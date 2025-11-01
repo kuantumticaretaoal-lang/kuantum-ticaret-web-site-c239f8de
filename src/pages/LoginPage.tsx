@@ -1,0 +1,140 @@
+import { useState, useEffect } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { supabase } from "@/integrations/supabase/client";
+import { signIn } from "@/lib/auth";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { useToast } from "@/hooks/use-toast";
+
+const formSchema = z.object({
+  email: z.string().email({ message: "Geçerli bir e-posta adresi girin" }),
+  password: z.string().min(6, { message: "Şifre en az 6 karakter olmalıdır" }),
+});
+
+const LoginPage = () => {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      email: "",
+      password: "",
+    },
+  });
+
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session) {
+        navigate("/");
+      }
+    });
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        navigate("/");
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [navigate]);
+
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    setIsLoading(true);
+    try {
+      const { error } = await signIn(values.email, values.password);
+      
+      if (error) {
+        toast({
+          variant: "destructive",
+          title: "Giriş Başarısız",
+          description: error.message === "Invalid login credentials" 
+            ? "E-posta veya şifre hatalı" 
+            : error.message,
+        });
+      } else {
+        toast({
+          title: "Giriş Başarılı",
+          description: "Hoş geldiniz!",
+        });
+      }
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Hata",
+        description: "Bir hata oluştu, lütfen tekrar deneyin",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-background">
+      <Navbar />
+      <div className="container mx-auto px-4 py-16 flex items-center justify-center">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle className="text-2xl text-center">Giriş Yap</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>E-posta</FormLabel>
+                      <FormControl>
+                        <Input type="email" placeholder="E-posta adresiniz" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Şifre</FormLabel>
+                      <FormControl>
+                        <Input type="password" placeholder="Şifreniz" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <Button 
+                  type="submit" 
+                  className="w-full"
+                  disabled={isLoading}
+                >
+                  {isLoading ? "Giriş yapılıyor..." : "Giriş Yap"}
+                </Button>
+                <p className="text-center text-sm text-muted-foreground">
+                  Hesabınız yok mu?{" "}
+                  <Link to="/register" className="text-primary hover:underline">
+                    Kayıt Olun
+                  </Link>
+                </p>
+              </form>
+            </Form>
+          </CardContent>
+        </Card>
+      </div>
+      <Footer />
+    </div>
+  );
+};
+
+export default LoginPage;
