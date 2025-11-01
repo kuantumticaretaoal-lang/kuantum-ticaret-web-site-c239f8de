@@ -121,6 +121,18 @@ const Navbar = () => {
           </div>
           
           <div className="flex items-center gap-2 lg:gap-4">
+            <Link to="/products" className="text-white hover:text-white/80 transition-colors text-sm lg:text-base hidden sm:block">
+              Ürünler
+            </Link>
+            <Link to="/contact" className="text-white hover:text-white/80 transition-colors text-sm lg:text-base hidden sm:block">
+              İletişim
+            </Link>
+            <Link to="/sponsors" className="text-white hover:text-white/80 transition-colors text-sm lg:text-base hidden md:block">
+              Sponsorlarımız
+            </Link>
+            <Link to="/follow" className="text-white hover:text-white/80 transition-colors text-sm lg:text-base hidden lg:block">
+              Bizi Takip Edin!
+            </Link>
             <Button
               variant="ghost"
               size="icon"
@@ -134,18 +146,6 @@ const Navbar = () => {
                 </Badge>
               )}
             </Button>
-            <Link to="/products" className="text-white hover:text-white/80 transition-colors text-sm lg:text-base hidden sm:block">
-              Ürünler
-            </Link>
-            <Link to="/contact" className="text-white hover:text-white/80 transition-colors text-sm lg:text-base hidden sm:block">
-              İletişim
-            </Link>
-            <Link to="/sponsors" className="text-white hover:text-white/80 transition-colors text-sm lg:text-base hidden md:block">
-              Sponsorlarımız
-            </Link>
-            <Link to="/follow" className="text-white hover:text-white/80 transition-colors text-sm lg:text-base hidden lg:block">
-              Bizi Takip Edin!
-            </Link>
             {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>

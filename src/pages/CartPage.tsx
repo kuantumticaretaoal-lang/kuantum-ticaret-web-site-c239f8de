@@ -81,6 +81,89 @@ const CartPage = () => {
     0
   );
 
+  const handleCheckout = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      toast({
+        variant: "destructive",
+        title: "Giriş Gerekli",
+        description: "Sipariş vermek için giriş yapmalısınız",
+      });
+      navigate("/login");
+      return;
+    }
+
+    // Get user profile to check if address is filled
+    const { data: profile } = await (supabase as any)
+      .from("profiles")
+      .select("address, district, province")
+      .eq("id", user.id)
+      .single();
+
+    if (!profile?.address || !profile?.district || !profile?.province) {
+      toast({
+        variant: "destructive",
+        title: "Adres Bilgisi Eksik",
+        description: "Sipariş vermek için hesabınızdan adres bilgilerinizi tamamlayın",
+      });
+      navigate("/account");
+      return;
+    }
+
+    try {
+      // Create order
+      const { data: order, error: orderError } = await (supabase as any)
+        .from("orders")
+        .insert({
+          user_id: user.id,
+          delivery_type: "address",
+          delivery_address: `${profile.address}, ${profile.district}, ${profile.province}`,
+          status: "pending",
+        })
+        .select()
+        .single();
+
+      if (orderError) throw orderError;
+
+      // Create order items
+      const orderItems = cartItems.map((item) => ({
+        order_id: order.id,
+        product_id: item.product_id,
+        quantity: item.quantity,
+        price: item.products.price,
+      }));
+
+      const { error: itemsError } = await (supabase as any)
+        .from("order_items")
+        .insert(orderItems);
+
+      if (itemsError) throw itemsError;
+
+      // Clear cart
+      const { error: clearError } = await (supabase as any)
+        .from("cart")
+        .delete()
+        .eq("user_id", user.id);
+
+      if (clearError) throw clearError;
+
+      toast({
+        title: "Sipariş Oluşturuldu",
+        description: "Siparişiniz başarıyla oluşturuldu. Hesabım sayfasından takip edebilirsiniz.",
+      });
+      
+      navigate("/account");
+    } catch (error) {
+      console.error("Checkout error:", error);
+      toast({
+        variant: "destructive",
+        title: "Hata",
+        description: "Sipariş oluşturulurken bir hata oluştu",
+      });
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
@@ -185,7 +268,7 @@ const CartPage = () => {
                       ₺{total.toFixed(2)}
                     </span>
                   </div>
-                  <Button className="w-full" size="lg">
+                  <Button className="w-full" size="lg" onClick={handleCheckout}>
                     Sipariş Ver
                   </Button>
                   <Button
