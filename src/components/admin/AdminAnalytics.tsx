@@ -16,7 +16,7 @@ export const AdminAnalytics = () => {
   const loadAnalytics = async () => {
     const { data } = await (supabase as any)
       .from("visitor_analytics")
-      .select("*, profiles(first_name, last_name)")
+      .select("*")
       .order("visited_at", { ascending: false })
       .limit(50);
 
@@ -94,9 +94,7 @@ export const AdminAnalytics = () => {
               {analytics.map((visit) => (
                 <TableRow key={visit.id}>
                   <TableCell>
-                    {visit.profiles?.first_name && visit.profiles?.last_name
-                      ? `${visit.profiles.first_name} ${visit.profiles.last_name}`
-                      : "Misafir"}
+                    {visit.user_id ? "Kayıtlı Kullanıcı" : "Misafir"}
                   </TableCell>
                   <TableCell>{visit.page_path}</TableCell>
                   <TableCell>{new Date(visit.visited_at).toLocaleString("tr-TR")}</TableCell>

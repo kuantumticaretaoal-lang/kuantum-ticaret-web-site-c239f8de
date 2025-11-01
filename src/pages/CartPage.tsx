@@ -117,7 +117,7 @@ const CartPage = () => {
         .from("orders")
         .insert({
           user_id: user.id,
-          delivery_type: "address",
+          delivery_type: "home_delivery",
           delivery_address: `${profile.address}, ${profile.district}, ${profile.province}`,
           status: "pending",
         })

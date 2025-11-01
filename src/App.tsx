@@ -15,6 +15,7 @@ import RegisterPage from "./pages/RegisterPage";
 import AccountPage from "./pages/AccountPage";
 import AdminPage from "./pages/AdminPage";
 import NotFound from "./pages/NotFound";
+import VisitorTracker from "./components/VisitorTracker";
 
 const queryClient = new QueryClient();
 
@@ -24,6 +25,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
+        <VisitorTracker />
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/products" element={<Products />} />
