@@ -8,16 +8,20 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Minus, Plus, Trash2 } from "lucide-react";
 
 const CartPage = () => {
   const [cartItems, setCartItems] = useState<any[]>([]);
+  const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
     loadCart();
+    loadOrders();
 
     const channel = supabase
       .channel("cart-changes")
@@ -35,6 +39,9 @@ const CartPage = () => {
           loadCart();
         }
       })
+      .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, () => {
+        loadOrders();
+      })
       .subscribe();
 
     return () => {
@@ -47,6 +54,24 @@ const CartPage = () => {
     const items = await getCartItems();
     setCartItems(items);
     setLoading(false);
+  };
+
+  const loadOrders = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data } = await (supabase as any)
+      .from("orders")
+      .select(`
+        *,
+        order_items(*, products(title, price))
+      `)
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false });
+
+    if (data) {
+      setOrders(data);
+    }
   };
 
   const handleUpdateQuantity = async (cartId: string, newQuantity: number) => {
@@ -176,113 +201,227 @@ const CartPage = () => {
     );
   }
 
+  const getStatusText = (status: string) => {
+    const statuses: Record<string, string> = {
+      pending: "Beklemede",
+      confirmed: "Onaylandı",
+      preparing: "Hazırlanıyor",
+      ready: "Hazır",
+      in_delivery: "Teslim Edilmek Üzere",
+      delivered: "Teslim Edildi",
+      rejected: "Reddedildi",
+    };
+    return statuses[status] || status;
+  };
+
+  const calculateOrderTotal = (order: any) => {
+    return order.order_items?.reduce(
+      (sum: number, item: any) => sum + (item.quantity * parseFloat(item.price)),
+      0
+    ) || 0;
+  };
+
+  const calculateAllOrdersTotal = () => {
+    return orders.reduce((sum, order) => sum + calculateOrderTotal(order), 0);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
       <div className="container mx-auto px-4 py-16">
         <h1 className="text-4xl font-bold mb-8">Sepetim</h1>
 
-        {cartItems.length === 0 ? (
-          <Card>
-            <CardContent className="py-12 text-center">
-              <p className="text-muted-foreground mb-4">Sepetiniz boş</p>
-              <Button onClick={() => navigate("/products")}>
-                Ürünlere Göz At
-              </Button>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2 space-y-4">
-              {cartItems.map((item) => (
-                <Card key={item.id}>
-                  <CardContent className="p-4">
-                    <div className="flex gap-4">
-                      {item.products.product_images?.[0] && (
-                        <img
-                          src={item.products.product_images[0].image_url}
-                          alt={item.products.title}
-                          className="w-24 h-24 object-cover rounded cursor-pointer"
-                          onClick={() => navigate(`/products/${item.products.id}`)}
-                        />
-                      )}
-                      <div className="flex-1">
-                        <h3 
-                          className="font-semibold mb-2 cursor-pointer hover:text-primary"
-                          onClick={() => navigate(`/products/${item.products.id}`)}
-                        >
-                          {item.products.title}
-                        </h3>
-                        <p className="text-lg font-bold text-primary mb-4">
-                          ₺{parseFloat(item.products.price).toFixed(2)}
-                        </p>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)}
-                          >
-                            <Minus className="h-4 w-4" />
-                          </Button>
-                          <Input
-                            type="number"
-                            value={item.quantity}
-                            onChange={(e) => {
-                              const val = parseInt(e.target.value);
-                              if (val > 0) handleUpdateQuantity(item.id, val);
-                            }}
-                            className="w-20 text-center"
-                          />
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}
-                          >
-                            <Plus className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            className="ml-auto"
-                            onClick={() => handleRemove(item.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+        <Tabs defaultValue="cart" className="w-full">
+          <TabsList className="mb-8">
+            <TabsTrigger value="cart">Sepetim</TabsTrigger>
+            <TabsTrigger value="orders">Geçmiş Siparişler</TabsTrigger>
+          </TabsList>
 
-            <div>
-              <Card className="sticky top-4">
-                <CardHeader>
-                  <CardTitle>Sipariş Özeti</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex justify-between text-lg">
-                    <span>Toplam:</span>
-                    <span className="font-bold text-primary">
-                      ₺{total.toFixed(2)}
-                    </span>
-                  </div>
-                  <Button className="w-full" size="lg" onClick={handleCheckout}>
-                    Sipariş Ver
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="w-full"
-                    onClick={() => navigate("/products")}
-                  >
-                    Alışverişe Devam Et
+          <TabsContent value="cart">
+            {cartItems.length === 0 ? (
+              <Card>
+                <CardContent className="py-12 text-center">
+                  <p className="text-muted-foreground mb-4">Sepetiniz boş</p>
+                  <Button onClick={() => navigate("/products")}>
+                    Ürünlere Göz At
                   </Button>
                 </CardContent>
               </Card>
-            </div>
-          </div>
-        )}
+            ) : (
+              <div className="grid lg:grid-cols-3 gap-8">
+                <div className="lg:col-span-2 space-y-4">
+                  {cartItems.map((item) => (
+                    <Card key={item.id}>
+                      <CardContent className="p-4">
+                        <div className="flex gap-4">
+                          {item.products.product_images?.[0] && (
+                            <img
+                              src={item.products.product_images[0].image_url}
+                              alt={item.products.title}
+                              className="w-24 h-24 object-cover rounded cursor-pointer"
+                              onClick={() => navigate(`/products/${item.products.id}`)}
+                            />
+                          )}
+                          <div className="flex-1">
+                            <h3 
+                              className="font-semibold mb-2 cursor-pointer hover:text-primary"
+                              onClick={() => navigate(`/products/${item.products.id}`)}
+                            >
+                              {item.products.title}
+                            </h3>
+                            <p className="text-lg font-bold text-primary mb-4">
+                              ₺{parseFloat(item.products.price).toFixed(2)}
+                            </p>
+                            <div className="flex items-center gap-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)}
+                              >
+                                <Minus className="h-4 w-4" />
+                              </Button>
+                              <Input
+                                type="number"
+                                value={item.quantity}
+                                onChange={(e) => {
+                                  const val = parseInt(e.target.value);
+                                  if (val > 0) handleUpdateQuantity(item.id, val);
+                                }}
+                                className="w-20 text-center"
+                              />
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}
+                              >
+                                <Plus className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                className="ml-auto"
+                                onClick={() => handleRemove(item.id)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+
+                <div>
+                  <Card className="sticky top-4">
+                    <CardHeader>
+                      <CardTitle>Sipariş Özeti</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="flex justify-between text-lg">
+                        <span>Toplam:</span>
+                        <span className="font-bold text-primary">
+                          ₺{total.toFixed(2)}
+                        </span>
+                      </div>
+                      <Button className="w-full" size="lg" onClick={handleCheckout}>
+                        Sipariş Ver
+                      </Button>
+                      <Button
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => navigate("/products")}
+                      >
+                        Alışverişe Devam Et
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="orders">
+            {orders.length === 0 ? (
+              <Card>
+                <CardContent className="py-12 text-center">
+                  <p className="text-muted-foreground mb-4">Henüz siparişiniz yok</p>
+                  <Button onClick={() => navigate("/products")}>
+                    Ürünlere Göz At
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : (
+              <>
+                <Card className="mb-4">
+                  <CardHeader>
+                    <CardTitle>Toplam Harcama</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-3xl font-bold text-primary">
+                      ₺{calculateAllOrdersTotal().toFixed(2)}
+                    </p>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      {orders.length} sipariş
+                    </p>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Sipariş Geçmişi</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Sipariş No</TableHead>
+                          <TableHead>Tarih</TableHead>
+                          <TableHead>Durum</TableHead>
+                          <TableHead>Ürünler</TableHead>
+                          <TableHead>Toplam</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {orders.map((order) => (
+                          <TableRow key={order.id}>
+                            <TableCell className="font-mono text-sm">
+                              #{order.id.slice(0, 8)}
+                            </TableCell>
+                            <TableCell>
+                              {new Date(order.created_at).toLocaleDateString("tr-TR")}
+                            </TableCell>
+                            <TableCell>
+                              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                order.status === "delivered" ? "bg-green-100 text-green-800" :
+                                order.status === "rejected" ? "bg-red-100 text-red-800" :
+                                "bg-blue-100 text-blue-800"
+                              }`}>
+                                {getStatusText(order.status)}
+                              </span>
+                            </TableCell>
+                            <TableCell>
+                              <div className="space-y-1">
+                                {order.order_items?.map((item: any, idx: number) => (
+                                  <div key={idx} className="text-sm">
+                                    {item.products?.title} x{item.quantity}
+                                  </div>
+                                ))}
+                              </div>
+                            </TableCell>
+                            <TableCell className="font-bold text-primary">
+                              ₺{calculateOrderTotal(order).toFixed(2)}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </CardContent>
+                </Card>
+              </>
+            )}
+          </TabsContent>
+        </Tabs>
       </div>
       <Footer />
     </div>

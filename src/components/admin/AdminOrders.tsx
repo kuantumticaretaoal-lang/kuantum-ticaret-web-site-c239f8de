@@ -22,7 +22,10 @@ export const AdminOrders = () => {
   const loadOrders = async () => {
     const { data, error } = await (supabase as any)
       .from("orders")
-      .select("*, profiles(first_name, last_name, email)")
+      .select(`
+        *,
+        profiles!orders_user_id_fkey(first_name, last_name, email)
+      `)
       .order("created_at", { ascending: false });
 
     if (!error && data) {

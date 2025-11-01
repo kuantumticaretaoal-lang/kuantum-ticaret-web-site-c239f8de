@@ -12,6 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 export const AdminSponsors = () => {
   const [sponsors, setSponsors] = useState<any[]>([]);
   const [newSponsor, setNewSponsor] = useState({ name: "", link: "", description: "", logo_url: "" });
+  const [editingSponsor, setEditingSponsor] = useState<any>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -58,6 +59,42 @@ export const AdminSponsors = () => {
         description: "Sponsor eklendi",
       });
       setNewSponsor({ name: "", link: "", description: "", logo_url: "" });
+      loadSponsors();
+    }
+  };
+
+  const updateSponsor = async () => {
+    if (!editingSponsor.name) {
+      toast({
+        variant: "destructive",
+        title: "Hata",
+        description: "Sponsor adı zorunludur",
+      });
+      return;
+    }
+
+    const { error } = await (supabase as any)
+      .from("sponsors")
+      .update({
+        name: editingSponsor.name,
+        link: editingSponsor.link,
+        description: editingSponsor.description,
+        logo_url: editingSponsor.logo_url,
+      })
+      .eq("id", editingSponsor.id);
+
+    if (error) {
+      toast({
+        variant: "destructive",
+        title: "Hata",
+        description: "Sponsor güncellenemedi",
+      });
+    } else {
+      toast({
+        title: "Başarılı",
+        description: "Sponsor güncellendi",
+      });
+      setEditingSponsor(null);
       loadSponsors();
     }
   };
@@ -133,9 +170,13 @@ export const AdminSponsors = () => {
         </CardTitle>
       </CardHeader>
       <CardContent>
+        <div className="mb-4 text-sm text-muted-foreground">
+          Toplam {sponsors.length} sponsor
+        </div>
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead>Logo</TableHead>
               <TableHead>Ad</TableHead>
               <TableHead>Link</TableHead>
               <TableHead>Açıklama</TableHead>
@@ -145,13 +186,77 @@ export const AdminSponsors = () => {
           <TableBody>
             {sponsors.map((sponsor) => (
               <TableRow key={sponsor.id}>
+                <TableCell>
+                  {sponsor.logo_url ? (
+                    <img src={sponsor.logo_url} alt={sponsor.name} className="h-12 w-12 object-contain" />
+                  ) : (
+                    <div className="h-12 w-12 bg-muted rounded flex items-center justify-center text-xs">
+                      Logo Yok
+                    </div>
+                  )}
+                </TableCell>
                 <TableCell>{sponsor.name}</TableCell>
                 <TableCell>{sponsor.link || "-"}</TableCell>
-                <TableCell>{sponsor.description || "-"}</TableCell>
+                <TableCell className="max-w-xs truncate">{sponsor.description || "-"}</TableCell>
                 <TableCell>
-                  <Button size="sm" variant="destructive" onClick={() => deleteSponsor(sponsor.id)}>
-                    Sil
-                  </Button>
+                  <div className="flex gap-2">
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => setEditingSponsor(sponsor)}
+                        >
+                          Düzenle
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Sponsor Düzenle</DialogTitle>
+                        </DialogHeader>
+                        {editingSponsor && (
+                          <div className="space-y-4">
+                            <div>
+                              <Label>Sponsor Adı *</Label>
+                              <Input
+                                value={editingSponsor.name}
+                                onChange={(e) => setEditingSponsor({ ...editingSponsor, name: e.target.value })}
+                              />
+                            </div>
+                            <div>
+                              <Label>Link</Label>
+                              <Input
+                                value={editingSponsor.link || ""}
+                                onChange={(e) => setEditingSponsor({ ...editingSponsor, link: e.target.value })}
+                                placeholder="https://..."
+                              />
+                            </div>
+                            <div>
+                              <Label>Açıklama</Label>
+                              <Textarea
+                                value={editingSponsor.description || ""}
+                                onChange={(e) => setEditingSponsor({ ...editingSponsor, description: e.target.value })}
+                              />
+                            </div>
+                            <div>
+                              <Label>Logo URL</Label>
+                              <Input
+                                value={editingSponsor.logo_url || ""}
+                                onChange={(e) => setEditingSponsor({ ...editingSponsor, logo_url: e.target.value })}
+                                placeholder="Logo URL"
+                              />
+                            </div>
+                            <Button onClick={updateSponsor} className="w-full">
+                              Güncelle
+                            </Button>
+                          </div>
+                        )}
+                      </DialogContent>
+                    </Dialog>
+                    <Button size="sm" variant="destructive" onClick={() => deleteSponsor(sponsor.id)}>
+                      Sil
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
             ))}
