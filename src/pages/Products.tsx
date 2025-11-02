@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,6 +10,7 @@ const Products = () => {
   const [products, setProducts] = useState<any[]>([]);
   const [sortBy, setSortBy] = useState<string>("newest");
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     loadProducts();
@@ -47,7 +48,14 @@ const Products = () => {
     }
   };
 
-  const sortedProducts = [...products].sort((a, b) => {
+  const query = new URLSearchParams(location.search).get("query")?.toLowerCase() || "";
+  const filtered = products.filter((p) => {
+    const title = (p.title || "").toLowerCase();
+    const desc = (p.description || "").toLowerCase();
+    return !query || title.includes(query) || desc.includes(query);
+  });
+
+  const sortedProducts = [...filtered].sort((a, b) => {
     switch (sortBy) {
       case "price-asc":
         return parseFloat(a.price) - parseFloat(b.price);

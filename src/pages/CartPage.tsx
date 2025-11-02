@@ -10,12 +10,15 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Minus, Plus, Trash2 } from "lucide-react";
 
 const CartPage = () => {
   const [cartItems, setCartItems] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deliveryType, setDeliveryType] = useState<"home_delivery" | "pickup">("home_delivery");
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -119,18 +122,18 @@ const CartPage = () => {
       return;
     }
 
-    // Get user profile to check if address is filled
+    // Get user profile to check if address is filled when needed
     const { data: profile } = await (supabase as any)
       .from("profiles")
       .select("address, district, province")
       .eq("id", user.id)
       .single();
 
-    if (!profile?.address || !profile?.district || !profile?.province) {
+    if (deliveryType === "home_delivery" && (!profile?.address || !profile?.district || !profile?.province)) {
       toast({
         variant: "destructive",
         title: "Adres Bilgisi Eksik",
-        description: "Sipariş vermek için hesabınızdan adres bilgilerinizi tamamlayın",
+        description: "Adrese teslim için adres bilgilerinizi tamamlayın",
       });
       navigate("/account");
       return;
@@ -142,8 +145,8 @@ const CartPage = () => {
         .from("orders")
         .insert({
           user_id: user.id,
-          delivery_type: "home_delivery",
-          delivery_address: `${profile.address}, ${profile.district}, ${profile.province}`,
+          delivery_type: deliveryType,
+          delivery_address: deliveryType === "home_delivery" ? `${profile.address}, ${profile.district}, ${profile.province}` : null,
           status: "pending",
         })
         .select()
@@ -313,29 +316,38 @@ const CartPage = () => {
                 </div>
 
                 <div>
-                  <Card className="sticky top-4">
-                    <CardHeader>
-                      <CardTitle>Sipariş Özeti</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="flex justify-between text-lg">
-                        <span>Toplam:</span>
-                        <span className="font-bold text-primary">
-                          ₺{total.toFixed(2)}
-                        </span>
-                      </div>
-                      <Button className="w-full" size="lg" onClick={handleCheckout}>
-                        Sipariş Ver
-                      </Button>
-                      <Button
-                        variant="outline"
-                        className="w-full"
-                        onClick={() => navigate("/products")}
-                      >
-                        Alışverişe Devam Et
-                      </Button>
-                    </CardContent>
-                  </Card>
+          <Card className="sticky top-4">
+            <CardHeader>
+              <CardTitle>Sipariş Özeti</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label>Teslimat Seçeneği</Label>
+                <Select value={deliveryType} onValueChange={(v: any) => setDeliveryType(v)}>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Seçiniz" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="home_delivery">Adrese Teslim</SelectItem>
+                    <SelectItem value="pickup">Yerinden Alma</SelectItem>
+                  </SelectContent>
+                </Select>
+                {deliveryType === "home_delivery" && (
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Not: Adrese teslim her bölgede mevcut olmayabilir ve ek ücret talep edilebilir.
+                  </p>
+                )}
+              </div>
+              <div className="flex justify-between text-lg">
+                <span>Toplam:</span>
+                <span className="font-bold text-primary">₺{total.toFixed(2)}</span>
+              </div>
+              <Button className="w-full" size="lg" onClick={handleCheckout}>Sipariş Ver</Button>
+              <Button variant="outline" className="w-full" onClick={() => navigate("/products")}>
+                Alışverişe Devam Et
+              </Button>
+            </CardContent>
+          </Card>
                 </div>
               </div>
             )}

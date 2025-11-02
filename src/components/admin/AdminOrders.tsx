@@ -40,7 +40,7 @@ export const AdminOrders = () => {
       .from("orders")
       .select(`
         *,
-        profiles(first_name, last_name, email)
+        profiles!orders_user_id_fkey(first_name, last_name, email, address, district, province)
       `)
       .order("created_at", { ascending: false });
 
@@ -79,6 +79,37 @@ export const AdminOrders = () => {
         description: "Sipariş güncellenemedi",
       });
     } else {
+      // If delivered, automatically log income once (idempotent by order_id)
+      if (status === "delivered") {
+        try {
+          const { data: existing } = await (supabase as any)
+            .from("expenses")
+            .select("id")
+            .eq("order_id", orderId)
+            .maybeSingle();
+
+          if (!existing) {
+            const { data: items } = await (supabase as any)
+              .from("order_items")
+              .select("price, quantity")
+              .eq("order_id", orderId);
+
+            const total = (items || []).reduce((sum: number, it: any) => sum + (parseFloat(it.price) * it.quantity), 0);
+
+            if (total > 0) {
+              await (supabase as any).from("expenses").insert({
+                type: "income",
+                amount: total,
+                description: `Sipariş No: ${orderId.slice(0, 8)}`,
+                order_id: orderId,
+              });
+            }
+          }
+        } catch (e) {
+          console.error("Gelir ekleme hatası:", e);
+        }
+      }
+
       toast({
         title: "Başarılı",
         description: "Sipariş durumu güncellendi",
@@ -134,6 +165,9 @@ export const AdminOrders = () => {
           <TableHead>Müşteri</TableHead>
           <TableHead>Durum</TableHead>
           <TableHead>Teslimat</TableHead>
+          <TableHead>Adres</TableHead>
+          <TableHead>İl</TableHead>
+          <TableHead>İlçe</TableHead>
           <TableHead>Tarih</TableHead>
           <TableHead>İşlemler</TableHead>
         </TableRow>
@@ -148,6 +182,21 @@ export const AdminOrders = () => {
             <TableCell>{getStatusText(order.status)}</TableCell>
             <TableCell>
               {order.delivery_type === "home_delivery" ? "Adrese Teslim" : "Yerinden Teslim"}
+            </TableCell>
+            <TableCell>
+              {order.delivery_type === "home_delivery"
+                ? (order.profiles?.address || (order.delivery_address?.split(",")[0]?.trim() || "-"))
+                : "-"}
+            </TableCell>
+            <TableCell>
+              {order.delivery_type === "home_delivery"
+                ? (order.profiles?.province || (order.delivery_address?.split(",")[2]?.trim() || "-"))
+                : "-"}
+            </TableCell>
+            <TableCell>
+              {order.delivery_type === "home_delivery"
+                ? (order.profiles?.district || (order.delivery_address?.split(",")[1]?.trim() || "-"))
+                : "-"}
             </TableCell>
             <TableCell>{new Date(order.created_at).toLocaleDateString("tr-TR")}</TableCell>
             <TableCell>
@@ -182,6 +231,7 @@ export const AdminOrders = () => {
                           <SelectItem value="delivered">Teslim Edildi</SelectItem>
                         </SelectContent>
                       </Select>
+                      <Button className="mt-2" onClick={() => updateOrderStatus(order.id, 'confirmed')}>Onayla</Button>
                     </div>
                     <div>
                       <Label>Ret Nedeni</Label>

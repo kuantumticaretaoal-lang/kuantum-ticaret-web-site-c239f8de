@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Search, User, Settings, Shield, ShoppingCart } from "lucide-react";
+import { Search, User, Settings, Shield, ShoppingCart, Bell } from "lucide-react";
 import logo from "@/assets/logo.jpg";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -21,6 +21,7 @@ const Navbar = () => {
   const [user, setUser] = useState<any>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [cartCount, setCartCount] = useState(0);
+  const [unreadCount, setUnreadCount] = useState(0);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -29,8 +30,10 @@ const Navbar = () => {
       setUser(session?.user ?? null);
       if (session?.user) {
         setTimeout(() => checkAdminStatus(session.user.id), 0);
+        setTimeout(loadUnreadCount, 0);
       } else {
         setIsAdmin(false);
+        setUnreadCount(0);
       }
       setTimeout(loadCartCount, 0);
     });
@@ -39,6 +42,7 @@ const Navbar = () => {
       setUser(session?.user ?? null);
       if (session?.user) {
         setTimeout(() => checkAdminStatus(session.user.id), 0);
+        setTimeout(loadUnreadCount, 0);
       }
     });
 
@@ -61,9 +65,23 @@ const Navbar = () => {
       })
       .subscribe();
 
+    const notificationsChannel = supabase
+      .channel("navbar-notifications-changes")
+      .on("postgres_changes", { event: "*", schema: "public", table: "notifications" }, async (payload) => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+        const newUserId = (payload.new as any)?.user_id;
+        const oldUserId = (payload.old as any)?.user_id;
+        if (newUserId === user.id || oldUserId === user.id) {
+          setTimeout(loadUnreadCount, 0);
+        }
+      })
+      .subscribe();
+
     return () => {
       subscription.unsubscribe();
       supabase.removeChannel(cartChannel);
+      supabase.removeChannel(notificationsChannel);
     };
   }, []);
 
@@ -84,6 +102,19 @@ const Navbar = () => {
     setCartCount(total);
   };
 
+  const loadUnreadCount = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      setUnreadCount(0);
+      return;
+    }
+    const { data } = await (supabase as any)
+      .from("notifications")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("read", false);
+    setUnreadCount(data?.length || 0);
+  };
   const handleSignOut = async () => {
     const { error } = await signOut();
     if (error) {
@@ -115,6 +146,12 @@ const Navbar = () => {
               <Input 
                 placeholder="Ürün ara..." 
                 className="bg-white/90 text-foreground border-0 pr-10"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    const q = (e.target as HTMLInputElement).value.trim();
+                    if (q) navigate(`/products?query=${encodeURIComponent(q)}`);
+                  }
+                }}
               />
               <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             </div>
@@ -143,6 +180,19 @@ const Navbar = () => {
               {cartCount > 0 && (
                 <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs bg-secondary">
                   {cartCount}
+                </Badge>
+              )}
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="relative text-white hover:text-white hover:bg-white/20"
+              onClick={() => navigate("/notifications")}
+            >
+              <Bell className="h-5 w-5" />
+              {unreadCount > 0 && (
+                <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs bg-secondary">
+                  {unreadCount}
                 </Badge>
               )}
             </Button>
