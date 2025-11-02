@@ -17,19 +17,46 @@ export const AdminOrders = () => {
 
   useEffect(() => {
     loadOrders();
+
+    const channel = (supabase as any)
+      .channel("orders-changes")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "orders" },
+        () => {
+          loadOrders();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      (supabase as any).removeChannel(channel);
+    };
   }, []);
 
   const loadOrders = async () => {
+    // Primary query with robust relationship selection
     const { data, error } = await (supabase as any)
       .from("orders")
       .select(`
         *,
-        profiles!orders_user_id_fkey(first_name, last_name, email)
+        profiles(first_name, last_name, email)
       `)
       .order("created_at", { ascending: false });
 
     if (!error && data) {
       setOrders(data);
+      return;
+    }
+
+    // Fallback without join (ensures orders still render even if relation name changes)
+    const { data: fallbackData } = await (supabase as any)
+      .from("orders")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (fallbackData) {
+      setOrders(fallbackData);
     }
   };
 
