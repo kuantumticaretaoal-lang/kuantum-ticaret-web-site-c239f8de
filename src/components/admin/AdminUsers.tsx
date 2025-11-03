@@ -28,7 +28,7 @@ export const AdminUsers = () => {
   const loadUsers = async () => {
     const { data, error } = await (supabase as any)
       .from("profiles")
-      .select("*, user_roles(role)")
+      .select("*")
       .order("created_at", { ascending: false });
 
     if (error) {

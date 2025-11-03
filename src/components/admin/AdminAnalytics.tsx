@@ -16,10 +16,7 @@ export const AdminAnalytics = () => {
   const loadAnalytics = async () => {
     const { data, error } = await (supabase as any)
       .from("visitor_analytics")
-      .select(`
-        *,
-        profiles(first_name, last_name)
-      `)
+      .select("*")
       .order("visited_at", { ascending: false })
       .limit(50);
 
@@ -30,16 +27,34 @@ export const AdminAnalytics = () => {
     }
 
     if (data) {
-      setAnalytics(data || []);
+      // Enrich with profile names without relying on FK joins
+      const userIds = Array.from(new Set((data || [])
+        .map((v: any) => v.user_id)
+        .filter((id: any): id is string => !!id)));
+
+      let profilesMap: Record<string, { first_name: string; last_name: string }> = {};
+      if (userIds.length > 0) {
+        const { data: profilesData } = await (supabase as any)
+          .from("profiles")
+          .select("id, first_name, last_name")
+          .in("id", userIds);
+        profilesMap = (profilesData || []).reduce((acc: any, p: any) => {
+          acc[p.id] = { first_name: p.first_name, last_name: p.last_name };
+          return acc;
+        }, {} as Record<string, { first_name: string; last_name: string }>);
+      }
+
+      const enriched = (data || []).map((v: any) => ({ ...v, profile: v.user_id ? profilesMap[v.user_id] : null }));
+      setAnalytics(enriched);
       
       const now = new Date();
       const fiveMinutesAgo = new Date(now.getTime() - 5 * 60 * 1000);
-      const onlineVisitors = data.filter((v: any) => {
+      const onlineVisitors = enriched.filter((v: any) => {
         const visitTime = new Date(v.visited_at);
         return visitTime > fiveMinutesAgo && !v.left_at;
       }).length;
 
-      const durations = data
+      const durations = enriched
         .filter((v: any) => v.duration)
         .map((v: any) => v.duration);
       const avgDur = durations.length > 0
@@ -48,7 +63,7 @@ export const AdminAnalytics = () => {
 
       setStats({
         online: onlineVisitors,
-        lastVisit: data.length > 0 ? new Date(data[0].visited_at).toLocaleString("tr-TR") : "-",
+        lastVisit: enriched.length > 0 ? new Date(enriched[0].visited_at).toLocaleString("tr-TR") : "-",
         avgDuration: Math.round(avgDur / 60),
       });
     }
@@ -110,8 +125,8 @@ export const AdminAnalytics = () => {
                 analytics.map((visit) => (
                   <TableRow key={visit.id}>
                     <TableCell>
-                      {visit.profiles?.first_name && visit.profiles?.last_name
-                        ? `${visit.profiles.first_name} ${visit.profiles.last_name}`
+                      {visit.profile?.first_name && visit.profile?.last_name
+                        ? `${visit.profile.first_name} ${visit.profile.last_name}`
                         : "Misafir"}
                     </TableCell>
                     <TableCell>{visit.page_path}</TableCell>

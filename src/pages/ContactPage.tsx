@@ -74,6 +74,16 @@ const ContactPage = () => {
                 <div>
                   <h3 className="font-semibold text-lg mb-2">Adres</h3>
                   <p className="text-muted-foreground">{settings?.address || "İstanbul, Türkiye"}</p>
+                  {settings?.location_url && (
+                    <a
+                      href={settings.location_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-primary underline mt-2 inline-block"
+                    >
+                      Konumu Aç
+                    </a>
+                  )}
                 </div>
               </CardContent>
             </Card>
