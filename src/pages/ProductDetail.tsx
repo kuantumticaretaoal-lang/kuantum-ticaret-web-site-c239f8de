@@ -98,7 +98,7 @@ const ProductDetail = () => {
       .from("product_questions")
       .select(`
         *,
-        profiles!product_questions_user_id_fkey (
+        profiles (
           first_name,
           last_name
         )
@@ -106,7 +106,7 @@ const ProductDetail = () => {
       .eq("product_id", id)
       .order("created_at", { ascending: false });
     
-    if (data) setQuestions(data);
+    if (data) setQuestions(data || []);
   };
 
   const submitReview = async () => {
@@ -397,37 +397,43 @@ const ProductDetail = () => {
             )}
 
             <div className="space-y-4">
-              {questions.map((q) => (
-                <Card key={q.id}>
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <p className="font-semibold">
-                        {q.profiles?.first_name} {q.profiles?.last_name}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        {new Date(q.created_at).toLocaleDateString("tr-TR")}
-                      </p>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div>
-                      <p className="text-sm text-muted-foreground mb-1">Soru:</p>
-                      <p>{q.question}</p>
-                    </div>
-                    {q.answer && (
-                      <div className="bg-muted p-4 rounded-lg">
-                        <p className="text-sm text-muted-foreground mb-1">Cevap:</p>
-                        <p>{q.answer}</p>
-                        {q.answered_at && (
-                          <p className="text-xs text-muted-foreground mt-2">
-                            {new Date(q.answered_at).toLocaleDateString("tr-TR")}
-                          </p>
-                        )}
+              {questions.length === 0 ? (
+                <p className="text-center text-muted-foreground py-8">Henüz soru sorulmamış</p>
+              ) : (
+                questions.map((q) => (
+                  <Card key={q.id}>
+                    <CardHeader>
+                      <div className="flex items-center justify-between">
+                        <p className="font-semibold">
+                          {q.profiles?.first_name && q.profiles?.last_name
+                            ? `${q.profiles.first_name} ${q.profiles.last_name}`
+                            : "Kullanıcı"}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {new Date(q.created_at).toLocaleDateString("tr-TR")} {new Date(q.created_at).toLocaleTimeString("tr-TR")}
+                        </p>
                       </div>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div>
+                        <p className="text-sm text-muted-foreground mb-1">Soru:</p>
+                        <p>{q.question}</p>
+                      </div>
+                      {q.answer && (
+                        <div className="bg-muted p-4 rounded-lg">
+                          <p className="text-sm text-muted-foreground mb-1">Cevap:</p>
+                          <p>{q.answer}</p>
+                          {q.answered_at && (
+                            <p className="text-xs text-muted-foreground mt-2">
+                              {new Date(q.answered_at).toLocaleDateString("tr-TR")} {new Date(q.answered_at).toLocaleTimeString("tr-TR")}
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))
+              )}
             </div>
           </TabsContent>
         </Tabs>

@@ -28,21 +28,26 @@ export const AdminProductQuestions = () => {
   }, []);
 
   const loadQuestions = async () => {
-    const { data } = await (supabase as any)
+    const { data, error } = await (supabase as any)
       .from("product_questions")
       .select(`
         *,
         products (
           title
         ),
-        profiles!product_questions_user_id_fkey (
+        profiles (
           first_name,
           last_name
         )
       `)
       .order("created_at", { ascending: false });
     
-    if (data) setQuestions(data);
+    if (error) {
+      console.error("Error loading questions:", error);
+      setQuestions([]);
+    } else {
+      setQuestions(data || []);
+    }
   };
 
   const answerQuestion = async () => {
@@ -95,51 +100,57 @@ export const AdminProductQuestions = () => {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {questions.map((question) => (
-            <Card key={question.id} className={!question.answer ? "border-destructive" : ""}>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-semibold">
-                      {question.profiles?.first_name} {question.profiles?.last_name}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      Ürün: {question.products?.title}
-                    </p>
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    {new Date(question.created_at).toLocaleDateString("tr-TR")}
-                  </p>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <p className="text-sm text-muted-foreground mb-1">Soru:</p>
-                  <p>{question.question}</p>
-                </div>
-                {question.answer ? (
-                  <div className="bg-muted p-4 rounded-lg">
-                    <p className="text-sm text-muted-foreground mb-1">Cevap:</p>
-                    <p>{question.answer}</p>
-                    {question.answered_at && (
-                      <p className="text-xs text-muted-foreground mt-2">
-                        {new Date(question.answered_at).toLocaleDateString("tr-TR")}
+          {questions.length === 0 ? (
+            <p className="text-center text-muted-foreground py-8">Henüz soru yok</p>
+          ) : (
+            questions.map((question) => (
+              <Card key={question.id} className={!question.answer ? "border-destructive" : ""}>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-semibold">
+                        {question.profiles?.first_name && question.profiles?.last_name
+                          ? `${question.profiles.first_name} ${question.profiles.last_name}`
+                          : "Kullanıcı"}
                       </p>
-                    )}
+                      <p className="text-sm text-muted-foreground">
+                        Ürün: {question.products?.title || "Bilinmiyor"}
+                      </p>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      {new Date(question.created_at).toLocaleDateString("tr-TR")} {new Date(question.created_at).toLocaleTimeString("tr-TR")}
+                    </p>
                   </div>
-                ) : (
-                  <Button
-                    onClick={() => {
-                      setSelectedQuestion(question);
-                      setAnswer("");
-                    }}
-                  >
-                    Cevapla
-                  </Button>
-                )}
-              </CardContent>
-            </Card>
-          ))}
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-1">Soru:</p>
+                    <p>{question.question}</p>
+                  </div>
+                  {question.answer ? (
+                    <div className="bg-muted p-4 rounded-lg">
+                      <p className="text-sm text-muted-foreground mb-1">Cevap:</p>
+                      <p>{question.answer}</p>
+                      {question.answered_at && (
+                        <p className="text-xs text-muted-foreground mt-2">
+                          {new Date(question.answered_at).toLocaleDateString("tr-TR")} {new Date(question.answered_at).toLocaleTimeString("tr-TR")}
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    <Button
+                      onClick={() => {
+                        setSelectedQuestion(question);
+                        setAnswer("");
+                      }}
+                    >
+                      Cevapla
+                    </Button>
+                  )}
+                </CardContent>
+              </Card>
+            ))
+          )}
         </CardContent>
       </Card>
 

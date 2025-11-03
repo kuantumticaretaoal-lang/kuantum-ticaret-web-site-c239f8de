@@ -14,30 +14,36 @@ export const AdminAnalytics = () => {
   }, []);
 
   const loadAnalytics = async () => {
-    const { data } = await (supabase as any)
+    const { data, error } = await (supabase as any)
       .from("visitor_analytics")
       .select(`
         *,
-        profiles!visitor_analytics_user_id_fkey(first_name, last_name)
+        profiles(first_name, last_name)
       `)
       .order("visited_at", { ascending: false })
       .limit(50);
 
+    if (error) {
+      console.error("Error loading analytics:", error);
+      setAnalytics([]);
+      return;
+    }
+
     if (data) {
-      setAnalytics(data);
+      setAnalytics(data || []);
       
       const now = new Date();
       const fiveMinutesAgo = new Date(now.getTime() - 5 * 60 * 1000);
-      const onlineVisitors = data.filter((v) => {
+      const onlineVisitors = data.filter((v: any) => {
         const visitTime = new Date(v.visited_at);
         return visitTime > fiveMinutesAgo && !v.left_at;
       }).length;
 
       const durations = data
-        .filter((v) => v.duration)
-        .map((v) => v.duration);
+        .filter((v: any) => v.duration)
+        .map((v: any) => v.duration);
       const avgDur = durations.length > 0
-        ? durations.reduce((a, b) => a + b, 0) / durations.length
+        ? durations.reduce((a: number, b: number) => a + b, 0) / durations.length
         : 0;
 
       setStats({
@@ -94,18 +100,26 @@ export const AdminAnalytics = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {analytics.map((visit) => (
-                <TableRow key={visit.id}>
-                  <TableCell>
-                    {visit.profiles 
-                      ? `${visit.profiles.first_name} ${visit.profiles.last_name}`
-                      : "Misafir"}
+              {analytics.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                    Henüz ziyaretçi kaydı yok
                   </TableCell>
-                  <TableCell>{visit.page_path}</TableCell>
-                  <TableCell>{new Date(visit.visited_at).toLocaleString("tr-TR")}</TableCell>
-                  <TableCell>{visit.duration ? `${Math.round(visit.duration / 60)} dk` : "-"}</TableCell>
                 </TableRow>
-              ))}
+              ) : (
+                analytics.map((visit) => (
+                  <TableRow key={visit.id}>
+                    <TableCell>
+                      {visit.profiles?.first_name && visit.profiles?.last_name
+                        ? `${visit.profiles.first_name} ${visit.profiles.last_name}`
+                        : "Misafir"}
+                    </TableCell>
+                    <TableCell>{visit.page_path}</TableCell>
+                    <TableCell>{new Date(visit.visited_at).toLocaleString("tr-TR")}</TableCell>
+                    <TableCell>{visit.duration ? `${Math.round(visit.duration / 60)} dk` : "-"}</TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </CardContent>

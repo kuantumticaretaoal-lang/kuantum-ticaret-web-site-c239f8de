@@ -225,7 +225,9 @@ const CartPage = () => {
   };
 
   const calculateAllOrdersTotal = () => {
-    return orders.reduce((sum, order) => sum + calculateOrderTotal(order), 0);
+    return orders
+      .filter((order) => order.status === "delivered")
+      .reduce((sum, order) => sum + calculateOrderTotal(order), 0);
   };
 
   return (
@@ -374,7 +376,10 @@ const CartPage = () => {
                       ₺{calculateAllOrdersTotal().toFixed(2)}
                     </p>
                     <p className="text-sm text-muted-foreground mt-2">
-                      {orders.length} sipariş
+                      {orders.filter((o) => o.status === "delivered").length} teslim edilmiş sipariş
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      (Sadece teslim edilmiş siparişler dahildir)
                     </p>
                   </CardContent>
                 </Card>

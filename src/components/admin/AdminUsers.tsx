@@ -31,8 +31,11 @@ export const AdminUsers = () => {
       .select("*, user_roles(role)")
       .order("created_at", { ascending: false });
 
-    if (!error && data) {
-      setUsers(data);
+    if (error) {
+      console.error("Error loading users:", error);
+      setUsers([]);
+    } else {
+      setUsers(data || []);
     }
   };
 
@@ -74,38 +77,46 @@ export const AdminUsers = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {users.map((user, index) => (
-              <TableRow key={user.id}>
-                <TableCell>{index + 1}</TableCell>
-                <TableCell>{user.first_name}</TableCell>
-                <TableCell>{user.last_name}</TableCell>
-                <TableCell>{user.email}</TableCell>
-                <TableCell>{user.phone}</TableCell>
-                <TableCell>{user.province}</TableCell>
-                <TableCell>{user.district}</TableCell>
-                <TableCell>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button size="sm" variant="destructive">Sil</Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Emin misiniz?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Bu işlem geri alınamaz. Kullanıcı kalıcı olarak silinecektir.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>İptal</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => deleteUser(user.id)}>
-                          Sil
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
+            {users.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
+                  Henüz kayıtlı kullanıcı yok
                 </TableCell>
               </TableRow>
-            ))}
+            ) : (
+              users.map((user, index) => (
+                <TableRow key={user.id}>
+                  <TableCell>{index + 1}</TableCell>
+                  <TableCell>{user.first_name || "-"}</TableCell>
+                  <TableCell>{user.last_name || "-"}</TableCell>
+                  <TableCell>{user.email || "-"}</TableCell>
+                  <TableCell>{user.phone || "-"}</TableCell>
+                  <TableCell>{user.province || "-"}</TableCell>
+                  <TableCell>{user.district || "-"}</TableCell>
+                  <TableCell>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button size="sm" variant="destructive">Sil</Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Emin misiniz?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Bu işlem geri alınamaz. Kullanıcı kalıcı olarak silinecektir.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>İptal</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => deleteUser(user.id)}>
+                            Sil
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
       </CardContent>
