@@ -13,7 +13,9 @@ const Sponsors = () => {
       .channel("public-sponsors-changes")
       .on("postgres_changes", { event: "*", schema: "public", table: "sponsors" }, () => load())
       .subscribe();
-    return () => supabase.removeChannel(channel);
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const load = async () => {
