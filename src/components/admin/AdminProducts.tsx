@@ -12,11 +12,18 @@ import { Pencil, Upload, X } from "lucide-react";
 
 export const AdminProducts = () => {
   const [products, setProducts] = useState<any[]>([]);
-  const [newProduct, setNewProduct] = useState({ title: "", description: "", price: "" });
+  const [newProduct, setNewProduct] = useState({ title: "", description: "", price: "", stock_status: "in_stock", promotion_badges: [] as string[] });
   const [editProduct, setEditProduct] = useState<any>(null);
   const [editImages, setEditImages] = useState<any[]>([]);
   const [uploadingImages, setUploadingImages] = useState<File[]>([]);
   const { toast } = useToast();
+  
+  const availablePromotions = [
+    "En Geç Yarın Kargoda",
+    "Hızlı Teslimat",
+    "Sınırlı Stok",
+    "İndirim"
+  ];
 
   useEffect(() => {
     loadProducts();
@@ -102,6 +109,8 @@ export const AdminProducts = () => {
         title: newProduct.title,
         description: newProduct.description,
         price: parseFloat(newProduct.price),
+        stock_status: newProduct.stock_status,
+        promotion_badges: newProduct.promotion_badges,
       })
       .select()
       .single();
@@ -120,7 +129,7 @@ export const AdminProducts = () => {
         title: "Başarılı",
         description: "Ürün eklendi",
       });
-      setNewProduct({ title: "", description: "", price: "" });
+      setNewProduct({ title: "", description: "", price: "", stock_status: "in_stock", promotion_badges: [] });
       setUploadingImages([]);
       loadProducts();
     }
@@ -142,6 +151,8 @@ export const AdminProducts = () => {
         title: editProduct.title,
         description: editProduct.description,
         price: parseFloat(editProduct.price),
+        stock_status: editProduct.stock_status,
+        promotion_badges: editProduct.promotion_badges || [],
       })
       .eq("id", editProduct.id);
 
@@ -224,6 +235,39 @@ export const AdminProducts = () => {
                   />
                 </div>
                 <div>
+                  <Label>Stok Durumu</Label>
+                  <select 
+                    className="w-full p-2 border rounded"
+                    value={newProduct.stock_status}
+                    onChange={(e) => setNewProduct({ ...newProduct, stock_status: e.target.value })}
+                  >
+                    <option value="in_stock">Stokta</option>
+                    <option value="limited_stock">Sınırlı Stok</option>
+                    <option value="out_of_stock">Tükendi</option>
+                  </select>
+                </div>
+                <div>
+                  <Label>Fırsatlar</Label>
+                  <div className="space-y-2">
+                    {availablePromotions.map((promo) => (
+                      <label key={promo} className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          checked={newProduct.promotion_badges.includes(promo)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setNewProduct({ ...newProduct, promotion_badges: [...newProduct.promotion_badges, promo] });
+                            } else {
+                              setNewProduct({ ...newProduct, promotion_badges: newProduct.promotion_badges.filter(p => p !== promo) });
+                            }
+                          }}
+                        />
+                        <span className="text-sm">{promo}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+                <div>
                   <Label>Resimler</Label>
                   <Input
                     type="file"
@@ -247,6 +291,8 @@ export const AdminProducts = () => {
               <TableHead>Başlık</TableHead>
               <TableHead>Açıklama</TableHead>
               <TableHead>Fiyat</TableHead>
+              <TableHead>Stok</TableHead>
+              <TableHead>Fırsatlar</TableHead>
               <TableHead>Resimler</TableHead>
               <TableHead>İşlemler</TableHead>
             </TableRow>
@@ -257,6 +303,13 @@ export const AdminProducts = () => {
                 <TableCell>{product.title}</TableCell>
                 <TableCell>{product.description || "-"}</TableCell>
                 <TableCell>{product.price} TL</TableCell>
+                <TableCell>
+                  {product.stock_status === 'in_stock' ? 'Stokta' : 
+                   product.stock_status === 'limited_stock' ? 'Sınırlı' : 'Tükendi'}
+                </TableCell>
+                <TableCell>
+                  {product.promotion_badges?.length > 0 ? product.promotion_badges.join(", ") : "-"}
+                </TableCell>
                 <TableCell>{product.product_images?.length || 0} resim</TableCell>
                 <TableCell className="space-x-2">
                   <Button
@@ -311,6 +364,40 @@ export const AdminProducts = () => {
                   onChange={(e) => setEditProduct({ ...editProduct, price: e.target.value })}
                   placeholder="0.00"
                 />
+              </div>
+              <div>
+                <Label>Stok Durumu</Label>
+                <select 
+                  className="w-full p-2 border rounded"
+                  value={editProduct.stock_status || 'in_stock'}
+                  onChange={(e) => setEditProduct({ ...editProduct, stock_status: e.target.value })}
+                >
+                  <option value="in_stock">Stokta</option>
+                  <option value="limited_stock">Sınırlı Stok</option>
+                  <option value="out_of_stock">Tükendi</option>
+                </select>
+              </div>
+              <div>
+                <Label>Fırsatlar</Label>
+                <div className="space-y-2">
+                  {availablePromotions.map((promo) => (
+                    <label key={promo} className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        checked={editProduct.promotion_badges?.includes(promo) || false}
+                        onChange={(e) => {
+                          const badges = editProduct.promotion_badges || [];
+                          if (e.target.checked) {
+                            setEditProduct({ ...editProduct, promotion_badges: [...badges, promo] });
+                          } else {
+                            setEditProduct({ ...editProduct, promotion_badges: badges.filter((p: string) => p !== promo) });
+                          }
+                        }}
+                      />
+                      <span className="text-sm">{promo}</span>
+                    </label>
+                  ))}
+                </div>
               </div>
               <div>
                 <Label>Mevcut Resimler</Label>

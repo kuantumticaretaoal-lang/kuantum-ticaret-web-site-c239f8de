@@ -35,12 +35,15 @@ export const AdminOrders = () => {
   }, []);
 
   const loadOrders = async () => {
-    // Primary query with robust relationship selection
     const { data, error } = await (supabase as any)
       .from("orders")
       .select(`
         *,
-        profiles!orders_user_id_fkey(first_name, last_name, email, address, district, province)
+        profiles!orders_user_id_fkey(first_name, last_name, email, address, district, province),
+        order_items(
+          *,
+          products(title, price)
+        )
       `)
       .order("created_at", { ascending: false });
 
@@ -49,7 +52,6 @@ export const AdminOrders = () => {
       return;
     }
 
-    // Fallback without join (ensures orders still render even if relation name changes)
     const { data: fallbackData } = await (supabase as any)
       .from("orders")
       .select("*")
@@ -163,6 +165,7 @@ export const AdminOrders = () => {
         <TableRow>
           <TableHead>Sipariş No</TableHead>
           <TableHead>Müşteri</TableHead>
+          <TableHead>Ürünler</TableHead>
           <TableHead>Durum</TableHead>
           <TableHead>Teslimat</TableHead>
           <TableHead>Adres</TableHead>
@@ -178,6 +181,13 @@ export const AdminOrders = () => {
             <TableCell>{order.id.slice(0, 8)}</TableCell>
             <TableCell>
               {order.profiles?.first_name} {order.profiles?.last_name}
+            </TableCell>
+            <TableCell>
+              {order.order_items?.map((item: any, idx: number) => (
+                <div key={idx} className="text-sm">
+                  {item.products?.title} x{item.quantity}
+                </div>
+              )) || "-"}
             </TableCell>
             <TableCell>
               <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${

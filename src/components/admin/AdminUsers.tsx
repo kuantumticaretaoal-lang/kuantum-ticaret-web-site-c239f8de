@@ -29,8 +29,8 @@ export const AdminUsers = () => {
     const { data, error } = await (supabase as any)
       .from("profiles")
       .select("*")
-      .order("created_at", { ascending: false });
-
+      .order("created_at", { ascending: true });
+    
     if (error) {
       console.error("Error loading users:", error);
       setUsers([]);
@@ -40,20 +40,25 @@ export const AdminUsers = () => {
   };
 
   const deleteUser = async (userId: string) => {
-    const { error } = await supabase.auth.admin.deleteUser(userId);
+    try {
+      const { error: profileError } = await (supabase as any)
+        .from("profiles")
+        .delete()
+        .eq("id", userId);
 
-    if (error) {
-      toast({
-        variant: "destructive",
-        title: "Hata",
-        description: "Kullanıcı silinemedi",
-      });
-    } else {
+      if (profileError) throw profileError;
+
       toast({
         title: "Başarılı",
         description: "Kullanıcı silindi",
       });
       loadUsers();
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Hata",
+        description: "Kullanıcı silinemedi",
+      });
     }
   };
 

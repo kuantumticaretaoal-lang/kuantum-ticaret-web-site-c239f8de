@@ -7,9 +7,13 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Mail, Phone, MapPin } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 const ContactPage = () => {
+  const { toast } = useToast();
   const [settings, setSettings] = useState<any>(null);
+  const [formData, setFormData] = useState({ name: "", email: "", phone: "", message: "" });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     loadSettings();
@@ -32,6 +36,51 @@ const ContactPage = () => {
       if (data) setSettings(data);
     } catch (error) {
       console.error("Error loading settings:", error);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!formData.name.trim() || !formData.email.trim() || !formData.message.trim()) {
+      toast({
+        variant: "destructive",
+        title: "Hata",
+        description: "Lütfen tüm alanları doldurun",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+
+      const { error } = await (supabase as any)
+        .from("contact_messages")
+        .insert({
+          name: formData.name.trim(),
+          email: formData.email.trim().toLowerCase(),
+          phone: formData.phone?.trim() || null,
+          message: formData.message.trim(),
+          user_id: user?.id || null,
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Başarılı",
+        description: "Mesajınız gönderildi",
+      });
+      setFormData({ name: "", email: "", phone: "", message: "" });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Hata",
+        description: "Mesaj gönderilemedi",
+      });
+    } finally {
+      setIsSubmitting(false);
     }
   };
   return (
@@ -94,27 +143,51 @@ const ContactPage = () => {
               <CardTitle>Mesaj Gönder</CardTitle>
             </CardHeader>
             <CardContent>
-              <form className="space-y-4">
+              <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                   <label className="text-sm font-medium mb-2 block">Adınız</label>
-                  <Input placeholder="Adınızı girin" />
+                  <Input 
+                    placeholder="Adınızı girin"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    required
+                  />
                 </div>
                 <div>
                   <label className="text-sm font-medium mb-2 block">E-posta</label>
-                  <Input type="email" placeholder="E-posta adresiniz" />
+                  <Input 
+                    type="email" 
+                    placeholder="E-posta adresiniz"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Telefon (İsteğe bağlı)</label>
+                  <Input 
+                    type="tel" 
+                    placeholder="Telefon numaranız"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  />
                 </div>
                 <div>
                   <label className="text-sm font-medium mb-2 block">Mesajınız</label>
                   <Textarea 
                     placeholder="Mesajınızı buraya yazın..." 
                     className="min-h-[150px] resize-none"
+                    value={formData.message}
+                    onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                    required
                   />
                 </div>
                 <Button 
                   type="submit" 
                   className="w-full bg-gradient-to-r from-primary to-secondary hover:opacity-90"
+                  disabled={isSubmitting}
                 >
-                  Gönder
+                  {isSubmitting ? "Gönderiliyor..." : "Gönder"}
                 </Button>
               </form>
             </CardContent>

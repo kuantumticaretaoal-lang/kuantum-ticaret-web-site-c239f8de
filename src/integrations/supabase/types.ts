@@ -330,6 +330,8 @@ export type Database = {
           description: string | null
           id: string
           price: number
+          promotion_badges: string[] | null
+          stock_status: string | null
           title: string
           updated_at: string | null
         }
@@ -338,6 +340,8 @@ export type Database = {
           description?: string | null
           id?: string
           price: number
+          promotion_badges?: string[] | null
+          stock_status?: string | null
           title: string
           updated_at?: string | null
         }
@@ -346,6 +350,8 @@ export type Database = {
           description?: string | null
           id?: string
           price?: number
+          promotion_badges?: string[] | null
+          stock_status?: string | null
           title?: string
           updated_at?: string | null
         }

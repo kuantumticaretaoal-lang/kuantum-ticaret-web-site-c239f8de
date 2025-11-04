@@ -71,7 +71,7 @@ export const AdminAnalytics = () => {
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-4 gap-4">
         <Card>
           <CardHeader>
             <CardTitle>Şu An Online</CardTitle>
@@ -87,6 +87,15 @@ export const AdminAnalytics = () => {
           </CardHeader>
           <CardContent>
             <p className="text-sm">{stats.lastVisit}</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Toplam Ziyaret</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-bold">{analytics.length}</p>
           </CardContent>
         </Card>
 

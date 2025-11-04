@@ -155,6 +155,74 @@ const AccountPage = () => {
                 Güncelle
               </Button>
             </form>
+
+            <div className="mt-8 pt-8 border-t">
+              <h3 className="text-lg font-semibold mb-4">Şifre Değiştir</h3>
+              <form onSubmit={async (e) => {
+                e.preventDefault();
+                const formData = new FormData(e.currentTarget);
+                const newPassword = formData.get("newPassword") as string;
+                const confirmPassword = formData.get("confirmPassword") as string;
+
+                if (!newPassword || newPassword.length < 6) {
+                  toast({
+                    variant: "destructive",
+                    title: "Hata",
+                    description: "Şifre en az 6 karakter olmalıdır",
+                  });
+                  return;
+                }
+
+                if (newPassword !== confirmPassword) {
+                  toast({
+                    variant: "destructive",
+                    title: "Hata",
+                    description: "Şifreler eşleşmiyor",
+                  });
+                  return;
+                }
+
+                const { error } = await supabase.auth.updateUser({
+                  password: newPassword
+                });
+
+                if (error) {
+                  toast({
+                    variant: "destructive",
+                    title: "Hata",
+                    description: "Şifre değiştirilemedi",
+                  });
+                } else {
+                  toast({
+                    title: "Başarılı",
+                    description: "Şifreniz değiştirildi",
+                  });
+                  (e.target as HTMLFormElement).reset();
+                }
+              }} className="space-y-4">
+                <div>
+                  <Label>Yeni Şifre</Label>
+                  <Input
+                    type="password"
+                    name="newPassword"
+                    placeholder="En az 6 karakter"
+                    required
+                  />
+                </div>
+                <div>
+                  <Label>Yeni Şifre (Tekrar)</Label>
+                  <Input
+                    type="password"
+                    name="confirmPassword"
+                    placeholder="Şifreyi tekrar girin"
+                    required
+                  />
+                </div>
+                <Button type="submit" className="w-full">
+                  Şifreyi Değiştir
+                </Button>
+              </form>
+            </div>
           </CardContent>
         </Card>
       </div>
