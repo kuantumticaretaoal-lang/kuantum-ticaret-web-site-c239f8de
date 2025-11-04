@@ -28,18 +28,9 @@ export const AdminProductQuestions = () => {
   }, []);
 
   const loadQuestions = async () => {
-    const { data, error } = await (supabase as any)
+    const { data, error } = await supabase
       .from("product_questions")
-      .select(`
-        *,
-        products (
-          title
-        ),
-        profiles (
-          first_name,
-          last_name
-        )
-      `)
+      .select("*, products!inner(title), profiles!inner(first_name, last_name)")
       .order("created_at", { ascending: false });
     
     if (error) {
@@ -60,7 +51,7 @@ export const AdminProductQuestions = () => {
       return;
     }
 
-    const { error } = await (supabase as any)
+    const { error } = await supabase
       .from("product_questions")
       .update({
         answer,
@@ -81,6 +72,7 @@ export const AdminProductQuestions = () => {
       });
       setSelectedQuestion(null);
       setAnswer("");
+      loadQuestions();
     }
   };
 

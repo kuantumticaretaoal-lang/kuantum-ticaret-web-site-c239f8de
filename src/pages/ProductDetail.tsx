@@ -78,35 +78,33 @@ const ProductDetail = () => {
   };
 
   const loadReviews = async () => {
-    const { data } = await (supabase as any)
+    const { data, error } = await supabase
       .from("product_reviews")
-      .select(`
-        *,
-        profiles (
-          first_name,
-          last_name
-        )
-      `)
+      .select("*, profiles!inner(first_name, last_name)")
       .eq("product_id", id)
       .order("created_at", { ascending: false });
     
-    if (data) setReviews(data);
+    if (error) {
+      console.error("Error loading reviews:", error);
+      setReviews([]);
+    } else {
+      setReviews(data || []);
+    }
   };
 
   const loadQuestions = async () => {
-    const { data } = await (supabase as any)
+    const { data, error } = await supabase
       .from("product_questions")
-      .select(`
-        *,
-        profiles (
-          first_name,
-          last_name
-        )
-      `)
+      .select("*, profiles!inner(first_name, last_name)")
       .eq("product_id", id)
       .order("created_at", { ascending: false });
     
-    if (data) setQuestions(data || []);
+    if (error) {
+      console.error("Error loading questions:", error);
+      setQuestions([]);
+    } else {
+      setQuestions(data || []);
+    }
   };
 
   const submitReview = async () => {
@@ -342,37 +340,41 @@ const ProductDetail = () => {
             )}
 
             <div className="space-y-4">
-              {reviews.map((review) => (
-                <Card key={review.id}>
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-semibold">
-                          {review.profiles?.first_name} {review.profiles?.last_name}
-                        </p>
-                        <div className="flex gap-1 mt-1">
-                          {[1, 2, 3, 4, 5].map((star) => (
-                            <Star
-                              key={star}
-                              className={`h-4 w-4 ${
-                                star <= review.rating ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
-                              }`}
-                            />
-                          ))}
+              {reviews.length === 0 ? (
+                <p className="text-center text-muted-foreground py-8">Henüz yorum yapılmamış</p>
+              ) : (
+                reviews.map((review) => (
+                  <Card key={review.id}>
+                    <CardHeader>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-semibold">
+                            {review.profiles?.first_name} {review.profiles?.last_name}
+                          </p>
+                          <div className="flex gap-1 mt-1">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <Star
+                                key={star}
+                                className={`h-4 w-4 ${
+                                  star <= review.rating ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
+                                }`}
+                              />
+                            ))}
+                          </div>
                         </div>
+                        <p className="text-sm text-muted-foreground">
+                          {new Date(review.created_at).toLocaleDateString("tr-TR")}
+                        </p>
                       </div>
-                      <p className="text-sm text-muted-foreground">
-                        {new Date(review.created_at).toLocaleDateString("tr-TR")}
-                      </p>
-                    </div>
-                  </CardHeader>
-                  {review.comment && (
-                    <CardContent>
-                      <p>{review.comment}</p>
-                    </CardContent>
-                  )}
-                </Card>
-              ))}
+                    </CardHeader>
+                    {review.comment && (
+                      <CardContent>
+                        <p>{review.comment}</p>
+                      </CardContent>
+                    )}
+                  </Card>
+                ))
+              )}
             </div>
           </TabsContent>
 
