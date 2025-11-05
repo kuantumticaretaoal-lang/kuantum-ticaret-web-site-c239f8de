@@ -5,12 +5,15 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
+import { AdminSentNotifications } from "./AdminSentNotifications";
 
 export const AdminNotifications = () => {
   const [message, setMessage] = useState("");
   const [targetUser, setTargetUser] = useState("all");
   const [users, setUsers] = useState<any[]>([]);
+  const [activeTab, setActiveTab] = useState<"send" | "sent">("send");
   const { toast } = useToast();
 
   useEffect(() => {
@@ -76,44 +79,57 @@ export const AdminNotifications = () => {
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Bildirim Gönder</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          <div>
-            <Label>Alıcı</Label>
-            <Select value={targetUser} onValueChange={setTargetUser}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tüm Kullanıcılar</SelectItem>
-                {users.map((user) => (
-                  <SelectItem key={user.id} value={user.id}>
-                    {user.first_name} {user.last_name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+    <Tabs defaultValue="send" value={activeTab} onValueChange={(v) => setActiveTab(v as "send" | "sent")}>
+      <TabsList className="grid w-full grid-cols-2">
+        <TabsTrigger value="send">Bildirim Gönder</TabsTrigger>
+        <TabsTrigger value="sent">Gönderilmiş Bildirimler</TabsTrigger>
+      </TabsList>
+      
+      <TabsContent value="send">
+        <Card>
+          <CardHeader>
+            <CardTitle>Bildirim Gönder</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div>
+                <Label>Alıcı</Label>
+                <Select value={targetUser} onValueChange={setTargetUser}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tüm Kullanıcılar</SelectItem>
+                    {users.map((user) => (
+                      <SelectItem key={user.id} value={user.id}>
+                        {user.first_name} {user.last_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-          <div>
-            <Label>Mesaj</Label>
-            <Textarea
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              placeholder="Bildirim mesajınızı yazın..."
-              rows={4}
-            />
-          </div>
+              <div>
+                <Label>Mesaj</Label>
+                <Textarea
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  placeholder="Bildirim mesajınızı yazın..."
+                  rows={4}
+                />
+              </div>
 
-          <Button onClick={sendNotification} className="w-full">
-            Gönder
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+              <Button onClick={sendNotification} className="w-full">
+                Gönder
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </TabsContent>
+
+      <TabsContent value="sent">
+        <AdminSentNotifications />
+      </TabsContent>
+    </Tabs>
   );
 };

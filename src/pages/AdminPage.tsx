@@ -16,6 +16,7 @@ import { AdminNotifications } from "@/components/admin/AdminNotifications";
 import { AdminManagers } from "@/components/admin/AdminManagers";
 import { AdminFinances } from "@/components/admin/AdminFinances";
 import { AdminMessages } from "@/components/admin/AdminMessages";
+import { AdminAbout } from "@/components/admin/AdminAbout";
 
 const AdminPage = () => {
   const navigate = useNavigate();
@@ -78,7 +79,7 @@ const AdminPage = () => {
         <h1 className="text-4xl font-bold mb-8">Admin Paneli</h1>
         
         <Tabs defaultValue="orders" className="w-full">
-          <TabsList className="grid grid-cols-3 lg:grid-cols-12 gap-2">
+          <TabsList className="grid grid-cols-3 lg:grid-cols-13 gap-2">
             <TabsTrigger value="orders">Siparişler</TabsTrigger>
             <TabsTrigger value="users">Kullanıcılar</TabsTrigger>
             <TabsTrigger value="products">Ürünler</TabsTrigger>
@@ -91,6 +92,7 @@ const AdminPage = () => {
             <TabsTrigger value="messages">Mesajlar</TabsTrigger>
             <TabsTrigger value="notifications">Bildirimler</TabsTrigger>
             <TabsTrigger value="managers">Yöneticiler</TabsTrigger>
+            <TabsTrigger value="about">Hakkımızda</TabsTrigger>
           </TabsList>
 
           <TabsContent value="orders">
@@ -139,6 +141,10 @@ const AdminPage = () => {
 
           <TabsContent value="managers">
             <AdminManagers />
+          </TabsContent>
+
+          <TabsContent value="about">
+            <AdminAbout />
           </TabsContent>
         </Tabs>
       </div>

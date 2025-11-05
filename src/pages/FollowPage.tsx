@@ -2,24 +2,34 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Instagram, Youtube, Linkedin, MapPin, Phone } from "lucide-react";
 
 const FollowPage = () => {
   const [socialMedia, setSocialMedia] = useState<any>(null);
+  const [aboutUs, setAboutUs] = useState("");
 
   useEffect(() => {
     loadSocialMedia();
+    loadAboutUs();
 
-    const channel = supabase
+    const socialChannel = supabase
       .channel("social-media-changes")
       .on("postgres_changes", { event: "*", schema: "public", table: "social_media" }, () => {
         loadSocialMedia();
       })
       .subscribe();
 
+    const aboutChannel = supabase
+      .channel("about-us-changes")
+      .on("postgres_changes", { event: "*", schema: "public", table: "about_us" }, () => {
+        loadAboutUs();
+      })
+      .subscribe();
+
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(socialChannel);
+      supabase.removeChannel(aboutChannel);
     };
   }, []);
 
@@ -30,6 +40,15 @@ const FollowPage = () => {
       .maybeSingle();
     
     if (data) setSocialMedia(data);
+  };
+
+  const loadAboutUs = async () => {
+    const { data } = await supabase
+      .from("about_us")
+      .select("content")
+      .maybeSingle();
+    
+    if (data) setAboutUs(data.content || "");
   };
 
   const socialLinks = [
@@ -93,6 +112,21 @@ const FollowPage = () => {
                 </Card>
               </a>
             ))}
+          </div>
+        )}
+
+        {aboutUs && (
+          <div className="max-w-4xl mx-auto mt-16">
+            <Card>
+              <CardHeader>
+                <h2 className="text-3xl font-bold text-center">Hakkımızda</h2>
+              </CardHeader>
+              <CardContent>
+                <p className="whitespace-pre-wrap text-muted-foreground leading-relaxed">
+                  {aboutUs}
+                </p>
+              </CardContent>
+            </Card>
           </div>
         )}
       </div>

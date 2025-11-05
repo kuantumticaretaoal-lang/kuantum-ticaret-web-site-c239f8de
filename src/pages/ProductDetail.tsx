@@ -80,7 +80,13 @@ const ProductDetail = () => {
   const loadReviews = async () => {
     const { data, error } = await supabase
       .from("product_reviews")
-      .select("*, profiles!inner(first_name, last_name)")
+      .select(`
+        *,
+        profiles (
+          first_name,
+          last_name
+        )
+      `)
       .eq("product_id", id)
       .order("created_at", { ascending: false });
     
@@ -95,7 +101,13 @@ const ProductDetail = () => {
   const loadQuestions = async () => {
     const { data, error } = await supabase
       .from("product_questions")
-      .select("*, profiles!inner(first_name, last_name)")
+      .select(`
+        *,
+        profiles (
+          first_name,
+          last_name
+        )
+      `)
       .eq("product_id", id)
       .order("created_at", { ascending: false });
     

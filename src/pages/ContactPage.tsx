@@ -140,7 +140,12 @@ const ContactPage = () => {
           
           <Card>
             <CardHeader>
-              <CardTitle>Mesaj Gönder</CardTitle>
+              <CardTitle className="text-2xl">
+                Mesaj Gönder{" "}
+                <span className="text-sm font-normal text-muted-foreground block mt-1">
+                  (İstek, Öneri, Şikayet ve Söylemek İstediğiniz Herhangi Bir Şeyi Buradan Yazabilirsiniz...)
+                </span>
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">

@@ -50,19 +50,9 @@ const LoginPage = () => {
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsLoading(true);
     try {
-      // Check if this is admin email with secondary password
-      if (values.email === "kuantum.ticaret.aoal@gmail.com" && values.password === "806Dk756") {
-        // Allow login with secondary password
-        const { error } = await signIn(values.email, "806Dk756");
-        
-        if (!error) {
-          toast({
-            title: "Giriş Başarılı",
-            description: "Hoş geldiniz!",
-          });
-          return;
-        }
-      }
+      // Admin için iki şifre desteği
+      // Not: İkinci şifre güvenlik nedeniyle şu an devre dışı
+      // Güvenli implementasyon için edge function gerekli
       
       const { error } = await signIn(values.email, values.password);
       

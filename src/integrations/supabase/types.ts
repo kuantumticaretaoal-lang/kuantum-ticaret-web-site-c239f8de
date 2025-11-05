@@ -14,6 +14,24 @@ export type Database = {
   }
   public: {
     Tables: {
+      about_us: {
+        Row: {
+          content: string | null
+          id: string
+          updated_at: string | null
+        }
+        Insert: {
+          content?: string | null
+          id?: string
+          updated_at?: string | null
+        }
+        Update: {
+          content?: string | null
+          id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       cart: {
         Row: {
           created_at: string
