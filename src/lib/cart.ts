@@ -10,6 +10,16 @@ export const getSessionId = () => {
 };
 
 export const addToCart = async (productId: string, quantity: number = 1) => {
+  // Validate quantity is safe integer
+  if (!Number.isInteger(quantity) || quantity < 1 || quantity > 999) {
+    return { 
+      error: { 
+        message: 'Geçersiz miktar. 1-999 arasında tam sayı olmalıdır.',
+        code: 'INVALID_QUANTITY' 
+      } as any
+    };
+  }
+
   const { data: { user } } = await supabase.auth.getUser();
   const sessionId = user ? null : getSessionId();
 
@@ -65,7 +75,16 @@ export const getCartItems = async () => {
 };
 
 export const updateCartQuantity = async (cartId: string, quantity: number) => {
-  if (quantity <= 0) {
+  // Validate quantity
+  if (!Number.isInteger(quantity) || quantity < 0 || quantity > 999) {
+    return { 
+      error: { 
+        message: 'Geçersiz miktar. 0-999 arasında tam sayı olmalıdır.' 
+      } as any
+    };
+  }
+
+  if (quantity === 0) {
     return removeFromCart(cartId);
   }
 

@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { logger } from "@/lib/logger";
 import { AdminOrders } from "@/components/admin/AdminOrders";
 import { AdminUsers } from "@/components/admin/AdminUsers";
 import { AdminProducts } from "@/components/admin/AdminProducts";
@@ -35,25 +36,41 @@ const AdminPage = () => {
       return;
     }
 
-    // Wait a bit to ensure trigger has completed
-    await new Promise(resolve => setTimeout(resolve, 500));
+    // Retry with exponential backoff instead of arbitrary delay
+    const maxAttempts = 5;
+    const baseDelay = 100;
 
-    const { data, error } = await (supabase as any)
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", session.user.id)
-      .eq("role", "admin")
-      .maybeSingle();
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      const { data, error } = await (supabase as any)
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", session.user.id)
+        .eq("role", "admin")
+        .maybeSingle();
 
-    console.log("Admin check:", { data, error, userId: session.user.id });
+      // Success - user is admin
+      if (data) {
+        setIsAdmin(true);
+        setLoading(false);
+        return;
+      }
 
-    if (!data) {
-      navigate("/");
-      return;
+      // Real error (not just missing data)
+      if (error && error.code !== 'PGRST116') {
+        logger.error('Error checking admin role', error);
+        navigate("/");
+        return;
+      }
+
+      // Wait before retry with exponential backoff
+      if (attempt < maxAttempts - 1) {
+        const delay = baseDelay * Math.pow(2, attempt);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
     }
 
-    setIsAdmin(true);
-    setLoading(false);
+    // After all attempts, user is not admin
+    navigate("/");
   };
 
   if (loading) {

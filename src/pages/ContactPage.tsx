@@ -8,6 +8,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Mail, Phone, MapPin } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { z } from "zod";
+import { logger } from "@/lib/logger";
 
 const ContactPage = () => {
   const { toast } = useToast();
@@ -30,27 +32,49 @@ const ContactPage = () => {
     };
   }, []);
 
+  const contactSchema = z.object({
+    name: z.string()
+      .trim()
+      .min(2, 'Ad en az 2 karakter olmalıdır')
+      .max(100, 'Ad en fazla 100 karakter olmalıdır'),
+    email: z.string()
+      .trim()
+      .email('Geçerli bir e-posta adresi girin')
+      .max(255, 'E-posta en fazla 255 karakter olmalıdır')
+      .toLowerCase(),
+    phone: z.string()
+      .trim()
+      .optional(),
+    message: z.string()
+      .trim()
+      .min(10, 'Mesaj en az 10 karakter olmalıdır')
+      .max(2000, 'Mesaj en fazla 2000 karakter olmalıdır')
+  });
+
   const loadSettings = async () => {
     try {
       const { data } = await (supabase as any).from("site_settings").select("*").single();
       if (data) setSettings(data);
     } catch (error) {
-      console.error("Error loading settings:", error);
+      logger.error("Error loading settings", error);
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.name.trim() || !formData.email.trim() || !formData.message.trim()) {
+    // Validate with zod schema
+    const validation = contactSchema.safeParse(formData);
+    if (!validation.success) {
       toast({
         variant: "destructive",
         title: "Hata",
-        description: "Lütfen tüm alanları doldurun",
+        description: validation.error.errors[0].message,
       });
       return;
     }
 
+    const validData = validation.data;
     setIsSubmitting(true);
 
     try {
@@ -59,10 +83,10 @@ const ContactPage = () => {
       const { error } = await (supabase as any)
         .from("contact_messages")
         .insert({
-          name: formData.name.trim(),
-          email: formData.email.trim().toLowerCase(),
-          phone: formData.phone?.trim() || null,
-          message: formData.message.trim(),
+          name: validData.name,
+          email: validData.email,
+          phone: validData.phone || null,
+          message: validData.message,
           user_id: user?.id || null,
         });
 
@@ -74,6 +98,7 @@ const ContactPage = () => {
       });
       setFormData({ name: "", email: "", phone: "", message: "" });
     } catch (error) {
+      logger.error("Failed to submit contact form", error);
       toast({
         variant: "destructive",
         title: "Hata",
