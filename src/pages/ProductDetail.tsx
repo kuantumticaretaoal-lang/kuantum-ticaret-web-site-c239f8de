@@ -78,45 +78,65 @@ const ProductDetail = () => {
   };
 
   const loadReviews = async () => {
-    const { data, error } = await supabase
+    const { data: reviewsData, error } = await supabase
       .from("product_reviews")
-      .select(`
-        *,
-        profiles (
-          first_name,
-          last_name
-        )
-      `)
+      .select("*")
       .eq("product_id", id)
       .order("created_at", { ascending: false });
     
     if (error) {
-      console.error("Error loading reviews:", error);
       setReviews([]);
-    } else {
-      setReviews(data || []);
+      return;
     }
+
+    // Fetch profiles for each review
+    const reviewsWithProfiles = await Promise.all(
+      (reviewsData || []).map(async (review) => {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("first_name, last_name")
+          .eq("id", review.user_id)
+          .single();
+        
+        return {
+          ...review,
+          profiles: profile
+        };
+      })
+    );
+
+    setReviews(reviewsWithProfiles);
   };
 
   const loadQuestions = async () => {
-    const { data, error } = await supabase
+    const { data: questionsData, error } = await supabase
       .from("product_questions")
-      .select(`
-        *,
-        profiles (
-          first_name,
-          last_name
-        )
-      `)
+      .select("*")
       .eq("product_id", id)
       .order("created_at", { ascending: false });
     
     if (error) {
-      console.error("Error loading questions:", error);
       setQuestions([]);
-    } else {
-      setQuestions(data || []);
+      return;
     }
+
+    // Fetch profiles for each question
+    const questionsWithProfiles = await Promise.all(
+      (questionsData || []).map(async (question) => {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("first_name, last_name")
+          .eq("id", question.user_id)
+          .single();
+        
+        return {
+          ...question,
+          profiles: profile
+        };
+      })
+    );
+
+    setQuestions(questionsWithProfiles);
   };
 
   const submitReview = async () => {
@@ -202,12 +222,22 @@ const ProductDetail = () => {
   };
 
   const handleAddToCart = async () => {
+    // Check stock status before adding
+    if (product.stock_status === 'out_of_stock') {
+      toast({
+        variant: "destructive",
+        title: "Stokta Yok",
+        description: "Bu ürün şu anda stokta bulunmamaktadır",
+      });
+      return;
+    }
+
     const { error } = await addToCart(id!, quantity);
     if (error) {
       toast({
         variant: "destructive",
         title: "Hata",
-        description: "Sepete eklenemedi",
+        description: error.message || "Sepete eklenemedi",
       });
     } else {
       toast({
@@ -293,20 +323,28 @@ const ProductDetail = () => {
             )}
             
             <div className="space-y-4">
-              <div className="flex items-center gap-4">
-                <label className="font-medium">Adet:</label>
-                <Input
-                  type="number"
-                  min="1"
-                  value={quantity}
-                  onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
-                  className="w-24"
-                />
-              </div>
-              <Button onClick={handleAddToCart} size="lg" className="w-full">
-                <ShoppingCart className="mr-2 h-5 w-5" />
-                Sepete Ekle
-              </Button>
+              {product.stock_status === 'out_of_stock' ? (
+                <div className="p-4 bg-destructive/10 border border-destructive rounded-lg">
+                  <p className="text-destructive font-semibold">Bu ürün şu anda stokta bulunmamaktadır</p>
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-center gap-4">
+                    <label className="font-medium">Adet:</label>
+                    <Input
+                      type="number"
+                      min="1"
+                      value={quantity}
+                      onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                      className="w-24"
+                    />
+                  </div>
+                  <Button onClick={handleAddToCart} size="lg" className="w-full">
+                    <ShoppingCart className="mr-2 h-5 w-5" />
+                    Sepete Ekle
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         </div>

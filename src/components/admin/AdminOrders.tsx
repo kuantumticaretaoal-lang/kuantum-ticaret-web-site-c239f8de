@@ -169,8 +169,8 @@ export const AdminOrders = () => {
           <TableHead>Durum</TableHead>
           <TableHead>Teslimat</TableHead>
           <TableHead>Adres</TableHead>
-          <TableHead>İl</TableHead>
           <TableHead>İlçe</TableHead>
+          <TableHead>İl</TableHead>
           <TableHead>Tarih</TableHead>
           <TableHead>İşlemler</TableHead>
         </TableRow>
@@ -209,12 +209,12 @@ export const AdminOrders = () => {
             </TableCell>
             <TableCell>
               {order.delivery_type === "home_delivery"
-                ? (order.profiles?.province || (order.delivery_address?.split(",")[2]?.trim() || "-"))
+                ? (order.profiles?.district || (order.delivery_address?.split(",")[1]?.trim() || "-"))
                 : "-"}
             </TableCell>
             <TableCell>
               {order.delivery_type === "home_delivery"
-                ? (order.profiles?.district || (order.delivery_address?.split(",")[1]?.trim() || "-"))
+                ? (order.profiles?.province || (order.delivery_address?.split(",")[2]?.trim() || "-"))
                 : "-"}
             </TableCell>
             <TableCell>{new Date(order.created_at).toLocaleString("tr-TR")}</TableCell>
