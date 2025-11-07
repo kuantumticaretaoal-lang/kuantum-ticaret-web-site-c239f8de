@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { logger } from "@/lib/logger";
 
 export const AdminOrders = () => {
   const [orders, setOrders] = useState<any[]>([]);
@@ -35,11 +36,10 @@ export const AdminOrders = () => {
   }, []);
 
   const loadOrders = async () => {
-    const { data, error } = await (supabase as any)
+    const { data: ordersData, error: ordersError } = await (supabase as any)
       .from("orders")
       .select(`
         *,
-        profiles!orders_user_id_fkey(first_name, last_name, email, address, district, province),
         order_items(
           *,
           products(title, price)
@@ -47,19 +47,33 @@ export const AdminOrders = () => {
       `)
       .order("created_at", { ascending: false });
 
-    if (!error && data) {
-      setOrders(data);
+    if (ordersError) {
+      logger.error("Failed to load orders", ordersError);
       return;
     }
 
-    const { data: fallbackData } = await (supabase as any)
-      .from("orders")
-      .select("*")
-      .order("created_at", { ascending: false });
-
-    if (fallbackData) {
-      setOrders(fallbackData);
+    if (!ordersData || ordersData.length === 0) {
+      setOrders([]);
+      return;
     }
+
+    // Fetch profiles separately for each order
+    const ordersWithProfiles = await Promise.all(
+      ordersData.map(async (order: any) => {
+        const { data: profile } = await (supabase as any)
+          .from("profiles")
+          .select("first_name, last_name, email, address, district, province")
+          .eq("id", order.user_id)
+          .single();
+
+        return {
+          ...order,
+          profiles: profile || null,
+        };
+      })
+    );
+
+    setOrders(ordersWithProfiles);
   };
 
   const updateOrderStatus = async (orderId: string, status: string, prepTime?: number, prepUnit?: string) => {
@@ -108,7 +122,7 @@ export const AdminOrders = () => {
             }
           }
         } catch (e) {
-          console.error("Gelir ekleme hatası:", e);
+          logger.error("Failed to add income", e);
         }
       }
 

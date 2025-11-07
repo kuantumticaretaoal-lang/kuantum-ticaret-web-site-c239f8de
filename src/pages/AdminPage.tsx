@@ -96,21 +96,23 @@ const AdminPage = () => {
         <h1 className="text-4xl font-bold mb-8">Admin Paneli</h1>
         
         <Tabs defaultValue="orders" className="w-full">
-          <TabsList className="grid grid-cols-3 lg:grid-cols-13 gap-2">
-            <TabsTrigger value="orders">Siparişler</TabsTrigger>
-            <TabsTrigger value="users">Kullanıcılar</TabsTrigger>
-            <TabsTrigger value="products">Ürünler</TabsTrigger>
-            <TabsTrigger value="questions">Sorular</TabsTrigger>
-            <TabsTrigger value="contact">İletişim</TabsTrigger>
-            <TabsTrigger value="social">Sosyal Medya</TabsTrigger>
-            <TabsTrigger value="sponsors">Sponsorlar</TabsTrigger>
-            <TabsTrigger value="analytics">Ziyaretçiler</TabsTrigger>
-            <TabsTrigger value="finances">Gelir-Gider</TabsTrigger>
-            <TabsTrigger value="messages">Mesajlar</TabsTrigger>
-            <TabsTrigger value="notifications">Bildirimler</TabsTrigger>
-            <TabsTrigger value="managers">Yöneticiler</TabsTrigger>
-            <TabsTrigger value="about">Hakkımızda</TabsTrigger>
-          </TabsList>
+          <div className="overflow-x-auto pb-2">
+            <TabsList className="inline-flex w-auto min-w-full">
+              <TabsTrigger value="orders" className="min-w-[120px]">Siparişler</TabsTrigger>
+              <TabsTrigger value="users" className="min-w-[120px]">Kullanıcılar</TabsTrigger>
+              <TabsTrigger value="products" className="min-w-[120px]">Ürünler</TabsTrigger>
+              <TabsTrigger value="questions" className="min-w-[120px]">Sorular</TabsTrigger>
+              <TabsTrigger value="contact" className="min-w-[120px]">İletişim</TabsTrigger>
+              <TabsTrigger value="social" className="min-w-[120px]">Sosyal Medya</TabsTrigger>
+              <TabsTrigger value="sponsors" className="min-w-[120px]">Sponsorlar</TabsTrigger>
+              <TabsTrigger value="analytics" className="min-w-[120px]">Ziyaretçiler</TabsTrigger>
+              <TabsTrigger value="finances" className="min-w-[120px]">Gelir-Gider</TabsTrigger>
+              <TabsTrigger value="messages" className="min-w-[120px]">Mesajlar</TabsTrigger>
+              <TabsTrigger value="notifications" className="min-w-[120px]">Bildirimler</TabsTrigger>
+              <TabsTrigger value="managers" className="min-w-[120px]">Yöneticiler</TabsTrigger>
+              <TabsTrigger value="about" className="min-w-[120px]">Hakkımızda</TabsTrigger>
+            </TabsList>
+          </div>
 
           <TabsContent value="orders">
             <AdminOrders />
