@@ -64,7 +64,7 @@ export const AdminOrders = () => {
           .from("profiles")
           .select("first_name, last_name, email, address, district, province")
           .eq("id", order.user_id)
-          .single();
+          .maybeSingle();
 
         return {
           ...order,
@@ -217,19 +217,13 @@ export const AdminOrders = () => {
               {order.delivery_type === "home_delivery" ? "Adrese Teslim" : "Yerinden Teslim"}
             </TableCell>
             <TableCell>
-              {order.delivery_type === "home_delivery"
-                ? (order.profiles?.address || (order.delivery_address?.split(",")[0]?.trim() || "-"))
-                : "-"}
+              {order.profiles?.address || order.delivery_address?.split(",")[0]?.trim() || "-"}
             </TableCell>
             <TableCell>
-              {order.delivery_type === "home_delivery"
-                ? (order.profiles?.district || (order.delivery_address?.split(",")[1]?.trim() || "-"))
-                : "-"}
+              {order.profiles?.district || order.delivery_address?.split(",")[1]?.trim() || "-"}
             </TableCell>
             <TableCell>
-              {order.delivery_type === "home_delivery"
-                ? (order.profiles?.province || (order.delivery_address?.split(",")[2]?.trim() || "-"))
-                : "-"}
+              {order.profiles?.province || order.delivery_address?.split(",")[2]?.trim() || "-"}
             </TableCell>
             <TableCell>{new Date(order.created_at).toLocaleString("tr-TR")}</TableCell>
             <TableCell>
