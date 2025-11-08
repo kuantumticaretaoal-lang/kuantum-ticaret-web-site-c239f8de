@@ -33,6 +33,19 @@ All colors MUST be HSL.
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
+    /* Additional semantic colors for badges */
+    --success: 142 72% 35%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 24 95% 53%;
+    --warning-foreground: 0 0% 100%;
+
+    --info: 220 90% 56%;
+    --info-foreground: 0 0% 100%;
+
+    --violet: 270 84% 60%;
+    --violet-foreground: 0 0% 100%;
+
     --border: 214 32% 91%;
     --input: 214 32% 91%;
     --ring: 217 91% 35%;
@@ -89,6 +102,19 @@ All colors MUST be HSL.
 
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
+
+    /* Additional semantic colors (dark) */
+    --success: 142 72% 35%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 24 95% 53%;
+    --warning-foreground: 0 0% 100%;
+
+    --info: 220 90% 56%;
+    --info-foreground: 0 0% 100%;
+
+    --violet: 270 84% 60%;
+    --violet-foreground: 0 0% 100%;
 
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;

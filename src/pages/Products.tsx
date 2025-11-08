@@ -19,6 +19,15 @@ const Products = () => {
   const location = useLocation();
   const { toast } = useToast();
 
+  const getPromoVariant = (badge: string): any => {
+    const b = (badge || "").toLowerCase();
+    if (b.includes("hızlı teslimat")) return "success";
+    if (b.includes("sınırlı stok")) return "warning";
+    if (b.includes("en geç yarın kargoda")) return "violet";
+    if (b.includes("indirim")) return "destructive";
+    return "secondary";
+  };
+
   useEffect(() => {
     loadProducts();
 
@@ -184,7 +193,7 @@ const Products = () => {
                     {product.promotion_badges && product.promotion_badges.length > 0 && (
                       <div className="absolute top-2 left-2 flex flex-col gap-1">
                         {product.promotion_badges.map((badge: string, idx: number) => (
-                          <Badge key={idx} variant="default" className="text-xs">
+                          <Badge key={idx} variant={getPromoVariant(badge)} className="text-xs">
                             {badge}
                           </Badge>
                         ))}

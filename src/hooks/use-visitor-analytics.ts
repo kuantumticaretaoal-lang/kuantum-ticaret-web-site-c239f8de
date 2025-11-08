@@ -28,19 +28,30 @@ export function useVisitorAnalytics() {
     const startNew = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       startRef.current = Date.now();
-      const { data } = await (supabase as any)
-        .from("visitor_analytics")
-        .insert({
-          page_path: location.pathname,
-          user_id: user?.id || null,
-        })
-        .select("id")
-        .single();
-      if (!cancelled && data?.id) {
-        visitIdRef.current = data.id as string;
+
+      if (user) {
+        const { data, error } = await (supabase as any)
+          .from("visitor_analytics")
+          .insert({
+            page_path: location.pathname,
+            user_id: user.id,
+          })
+          .select("id")
+          .single();
+        if (!cancelled && !error && data?.id) {
+          visitIdRef.current = data.id as string;
+        }
+      } else {
+        // Anonymous users: insert without requiring SELECT permission
+        await (supabase as any)
+          .from("visitor_analytics")
+          .insert({
+            page_path: location.pathname,
+            user_id: null,
+          }, { returning: 'minimal' });
+        // No id available -> we won't update duration for anonymous sessions
       }
     };
-
     // Finish old visit then start a new one
     finalizePrevious().finally(startNew);
 
