@@ -196,11 +196,11 @@ const Products = () => {
                       className="w-full h-full object-cover"
                     />
                     <Button
-                      size="sm"
-                      className="absolute top-2 right-2 h-8 w-8 p-0 rounded-full"
+                      size="default"
+                      className="absolute top-2 right-2 h-10 w-10 p-0 rounded-full shadow-lg"
                       onClick={(e) => handleAddToCart(product.id, e)}
                     >
-                      <ShoppingCart className="h-4 w-4" />
+                      <ShoppingCart className="h-5 w-5" />
                     </Button>
                     {product.promotion_badges && product.promotion_badges.length > 0 && (
                       <div className="absolute top-2 left-2 flex flex-col gap-1">
