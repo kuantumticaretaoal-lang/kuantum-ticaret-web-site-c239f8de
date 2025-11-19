@@ -18,11 +18,11 @@ export const generateBackupCode = (): string => {
 
 // Create or regenerate backup code for user
 export const createBackupCode = async (userId: string): Promise<{ code: string | null; error: any }> => {
-  // Generate unique code
+  // Generate unique code with increased retry attempts (DB constraint guarantees uniqueness)
   let code = generateBackupCode();
   let attempts = 0;
   
-  while (attempts < 10) {
+  while (attempts < 100) {
     const { data: existing } = await supabase
       .from("backup_codes")
       .select("id")
@@ -34,8 +34,8 @@ export const createBackupCode = async (userId: string): Promise<{ code: string |
     attempts++;
   }
   
-  if (attempts >= 10) {
-    return { code: null, error: new Error("Failed to generate unique code") };
+  if (attempts >= 100) {
+    return { code: null, error: new Error("Failed to generate unique code after 100 attempts") };
   }
   
   // Mark all previous codes as used
