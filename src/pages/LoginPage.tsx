@@ -112,10 +112,10 @@ const LoginPage = () => {
       const { data: profile } = await supabase
         .from("profiles")
         .select("id, email")
-        .eq("email", values.email.toLowerCase())
+        .eq("id", userId)
         .maybeSingle();
 
-      if (!profile || profile.id !== userId) {
+      if (!profile || profile.email?.toLowerCase() !== values.email.toLowerCase()) {
         toast({
           variant: "destructive",
           title: "Email Uyuşmuyor",
@@ -125,10 +125,7 @@ const LoginPage = () => {
         return;
       }
 
-      // Generate new backup code for user
-      await createBackupCode(userId);
-
-      // Send password reset email
+      // Send password reset email (don't create new code here - user is not authenticated)
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(
         values.email.toLowerCase(),
         {
@@ -148,8 +145,8 @@ const LoginPage = () => {
 
       toast({
         title: "Hesabınız Güvenli Bir Şekilde Kurtarıldı!",
-        description: "Email adresinize şifre sıfırlama linki gönderildi. Lütfen email'inizi kontrol edin ve yeni şifrenizi belirleyin.",
-        duration: 6000,
+        description: "Email adresinize şifre sıfırlama linki gönderildi. Lütfen email'inizi kontrol edin ve yeni şifrenizi belirleyin. Yeni backup kodunuz otomatik oluşturulacak.",
+        duration: 8000,
       });
       
       backupForm.reset();
