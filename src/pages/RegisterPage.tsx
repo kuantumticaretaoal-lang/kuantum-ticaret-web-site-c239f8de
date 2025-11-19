@@ -68,8 +68,8 @@ const RegisterPage = () => {
           first_name: values.firstName,
           last_name: values.lastName,
           phone: values.phone,
-          province: values.province,
-          district: values.district,
+          province: values.province.toUpperCase(),
+          district: values.district.charAt(0).toUpperCase() + values.district.slice(1).toLowerCase(),
           address: values.address,
         }
       }
