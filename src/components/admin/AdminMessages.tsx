@@ -1,15 +1,18 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Edit } from "lucide-react";
 
 export const AdminMessages = () => {
   const [messages, setMessages] = useState<any[]>([]);
   const [selectedMessage, setSelectedMessage] = useState<any>(null);
   const [reply, setReply] = useState("");
+  const [isEditing, setIsEditing] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -51,28 +54,108 @@ export const AdminMessages = () => {
       return;
     }
 
+    // Update message as replied
+    const { error: updateError } = await supabase
+      .from("contact_messages")
+      .update({
+        replied: true,
+        reply_message: reply,
+        replied_at: new Date().toISOString(),
+      })
+      .eq("id", selectedMessage.id);
+
+    if (updateError) {
+      toast({
+        variant: "destructive",
+        title: "Hata",
+        description: "Mesaj güncellenemedi",
+      });
+      return;
+    }
+
     // Send notification to user if they have user_id
     if (selectedMessage.user_id) {
-      const { error: notifError } = await (supabase as any)
+      await supabase
         .from("notifications")
         .insert({
           user_id: selectedMessage.user_id,
           message: `İletişim mesajınıza yanıt: ${reply}`,
         });
-
-      if (notifError) {
-        console.error("Error sending notification:", notifError);
-      }
     }
 
     toast({
       title: "Başarılı",
-      description: "Yanıt kullanıcıya bildirim olarak gönderildi",
+      description: isEditing ? "Yanıt güncellendi" : "Yanıt kullanıcıya gönderildi",
     });
     
     setSelectedMessage(null);
     setReply("");
+    setIsEditing(false);
+    loadMessages();
   };
+
+  const unansweredMessages = messages.filter(m => !m.replied);
+  const answeredMessages = messages.filter(m => m.replied);
+
+  const MessageCard = ({ message }: { message: any }) => (
+    <Card key={message.id}>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="font-semibold">{message.name}</p>
+            <p className="text-sm text-muted-foreground">{message.email}</p>
+            {message.phone && (
+              <p className="text-sm text-muted-foreground">{message.phone}</p>
+            )}
+            {message.replied && (
+              <p className="text-xs text-green-600 mt-1">✓ Bu Soru Daha Önceden Cevaplandı</p>
+            )}
+          </div>
+          <p className="text-sm text-muted-foreground">
+            {new Date(message.created_at).toLocaleDateString("tr-TR")}{" "}
+            {new Date(message.created_at).toLocaleTimeString("tr-TR")}
+          </p>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div>
+          <p className="text-sm text-muted-foreground mb-1">Mesaj:</p>
+          <p>{message.message}</p>
+        </div>
+        {message.reply_message && (
+          <div className="bg-muted p-4 rounded-lg">
+            <p className="text-sm text-muted-foreground mb-1">Verilen Yanıt:</p>
+            <p>{message.reply_message}</p>
+            {message.replied_at && (
+              <p className="text-xs text-muted-foreground mt-2">
+                {new Date(message.replied_at).toLocaleDateString("tr-TR")}{" "}
+                {new Date(message.replied_at).toLocaleTimeString("tr-TR")}
+              </p>
+            )}
+          </div>
+        )}
+        <div className="flex gap-2">
+          <Button
+            variant={message.replied ? "outline" : "default"}
+            onClick={() => {
+              setSelectedMessage(message);
+              setReply(message.reply_message || "");
+              setIsEditing(!!message.replied);
+            }}
+          >
+            {message.replied ? (
+              <>
+                <Edit className="h-4 w-4 mr-2" />
+                Yanıtı Düzenle
+              </>
+            ) : (
+              "Yanıtla"
+            )}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
 
   return (
     <>

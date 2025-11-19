@@ -14,6 +14,12 @@ export const AdminAnalytics = () => {
     totalOthers: 0,
     avgDurationAll: 0,
     avgDurationExAdmin: 0,
+    totalGuests: 0,
+    totalRegistered: 0,
+    lastGuestVisit: "-",
+    lastRegisteredVisit: "-",
+    avgDurationGuests: 0,
+    avgDurationRegistered: 0,
   });
 
   useEffect(() => {
@@ -71,6 +77,8 @@ export const AdminAnalytics = () => {
       }).length;
 
       const isAdminVisit = (v: any) => v.user_id && adminSet.has(v.user_id);
+      const isAuthenticatedNonAdmin = (v: any) => v.user_id && !adminSet.has(v.user_id);
+      const isGuest = (v: any) => !v.user_id;
 
       const lastAdmin = enriched.find(isAdminVisit);
       const lastOther = enriched.find((v: any) => !isAdminVisit(v));
@@ -82,16 +90,32 @@ export const AdminAnalytics = () => {
       const avgOthers = durationsOthers.length > 0 ? (durationsOthers.reduce((a: number, b: number) => a + b, 0) / durationsOthers.length) : 0;
 
       const totalAdmin = enriched.filter(isAdminVisit).length;
-      const totalOthers = enriched.length - totalAdmin;
+      const totalGuests = enriched.filter(isGuest).length;
+      const totalRegistered = enriched.filter(isAuthenticatedNonAdmin).length;
+
+      const lastGuestVisit = enriched.find(isGuest);
+      const lastRegisteredVisit = enriched.find(isAuthenticatedNonAdmin);
+
+      const durationsGuests = enriched.filter((v: any) => v.duration && isGuest(v)).map((v: any) => v.duration);
+      const durationsRegistered = enriched.filter((v: any) => v.duration && isAuthenticatedNonAdmin(v)).map((v: any) => v.duration);
+
+      const avgGuests = durationsGuests.length > 0 ? (durationsGuests.reduce((a: number, b: number) => a + b, 0) / durationsGuests.length) : 0;
+      const avgRegistered = durationsRegistered.length > 0 ? (durationsRegistered.reduce((a: number, b: number) => a + b, 0) / durationsRegistered.length) : 0;
 
       setStats({
         online: onlineVisitors,
         lastAdminVisit: lastAdmin ? new Date(lastAdmin.visited_at).toLocaleString("tr-TR") : "-",
         lastOtherVisit: lastOther ? new Date(lastOther.visited_at).toLocaleString("tr-TR") : "-",
         totalAdmin,
-        totalOthers,
+        totalOthers: enriched.length - totalAdmin,
         avgDurationAll: Math.round(avgAll / 60),
         avgDurationExAdmin: Math.round(avgOthers / 60),
+        totalGuests,
+        totalRegistered,
+        lastGuestVisit: lastGuestVisit ? new Date(lastGuestVisit.visited_at).toLocaleString("tr-TR") : "-",
+        lastRegisteredVisit: lastRegisteredVisit ? new Date(lastRegisteredVisit.visited_at).toLocaleString("tr-TR") : "-",
+        avgDurationGuests: Math.round(avgGuests / 60),
+        avgDurationRegistered: Math.round(avgRegistered / 60),
       });
     }
   };
@@ -119,10 +143,19 @@ export const AdminAnalytics = () => {
 
         <Card>
           <CardHeader>
-            <CardTitle>Son Ziyaret (Diğer)</CardTitle>
+            <CardTitle>Son Ziyaret (Misafir)</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm">{stats.lastOtherVisit}</p>
+            <p className="text-sm">{stats.lastGuestVisit}</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Son Ziyaret (Kayıtlı)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm">{stats.lastRegisteredVisit}</p>
           </CardContent>
         </Card>
 
@@ -137,10 +170,19 @@ export const AdminAnalytics = () => {
 
         <Card>
           <CardHeader>
-            <CardTitle>Toplam Ziyaret (Diğer)</CardTitle>
+            <CardTitle>Toplam Misafir Ziyaret</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold">{stats.totalOthers}</p>
+            <p className="text-3xl font-bold">{stats.totalGuests}</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Toplam Kayıtlı Kullanıcı Ziyaret</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-bold">{stats.totalRegistered}</p>
           </CardContent>
         </Card>
 
@@ -155,10 +197,19 @@ export const AdminAnalytics = () => {
 
         <Card>
           <CardHeader>
-            <CardTitle>Ort. Süre (Admin Hariç)</CardTitle>
+            <CardTitle>Ort. Süre (Misafir)</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold">{stats.avgDurationExAdmin} dk</p>
+            <p className="text-3xl font-bold">{stats.avgDurationGuests} dk</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Ort. Süre (Kayıtlı)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-bold">{stats.avgDurationRegistered} dk</p>
           </CardContent>
         </Card>
       </div>
