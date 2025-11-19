@@ -5,12 +5,15 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { logger } from "@/lib/logger";
+import { Trash2, Edit } from "lucide-react";
 
 export const AdminProductQuestions = () => {
   const [questions, setQuestions] = useState<any[]>([]);
   const [selectedQuestion, setSelectedQuestion] = useState<any>(null);
   const [answer, setAnswer] = useState("");
+  const [isEditing, setIsEditing] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -105,10 +108,32 @@ export const AdminProductQuestions = () => {
     } else {
       toast({
         title: "Başarılı",
-        description: "Cevap gönderildi",
+        description: isEditing ? "Cevap güncellendi" : "Cevap gönderildi",
       });
       setSelectedQuestion(null);
       setAnswer("");
+      setIsEditing(false);
+      loadQuestions();
+    }
+  };
+
+  const deleteQuestion = async (id: string) => {
+    const { error } = await supabase
+      .from("product_questions")
+      .delete()
+      .eq("id", id);
+
+    if (error) {
+      toast({
+        variant: "destructive",
+        title: "Hata",
+        description: "Soru silinemedi",
+      });
+    } else {
+      toast({
+        title: "Başarılı",
+        description: "Soru silindi",
+      });
       loadQuestions();
     }
   };
@@ -166,16 +191,48 @@ export const AdminProductQuestions = () => {
                         </p>
                       )}
                     </div>
-                  ) : (
+                  ) : null}
+                  <div className="flex gap-2">
                     <Button
+                      variant={question.answer ? "outline" : "default"}
                       onClick={() => {
                         setSelectedQuestion(question);
-                        setAnswer("");
+                        setAnswer(question.answer || "");
+                        setIsEditing(!!question.answer);
                       }}
                     >
-                      Cevapla
+                      {question.answer ? (
+                        <>
+                          <Edit className="h-4 w-4 mr-2" />
+                          Cevabı Düzenle
+                        </>
+                      ) : (
+                        "Cevapla"
+                      )}
                     </Button>
-                  )}
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="destructive" size="sm">
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Sil
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Soruyu sil</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Bu soruyu silmek istediğinizden emin misiniz?
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>İptal</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => deleteQuestion(question.id)}>
+                            Sil
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
                 </CardContent>
               </Card>
             ))
@@ -183,10 +240,10 @@ export const AdminProductQuestions = () => {
         </CardContent>
       </Card>
 
-      <Dialog open={!!selectedQuestion} onOpenChange={(open) => !open && setSelectedQuestion(null)}>
+      <Dialog open={!!selectedQuestion} onOpenChange={(open) => !open && (setSelectedQuestion(null), setIsEditing(false))}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Soruyu Cevapla</DialogTitle>
+            <DialogTitle>{isEditing ? "Cevabı Düzenle" : "Soruyu Cevapla"}</DialogTitle>
           </DialogHeader>
           {selectedQuestion && (
             <div className="space-y-4">
@@ -201,7 +258,7 @@ export const AdminProductQuestions = () => {
                 rows={4}
               />
               <Button onClick={answerQuestion} className="w-full">
-                Gönder
+                {isEditing ? "Güncelle" : "Gönder"}
               </Button>
             </div>
           )}

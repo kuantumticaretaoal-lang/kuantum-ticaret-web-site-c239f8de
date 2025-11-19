@@ -82,7 +82,7 @@ const Footer = () => {
         </div>
 
         <div className="border-t border-white/20 pt-6 text-center text-white/70">
-          <p>© 2025 Kuantum Ticaret. Tüm hakları saklıdır.</p>
+          <p>© {new Date().getFullYear()} Kuantum Ticaret. Tüm hakları saklıdır.</p>
         </div>
       </div>
     </footer>

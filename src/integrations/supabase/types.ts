@@ -32,6 +32,54 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_visibility_settings: {
+        Row: {
+          id: string
+          setting_key: string
+          updated_at: string | null
+          visible: boolean | null
+        }
+        Insert: {
+          id?: string
+          setting_key: string
+          updated_at?: string | null
+          visible?: boolean | null
+        }
+        Update: {
+          id?: string
+          setting_key?: string
+          updated_at?: string | null
+          visible?: boolean | null
+        }
+        Relationships: []
+      }
+      backup_codes: {
+        Row: {
+          code: string
+          created_at: string | null
+          id: string
+          used: boolean | null
+          used_at: string | null
+          user_id: string
+        }
+        Insert: {
+          code: string
+          created_at?: string | null
+          id?: string
+          used?: boolean | null
+          used_at?: string | null
+          user_id: string
+        }
+        Update: {
+          code?: string
+          created_at?: string | null
+          id?: string
+          used?: boolean | null
+          used_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       cart: {
         Row: {
           created_at: string
@@ -78,6 +126,9 @@ export type Database = {
           message: string
           name: string
           phone: string | null
+          replied: boolean | null
+          replied_at: string | null
+          reply_message: string | null
           user_id: string | null
         }
         Insert: {
@@ -87,6 +138,9 @@ export type Database = {
           message: string
           name: string
           phone?: string | null
+          replied?: boolean | null
+          replied_at?: string | null
+          reply_message?: string | null
           user_id?: string | null
         }
         Update: {
@@ -96,6 +150,9 @@ export type Database = {
           message?: string
           name?: string
           phone?: string | null
+          replied?: boolean | null
+          replied_at?: string | null
+          reply_message?: string | null
           user_id?: string | null
         }
         Relationships: []
@@ -211,6 +268,7 @@ export type Database = {
           preparation_unit: string | null
           rejection_reason: string | null
           status: Database["public"]["Enums"]["order_status"]
+          trashed: boolean | null
           updated_at: string | null
           user_id: string
         }
@@ -223,6 +281,7 @@ export type Database = {
           preparation_unit?: string | null
           rejection_reason?: string | null
           status?: Database["public"]["Enums"]["order_status"]
+          trashed?: boolean | null
           updated_at?: string | null
           user_id: string
         }
@@ -235,6 +294,7 @@ export type Database = {
           preparation_unit?: string | null
           rejection_reason?: string | null
           status?: Database["public"]["Enums"]["order_status"]
+          trashed?: boolean | null
           updated_at?: string | null
           user_id?: string
         }
@@ -502,18 +562,21 @@ export type Database = {
         Row: {
           created_at: string | null
           id: string
+          is_main_admin: boolean | null
           role: Database["public"]["Enums"]["app_role"]
           user_id: string
         }
         Insert: {
           created_at?: string | null
           id?: string
+          is_main_admin?: boolean | null
           role: Database["public"]["Enums"]["app_role"]
           user_id: string
         }
         Update: {
           created_at?: string | null
           id?: string
+          is_main_admin?: boolean | null
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
         }

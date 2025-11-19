@@ -66,6 +66,18 @@ const Products = () => {
 
   const handleAddToCart = async (productId: string, e: React.MouseEvent) => {
     e.stopPropagation();
+    
+    // Check stock status
+    const product = products.find(p => p.id === productId);
+    if (product?.stock_status === "out_of_stock") {
+      toast({
+        variant: "destructive",
+        title: "Stokta Yok",
+        description: "Bu ürün şu anda stokta bulunmamaktadır",
+      });
+      return;
+    }
+    
     const { error } = await addToCart(productId, 1);
     if (error) {
       toast({
