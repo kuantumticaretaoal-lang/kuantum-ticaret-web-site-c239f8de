@@ -45,6 +45,7 @@ export const AdminOrders = () => {
           products(title, price)
         )
       `)
+      .eq("trashed", false)
       .order("created_at", { ascending: false });
 
     if (ordersError) {
@@ -170,7 +171,115 @@ export const AdminOrders = () => {
 
   const filterOrders = (status: string) => {
     if (status === "all") return orders;
+    if (status === "trash") return orders.filter((order) => order.trashed === true);
     return orders.filter((order) => order.status === status);
+  };
+
+  const moveToTrash = async (orderId: string) => {
+    const { error } = await (supabase as any)
+      .from("orders")
+      .update({ trashed: true })
+      .eq("id", orderId);
+
+    if (error) {
+      toast({
+        variant: "destructive",
+        title: "Hata",
+        description: "Sipariş çöp kutusuna taşınamadı",
+      });
+    } else {
+      toast({
+        title: "Başarılı",
+        description: "Sipariş çöp kutusuna taşındı",
+      });
+      loadOrders();
+    }
+  };
+
+  const loadTrashedOrders = async () => {
+    const { data: ordersData } = await (supabase as any)
+      .from("orders")
+      .select(`
+        *,
+        order_items(
+          *,
+          products(title, price)
+        )
+      `)
+      .eq("trashed", true)
+      .order("created_at", { ascending: false });
+
+    if (ordersData) {
+      const ordersWithProfiles = await Promise.all(
+        ordersData.map(async (order: any) => {
+          const { data: profile } = await (supabase as any)
+            .from("profiles")
+            .select("first_name, last_name, email, address, district, province")
+            .eq("id", order.user_id)
+            .maybeSingle();
+
+          return {
+            ...order,
+            profiles: profile || null,
+          };
+        })
+      );
+      return ordersWithProfiles;
+    }
+    return [];
+  };
+
+  const TrashTable = () => {
+    const [trashedOrders, setTrashedOrders] = useState<any[]>([]);
+
+    useEffect(() => {
+      loadTrashedOrders().then(setTrashedOrders);
+    }, [orders]);
+
+    return (
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Sipariş No</TableHead>
+            <TableHead>Müşteri</TableHead>
+            <TableHead>Ürünler</TableHead>
+            <TableHead>Durum</TableHead>
+            <TableHead>Tarih</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {trashedOrders.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                Çöp kutusunda sipariş yok
+              </TableCell>
+            </TableRow>
+          ) : (
+            trashedOrders.map((order) => (
+              <TableRow key={order.id}>
+                <TableCell>{order.id.slice(0, 8)}</TableCell>
+                <TableCell>
+                  {order.profiles?.first_name} {order.profiles?.last_name}
+                </TableCell>
+                <TableCell>
+                  {order.order_items?.map((item: any, idx: number) => (
+                    <div key={idx} className="text-sm">
+                      {item.products?.title} x{item.quantity}
+                    </div>
+                  )) || "-"}
+                </TableCell>
+                <TableCell>
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                    Çöp Kutusu
+                  </span>
+                </TableCell>
+                <TableCell>{new Date(order.created_at).toLocaleString("tr-TR")}</TableCell>
+              </TableRow>
+            ))
+          )}
+        </TableBody>
+      </Table>
+    );
   };
 
   const OrdersTable = ({ ordersList }: { ordersList: any[] }) => (
@@ -275,10 +384,21 @@ export const AdminOrders = () => {
                             rejectOrder(order.id, reason);
                           }
                         }}
-                      >
+                       >
                         Siparişi Reddet
                       </Button>
                     </div>
+                    {order.status === "rejected" && (
+                      <div>
+                        <Button 
+                          className="mt-2 w-full" 
+                          variant="outline"
+                          onClick={() => moveToTrash(order.id)}
+                        >
+                          Çöp Kutusuna Taşı
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 </DialogContent>
               </Dialog>
@@ -301,6 +421,7 @@ export const AdminOrders = () => {
             <TabsTrigger value="pending">Bekleyen</TabsTrigger>
             <TabsTrigger value="confirmed">Onaylanan</TabsTrigger>
             <TabsTrigger value="rejected">Reddedilen</TabsTrigger>
+            <TabsTrigger value="trash">Çöp Kutusu</TabsTrigger>
           </TabsList>
 
           <TabsContent value="all">
@@ -317,6 +438,10 @@ export const AdminOrders = () => {
 
           <TabsContent value="rejected">
             <OrdersTable ordersList={filterOrders("rejected")} />
+          </TabsContent>
+
+          <TabsContent value="trash">
+            <TrashTable />
           </TabsContent>
         </Tabs>
       </CardContent>

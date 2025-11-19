@@ -29,11 +29,26 @@ export const AdminSentNotifications = () => {
   const loadNotifications = async () => {
     const { data } = await supabase
       .from("notifications")
-      .select("*, profiles(first_name, last_name)")
+      .select("*")
       .order("created_at", { ascending: false });
 
     if (data) {
-      setNotifications(data);
+      // Fetch profiles separately for each notification
+      const notificationsWithProfiles = await Promise.all(
+        data.map(async (notif) => {
+          if (!notif.user_id) return { ...notif, profiles: null };
+          
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("first_name, last_name")
+            .eq("id", notif.user_id)
+            .maybeSingle();
+          
+          return { ...notif, profiles: profile };
+        })
+      );
+      
+      setNotifications(notificationsWithProfiles);
     }
   };
 
