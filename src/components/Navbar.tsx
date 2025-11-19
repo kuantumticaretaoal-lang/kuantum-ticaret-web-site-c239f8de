@@ -144,6 +144,7 @@ const Navbar = () => {
           <div className="flex-1 max-w-md mx-4 hidden md:block">
             <div className="relative">
               <Input 
+                id="navbar-search-input"
                 placeholder="Ürün ara..." 
                 className="bg-white/90 text-foreground border-0 pr-10"
                 onKeyDown={(e) => {
@@ -153,7 +154,14 @@ const Navbar = () => {
                   }
                 }}
               />
-              <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Search 
+                className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground cursor-pointer hover:text-foreground transition-colors" 
+                onClick={() => {
+                  const input = document.getElementById('navbar-search-input') as HTMLInputElement;
+                  const q = input?.value.trim();
+                  if (q) navigate(`/products?query=${encodeURIComponent(q)}`);
+                }}
+              />
             </div>
           </div>
           
