@@ -17,24 +17,53 @@ export const AdminManagers = () => {
   }, []);
 
   const loadAdmins = async () => {
-    const { data, error } = await supabase
+    // Get all admin roles first
+    const { data: adminRoles, error: rolesError } = await supabase
       .from("user_roles")
-      .select("*, profiles!user_roles_user_id_fkey(first_name, last_name, email)")
+      .select("id, user_id, role, is_main_admin, created_at")
       .eq("role", "admin")
       .order("created_at", { ascending: false });
 
-    if (error) {
-      console.error("Error loading admins:", error);
+    if (rolesError) {
+      console.error("Error loading admin roles:", rolesError);
       toast({
         variant: "destructive",
         title: "Hata",
-        description: "Yöneticiler yüklenemedi: " + error.message,
+        description: "Yönetici rolleri yüklenemedi: " + rolesError.message,
       });
       return;
     }
 
-    console.log("Loaded admins:", data);
-    if (data) setAdmins(data);
+    if (!adminRoles || adminRoles.length === 0) {
+      setAdmins([]);
+      return;
+    }
+
+    // Get profile data for each admin
+    const userIds = adminRoles.map(role => role.user_id);
+    const { data: profiles, error: profilesError } = await supabase
+      .from("profiles")
+      .select("id, first_name, last_name, email")
+      .in("id", userIds);
+
+    if (profilesError) {
+      console.error("Error loading profiles:", profilesError);
+      toast({
+        variant: "destructive",
+        title: "Hata",
+        description: "Profiller yüklenemedi: " + profilesError.message,
+      });
+      return;
+    }
+
+    // Combine the data
+    const adminsWithProfiles = adminRoles.map(role => ({
+      ...role,
+      profiles: profiles?.find(p => p.id === role.user_id) || null
+    }));
+
+    console.log("Loaded admins:", adminsWithProfiles);
+    setAdmins(adminsWithProfiles);
   };
 
   const addAdmin = async () => {
