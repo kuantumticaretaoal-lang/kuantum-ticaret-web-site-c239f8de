@@ -123,7 +123,7 @@ export const AdminManagers = () => {
                 </TableCell>
                 <TableCell>{admin.profiles?.email}</TableCell>
                 <TableCell>
-                  {admin.profiles?.email !== "kuantum.ticaret.aoal@gmail.com" && !admin.is_main_admin && (
+                  {!admin.is_main_admin && (
                     <Button
                       size="sm"
                       variant="destructive"

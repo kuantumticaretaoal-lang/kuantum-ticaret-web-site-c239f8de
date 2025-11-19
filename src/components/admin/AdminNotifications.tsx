@@ -8,6 +8,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { AdminSentNotifications } from "./AdminSentNotifications";
+import { z } from "zod";
+
+const notificationSchema = z.object({
+  message: z.string()
+    .trim()
+    .min(1, "Mesaj boş olamaz")
+    .max(500, "Mesaj en fazla 500 karakter olabilir"),
+  targetUser: z.string().min(1, "Kullanıcı seçmelisiniz")
+});
 
 export const AdminNotifications = () => {
   const [message, setMessage] = useState("");
@@ -26,11 +35,12 @@ export const AdminNotifications = () => {
   };
 
   const sendNotification = async () => {
-    if (!message) {
+    const validation = notificationSchema.safeParse({ message, targetUser });
+    
+    if (!validation.success) {
       toast({
         variant: "destructive",
-        title: "Hata",
-        description: "Mesaj boş olamaz",
+        description: validation.error.errors[0].message,
       });
       return;
     }
@@ -38,7 +48,7 @@ export const AdminNotifications = () => {
     if (targetUser === "all") {
       const notifications = users.map((user) => ({
         user_id: user.id,
-        message,
+        message: message.trim(),
       }));
 
       const { error } = await (supabase as any).from("notifications").insert(notifications);
@@ -59,7 +69,7 @@ export const AdminNotifications = () => {
     } else {
       const { error } = await (supabase as any).from("notifications").insert({
         user_id: targetUser,
-        message,
+        message: message.trim(),
       });
 
       if (error) {
@@ -116,7 +126,11 @@ export const AdminNotifications = () => {
                   onChange={(e) => setMessage(e.target.value)}
                   placeholder="Bildirim mesajınızı yazın..."
                   rows={4}
+                  maxLength={500}
                 />
+                <p className="text-sm text-muted-foreground mt-1">
+                  {message.length}/500 karakter
+                </p>
               </div>
 
               <Button onClick={sendNotification} className="w-full">
