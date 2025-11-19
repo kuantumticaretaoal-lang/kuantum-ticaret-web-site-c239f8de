@@ -21,8 +21,8 @@ const formSchema = z.object({
 });
 
 const backupCodeSchema = z.object({
+  email: z.string().email({ message: "Geçerli bir e-posta adresi girin" }),
   code: z.string().min(10, { message: "Geçerli bir yedek kod girin" }),
-  newPassword: z.string().min(6, { message: "Yeni şifre en az 6 karakter olmalıdır" }),
 });
 
 const LoginPage = () => {
@@ -41,8 +41,8 @@ const LoginPage = () => {
   const backupForm = useForm<z.infer<typeof backupCodeSchema>>({
     resolver: zodResolver(backupCodeSchema),
     defaultValues: {
+      email: "",
       code: "",
-      newPassword: "",
     },
   });
 
@@ -95,9 +95,10 @@ const LoginPage = () => {
   const onBackupCodeSubmit = async (values: z.infer<typeof backupCodeSchema>) => {
     setIsLoading(true);
     try {
-      const { userId, error } = await verifyBackupCode(values.code);
+      // Verify backup code first
+      const { userId, error: verifyError } = await verifyBackupCode(values.code);
       
-      if (error || !userId) {
+      if (verifyError || !userId) {
         toast({
           variant: "destructive",
           title: "Kod Geçersiz",
@@ -107,18 +108,18 @@ const LoginPage = () => {
         return;
       }
 
-      // Get user's email from profiles
+      // Verify that the email matches the user_id from backup code
       const { data: profile } = await supabase
         .from("profiles")
-        .select("email")
-        .eq("id", userId)
-        .single();
+        .select("id, email")
+        .eq("email", values.email.toLowerCase())
+        .maybeSingle();
 
-      if (!profile?.email) {
+      if (!profile || profile.id !== userId) {
         toast({
           variant: "destructive",
-          title: "Hata",
-          description: "Kullanıcı bilgileri bulunamadı",
+          title: "Email Uyuşmuyor",
+          description: "Bu yedek kod, girilen email adresi ile eşleşmiyor",
         });
         setIsLoading(false);
         return;
@@ -127,19 +128,19 @@ const LoginPage = () => {
       // Generate new backup code for user
       await createBackupCode(userId);
 
-      // Sign in the user with a magic link (passwordless)
-      const { error: signInError } = await supabase.auth.signInWithOtp({
-        email: profile.email,
-        options: {
-          shouldCreateUser: false
+      // Send password reset email
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(
+        values.email.toLowerCase(),
+        {
+          redirectTo: `${window.location.origin}/account`,
         }
-      });
+      );
 
-      if (signInError) {
+      if (resetError) {
         toast({
           variant: "destructive",
-          title: "Giriş Hatası",
-          description: "Giriş yapılamadı, lütfen şifrenizle giriş yapın",
+          title: "Email Gönderilemedi",
+          description: "Şifre sıfırlama linki gönderilemedi",
         });
         setIsLoading(false);
         return;
@@ -147,7 +148,8 @@ const LoginPage = () => {
 
       toast({
         title: "Hesabınız Güvenli Bir Şekilde Kurtarıldı!",
-        description: "Email adresinize giriş linki gönderildi. Lütfen email'inizi kontrol edin.",
+        description: "Email adresinize şifre sıfırlama linki gönderildi. Lütfen email'inizi kontrol edin ve yeni şifrenizi belirleyin.",
+        duration: 6000,
       });
       
       backupForm.reset();
@@ -218,12 +220,12 @@ const LoginPage = () => {
                   <form onSubmit={backupForm.handleSubmit(onBackupCodeSubmit)} className="space-y-4">
                     <FormField
                       control={backupForm.control}
-                      name="code"
+                      name="email"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Yedek Kod</FormLabel>
+                          <FormLabel>E-posta</FormLabel>
                           <FormControl>
-                            <Input placeholder="AB12-CD3-456E" className="font-mono" {...field} />
+                            <Input type="email" placeholder="E-posta adresiniz" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -231,19 +233,19 @@ const LoginPage = () => {
                     />
                     <FormField
                       control={backupForm.control}
-                      name="newPassword"
+                      name="code"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Yeni Şifre</FormLabel>
+                          <FormLabel>Yedek Kod</FormLabel>
                           <FormControl>
-                            <Input type="password" placeholder="Yeni şifreniz" {...field} />
+                            <Input placeholder="AB12-CD3-456E" className="font-mono uppercase" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
                     <p className="text-xs text-muted-foreground">
-                      Yedek kodunuz ile hesabınızı kurtarabilirsiniz.
+                      Email adresinize şifre sıfırlama linki gönderilecektir.
                     </p>
                     <Button type="submit" className="w-full" disabled={isLoading}>
                       {isLoading ? "İşleniyor..." : "Hesabı Kurtar"}
