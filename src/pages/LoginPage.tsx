@@ -107,12 +107,47 @@ const LoginPage = () => {
         return;
       }
 
-      // Generate new code for user
+      // Get user's email from profiles
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("email")
+        .eq("id", userId)
+        .single();
+
+      if (!profile?.email) {
+        toast({
+          variant: "destructive",
+          title: "Hata",
+          description: "Kullanıcı bilgileri bulunamadı",
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      // Generate new backup code for user
       await createBackupCode(userId);
+
+      // Sign in the user with a magic link (passwordless)
+      const { error: signInError } = await supabase.auth.signInWithOtp({
+        email: profile.email,
+        options: {
+          shouldCreateUser: false
+        }
+      });
+
+      if (signInError) {
+        toast({
+          variant: "destructive",
+          title: "Giriş Hatası",
+          description: "Giriş yapılamadı, lütfen şifrenizle giriş yapın",
+        });
+        setIsLoading(false);
+        return;
+      }
 
       toast({
         title: "Hesabınız Güvenli Bir Şekilde Kurtarıldı!",
-        description: "Yeni bir yedek kod oluşturuldu. Lütfen hesap ayarlarından kontrol edin.",
+        description: "Email adresinize giriş linki gönderildi. Lütfen email'inizi kontrol edin.",
       });
       
       backupForm.reset();
