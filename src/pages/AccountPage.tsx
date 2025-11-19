@@ -8,6 +8,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { formatLocationData } from "@/lib/formatters";
+import { createBackupCode, getActiveBackupCode } from "@/lib/backup-codes";
+import { Copy, RefreshCw } from "lucide-react";
 
 const AccountPage = () => {
   const navigate = useNavigate();
@@ -15,6 +18,8 @@ const AccountPage = () => {
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<any>(null);
   const [email, setEmail] = useState("");
+  const [backupCode, setBackupCode] = useState<string | null>(null);
+  const [regeneratingCode, setRegeneratingCode] = useState(false);
 
   useEffect(() => {
     loadProfile();
@@ -43,7 +48,18 @@ const AccountPage = () => {
         description: "Profil yüklenemedi",
       });
     } else if (data) {
-      setProfile(data);
+      const formatted = formatLocationData(data);
+      setProfile(formatted);
+    }
+
+    // Load backup code
+    const code = await getActiveBackupCode(session.user.id);
+    if (!code) {
+      // Generate first code if doesn't exist
+      const { code: newCode } = await createBackupCode(session.user.id);
+      setBackupCode(newCode);
+    } else {
+      setBackupCode(code);
     }
 
     setLoading(false);
@@ -55,9 +71,11 @@ const AccountPage = () => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) return;
 
-    const { error } = await (supabase as any)
+    const formatted = formatLocationData(profile);
+
+    const { error } = await supabase
       .from("profiles")
-      .update(profile)
+      .update(formatted)
       .eq("id", session.user.id);
 
     if (error) {
@@ -67,9 +85,43 @@ const AccountPage = () => {
         description: "Profil güncellenemedi",
       });
     } else {
+      setProfile(formatted);
       toast({
         title: "Başarılı",
         description: "Profiliniz güncellendi",
+      });
+    }
+  };
+
+  const handleRegenerateCode = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+
+    setRegeneratingCode(true);
+    const { code, error } = await createBackupCode(session.user.id);
+    setRegeneratingCode(false);
+
+    if (error || !code) {
+      toast({
+        variant: "destructive",
+        title: "Hata",
+        description: "Kod oluşturulamadı",
+      });
+    } else {
+      setBackupCode(code);
+      toast({
+        title: "Başarılı",
+        description: "Yeni yedek kod oluşturuldu",
+      });
+    }
+  };
+
+  const copyToClipboard = () => {
+    if (backupCode) {
+      navigator.clipboard.writeText(backupCode);
+      toast({
+        title: "Kopyalandı",
+        description: "Yedek kod panoya kopyalandı",
       });
     }
   };
@@ -155,6 +207,41 @@ const AccountPage = () => {
                 Güncelle
               </Button>
             </form>
+
+            <div className="mt-8 pt-8 border-t">
+              <h3 className="text-lg font-semibold mb-2">Hesap Kurtarma Kodu</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Bu kodu güvenli bir yerde saklayın. Şifrenizi unutursanız bu kod ile hesabınıza giriş yapabilirsiniz.
+              </p>
+              <div className="flex gap-2 items-center">
+                <Input
+                  value={backupCode || "Yükleniyor..."}
+                  disabled
+                  className="font-mono text-lg"
+                />
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="outline"
+                  onClick={copyToClipboard}
+                  disabled={!backupCode}
+                >
+                  <Copy className="h-4 w-4" />
+                </Button>
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="outline"
+                  onClick={handleRegenerateCode}
+                  disabled={regeneratingCode || !backupCode}
+                >
+                  <RefreshCw className={`h-4 w-4 ${regeneratingCode ? "animate-spin" : ""}`} />
+                </Button>
+              </div>
+              <p className="text-xs text-destructive mt-2">
+                ⚠️ Eski kod kullanıldıktan sonra otomatik olarak yeni kod oluşturulur
+              </p>
+            </div>
 
             <div className="mt-8 pt-8 border-t">
               <h3 className="text-lg font-semibold mb-4">Şifre Değiştir</h3>
