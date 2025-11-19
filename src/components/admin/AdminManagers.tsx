@@ -28,10 +28,14 @@ export const AdminManagers = () => {
   const addAdmin = async () => {
     if (!newAdminEmail) return;
 
-    const { data: { users } } = await supabase.auth.admin.listUsers();
-    const user = users?.find((u: any) => u.email === newAdminEmail);
+    // Find user by email in profiles table
+    const { data: profile } = await (supabase as any)
+      .from("profiles")
+      .select("id")
+      .eq("email", newAdminEmail)
+      .maybeSingle();
 
-    if (!user) {
+    if (!profile) {
       toast({
         variant: "destructive",
         title: "Hata",
@@ -42,7 +46,7 @@ export const AdminManagers = () => {
 
     const { error } = await (supabase as any)
       .from("user_roles")
-      .insert({ user_id: user.id, role: "admin" });
+      .insert({ user_id: profile.id, role: "admin" });
 
     if (error) {
       toast({
@@ -119,7 +123,7 @@ export const AdminManagers = () => {
                 </TableCell>
                 <TableCell>{admin.profiles?.email}</TableCell>
                 <TableCell>
-                  {admin.profiles?.email !== "kuantum.ticaret.aoal@gmail.com" && (
+                  {admin.profiles?.email !== "kuantum.ticaret.aoal@gmail.com" && !admin.is_main_admin && (
                     <Button
                       size="sm"
                       variant="destructive"

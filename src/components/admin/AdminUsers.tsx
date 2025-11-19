@@ -8,9 +8,11 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 
 export const AdminUsers = () => {
   const [users, setUsers] = useState<any[]>([]);
+  const [isMainAdmin, setIsMainAdmin] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
+    checkMainAdmin();
     loadUsers();
 
     const channel = supabase
@@ -24,6 +26,20 @@ export const AdminUsers = () => {
       supabase.removeChannel(channel);
     };
   }, []);
+
+  const checkMainAdmin = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data } = await (supabase as any)
+      .from("user_roles")
+      .select("is_main_admin")
+      .eq("user_id", user.id)
+      .eq("role", "admin")
+      .maybeSingle();
+
+    setIsMainAdmin(data?.is_main_admin === true);
+  };
 
   const loadUsers = async () => {
     const { data, error } = await (supabase as any)
@@ -92,17 +108,18 @@ export const AdminUsers = () => {
               users.map((user, index) => (
                 <TableRow key={user.id}>
                   <TableCell>{index + 1}</TableCell>
-                  <TableCell>{user.first_name || "-"}</TableCell>
-                  <TableCell>{user.last_name || "-"}</TableCell>
-                  <TableCell>{user.email || "-"}</TableCell>
-                  <TableCell>{user.phone || "-"}</TableCell>
-                  <TableCell>{user.province || "-"}</TableCell>
-                  <TableCell>{user.district || "-"}</TableCell>
+                  <TableCell>{isMainAdmin ? (user.first_name || "-") : "Bu bilgileri görme yetkiniz yok!"}</TableCell>
+                  <TableCell>{isMainAdmin ? (user.last_name || "-") : "Bu bilgileri görme yetkiniz yok!"}</TableCell>
+                  <TableCell>{isMainAdmin ? (user.email || "-") : "Bu bilgileri görme yetkiniz yok!"}</TableCell>
+                  <TableCell>{isMainAdmin ? (user.phone || "-") : "Bu bilgileri görme yetkiniz yok!"}</TableCell>
+                  <TableCell>{isMainAdmin ? (user.province || "-") : "Bu bilgileri görme yetkiniz yok!"}</TableCell>
+                  <TableCell>{isMainAdmin ? (user.district || "-") : "Bu bilgileri görme yetkiniz yok!"}</TableCell>
                   <TableCell>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button size="sm" variant="destructive">Sil</Button>
-                      </AlertDialogTrigger>
+                    {isMainAdmin && (
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button size="sm" variant="destructive">Sil</Button>
+                        </AlertDialogTrigger>
                       <AlertDialogContent>
                         <AlertDialogHeader>
                           <AlertDialogTitle>Emin misiniz?</AlertDialogTitle>
@@ -118,6 +135,7 @@ export const AdminUsers = () => {
                         </AlertDialogFooter>
                       </AlertDialogContent>
                     </AlertDialog>
+                    )}
                   </TableCell>
                 </TableRow>
               ))
