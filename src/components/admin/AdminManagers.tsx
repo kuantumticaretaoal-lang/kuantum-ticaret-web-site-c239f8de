@@ -17,11 +17,23 @@ export const AdminManagers = () => {
   }, []);
 
   const loadAdmins = async () => {
-    const { data } = await (supabase as any)
+    const { data, error } = await supabase
       .from("user_roles")
-      .select("*, profiles(first_name, last_name, email)")
-      .eq("role", "admin");
+      .select("*, profiles!user_roles_user_id_fkey(first_name, last_name, email)")
+      .eq("role", "admin")
+      .order("created_at", { ascending: false });
 
+    if (error) {
+      console.error("Error loading admins:", error);
+      toast({
+        variant: "destructive",
+        title: "Hata",
+        description: "Yöneticiler yüklenemedi: " + error.message,
+      });
+      return;
+    }
+
+    console.log("Loaded admins:", data);
     if (data) setAdmins(data);
   };
 
@@ -29,22 +41,39 @@ export const AdminManagers = () => {
     if (!newAdminEmail) return;
 
     // Find user by email in profiles table
-    const { data: profile } = await (supabase as any)
+    const { data: profile, error: profileError } = await supabase
       .from("profiles")
       .select("id")
-      .eq("email", newAdminEmail)
+      .eq("email", newAdminEmail.toLowerCase())
       .maybeSingle();
 
-    if (!profile) {
+    if (profileError || !profile) {
       toast({
         variant: "destructive",
         title: "Hata",
-        description: "Kullanıcı bulunamadı",
+        description: "Kullanıcı bulunamadı: " + (profileError?.message || "Email eşleşmedi"),
       });
       return;
     }
 
-    const { error } = await (supabase as any)
+    // Check if already admin
+    const { data: existingRole } = await supabase
+      .from("user_roles")
+      .select("id")
+      .eq("user_id", profile.id)
+      .eq("role", "admin")
+      .maybeSingle();
+
+    if (existingRole) {
+      toast({
+        variant: "destructive",
+        title: "Hata",
+        description: "Bu kullanıcı zaten yönetici",
+      });
+      return;
+    }
+
+    const { error } = await supabase
       .from("user_roles")
       .insert({ user_id: profile.id, role: "admin" });
 
@@ -52,7 +81,7 @@ export const AdminManagers = () => {
       toast({
         variant: "destructive",
         title: "Hata",
-        description: "Admin eklenemedi",
+        description: "Admin eklenemedi: " + error.message,
       });
     } else {
       toast({
@@ -65,7 +94,7 @@ export const AdminManagers = () => {
   };
 
   const removeAdmin = async (userId: string) => {
-    const { error } = await (supabase as any)
+    const { error } = await supabase
       .from("user_roles")
       .delete()
       .eq("user_id", userId)
@@ -75,7 +104,7 @@ export const AdminManagers = () => {
       toast({
         variant: "destructive",
         title: "Hata",
-        description: "Yönetici kaldırılamadı",
+        description: "Yönetici kaldırılamadı: " + error.message,
       });
     } else {
       toast({
