@@ -403,7 +403,7 @@ const CartPage = () => {
                         {orders.map((order) => (
                           <TableRow key={order.id}>
                             <TableCell className="font-mono text-sm">
-                              #{order.id.slice(0, 8)}
+                              {order.order_code || `#${order.id.slice(0, 8)}`}
                             </TableCell>
                             <TableCell>
                               {new Date(order.created_at).toLocaleDateString("tr-TR")}

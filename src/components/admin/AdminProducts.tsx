@@ -13,11 +13,14 @@ import { Pencil, Upload, X } from "lucide-react";
 
 export const AdminProducts = () => {
   const [products, setProducts] = useState<any[]>([]);
-  const [newProduct, setNewProduct] = useState({ title: "", description: "", price: "", stock_status: "in_stock", promotion_badges: [] as string[] });
+  const [newProduct, setNewProduct] = useState({ title: "", description: "", price: "", stock_status: "in_stock", stock_quantity: 0, promotion_badges: [] as string[] });
   const [editProduct, setEditProduct] = useState<any>(null);
   const [editImages, setEditImages] = useState<any[]>([]);
   const [uploadingImages, setUploadingImages] = useState<File[]>([]);
   const { toast } = useToast();
+  const [totalProducts, setTotalProducts] = useState(0);
+  const [totalValue, setTotalValue] = useState(0);
+  const [lowStockProducts, setLowStockProducts] = useState(0);
   
   const availablePromotions = [
     "En Geç Yarın Kargoda",
@@ -52,7 +55,14 @@ export const AdminProducts = () => {
         )
       `)
       .order("created_at", { ascending: false });
-    if (data) setProducts(data);
+    if (data) {
+      setProducts(data);
+      const total = data.reduce((sum, p) => sum + Number(p.price), 0);
+      const lowStock = data.filter(p => (p.stock_quantity || 0) < 10).length;
+      setTotalProducts(data.length);
+      setTotalValue(total);
+      setLowStockProducts(lowStock);
+    }
   };
 
   const uploadImages = async (productId: string, files: File[]) => {
@@ -111,6 +121,7 @@ export const AdminProducts = () => {
         description: newProduct.description,
         price: parseFloat(newProduct.price),
         stock_status: newProduct.stock_status,
+        stock_quantity: newProduct.stock_quantity || 0,
         promotion_badges: newProduct.promotion_badges,
       })
       .select()
@@ -130,7 +141,7 @@ export const AdminProducts = () => {
         title: "Başarılı",
         description: "Ürün eklendi",
       });
-      setNewProduct({ title: "", description: "", price: "", stock_status: "in_stock", promotion_badges: [] });
+      setNewProduct({ title: "", description: "", price: "", stock_status: "in_stock", stock_quantity: 0, promotion_badges: [] });
       setUploadingImages([]);
       loadProducts();
     }
@@ -153,6 +164,7 @@ export const AdminProducts = () => {
         description: editProduct.description,
         price: parseFloat(editProduct.price),
         stock_status: editProduct.stock_status,
+        stock_quantity: editProduct.stock_quantity || 0,
         promotion_badges: editProduct.promotion_badges || [],
       })
       .eq("id", editProduct.id);
@@ -195,24 +207,40 @@ export const AdminProducts = () => {
     }
   };
 
-  const totalPrice = products.reduce((sum, p) => sum + parseFloat(p.price), 0);
-  const totalProducts = products.length;
-
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex justify-between items-center">
-          <div className="flex flex-col gap-2">
-            <span>Ürünler</span>
-            <div className="text-sm font-normal text-muted-foreground">
-              Toplam Ürün Sayısı: {totalProducts} | Toplam Fiyat: {totalPrice.toFixed(2)} TL
-            </div>
-          </div>
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button>Yeni Ürün Ekle</Button>
-            </DialogTrigger>
-            <DialogContent>
+        <CardTitle>Ürünler</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-3 gap-4 mb-6">
+          <Card>
+            <CardContent className="pt-6">
+              <div className="text-2xl font-bold">{totalProducts}</div>
+              <p className="text-sm text-muted-foreground">Toplam Ürün Sayısı</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6">
+              <div className="text-2xl font-bold">{totalValue.toFixed(2)} ₺</div>
+              <p className="text-sm text-muted-foreground">Toplam Fiyat</p>
+            </CardContent>
+          </Card>
+          <Card className={lowStockProducts > 0 ? "border-destructive" : ""}>
+            <CardContent className="pt-6">
+              <div className={`text-2xl font-bold ${lowStockProducts > 0 ? "text-destructive" : ""}`}>
+                {lowStockProducts}
+              </div>
+              <p className="text-sm text-muted-foreground">Düşük Stoklu Ürün</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button className="mb-4">Yeni Ürün Ekle</Button>
+          </DialogTrigger>
+          <DialogContent>
               <DialogHeader>
                 <DialogTitle>Yeni Ürün</DialogTitle>
               </DialogHeader>
@@ -224,6 +252,18 @@ export const AdminProducts = () => {
                     onChange={(e) => setNewProduct({ ...newProduct, title: e.target.value })}
                     placeholder="Ürün başlığı"
                   />
+                </div>
+                <div>
+                  <Label>Stok Miktarı</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    value={newProduct.stock_quantity}
+                    onChange={(e) => setNewProduct({ ...newProduct, stock_quantity: parseInt(e.target.value) || 0 })}
+                  />
+                  {newProduct.stock_quantity < 10 && (
+                    <p className="text-xs text-destructive mt-1">⚠️ Düşük stok uyarısı</p>
+                  )}
                 </div>
                 <div>
                   <Label>Açıklama</Label>
@@ -291,16 +331,15 @@ export const AdminProducts = () => {
               </div>
             </DialogContent>
           </Dialog>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
+        
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Başlık</TableHead>
               <TableHead>Açıklama</TableHead>
               <TableHead>Fiyat</TableHead>
-              <TableHead>Stok</TableHead>
+              <TableHead>Stok Durumu</TableHead>
+              <TableHead>Stok Miktarı</TableHead>
               <TableHead>Fırsatlar</TableHead>
               <TableHead>Resimler</TableHead>
               <TableHead>İşlemler</TableHead>
@@ -315,6 +354,12 @@ export const AdminProducts = () => {
                 <TableCell>
                   {product.stock_status === 'in_stock' ? 'Stokta' : 
                    product.stock_status === 'limited_stock' ? 'Sınırlı' : 'Tükendi'}
+                </TableCell>
+                <TableCell>
+                  <span className={(product.stock_quantity || 0) < 10 ? "text-destructive font-semibold" : ""}>
+                    {product.stock_quantity || 0}
+                    {(product.stock_quantity || 0) < 10 && " ⚠️"}
+                  </span>
                 </TableCell>
                 <TableCell>
                   {product.promotion_badges?.length > 0 ? product.promotion_badges.join(", ") : "-"}
@@ -403,6 +448,18 @@ export const AdminProducts = () => {
                   <option value="limited_stock">Sınırlı Stok</option>
                   <option value="out_of_stock">Tükendi</option>
                 </select>
+              </div>
+              <div>
+                <Label>Stok Miktarı</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  value={editProduct.stock_quantity || 0}
+                  onChange={(e) => setEditProduct({ ...editProduct, stock_quantity: parseInt(e.target.value) || 0 })}
+                />
+                {(editProduct.stock_quantity || 0) < 10 && (
+                  <p className="text-xs text-destructive mt-1">⚠️ Düşük stok uyarısı</p>
+                )}
               </div>
               <div>
                 <Label>Fırsatlar</Label>

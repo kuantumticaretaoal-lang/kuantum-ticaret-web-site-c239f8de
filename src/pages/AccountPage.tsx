@@ -11,6 +11,8 @@ import { useToast } from "@/hooks/use-toast";
 import { formatLocationData } from "@/lib/formatters";
 import { createBackupCode, getActiveBackupCode } from "@/lib/backup-codes";
 import { Copy, RefreshCw } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import OrderTracking from "@/components/OrderTracking";
 
 const AccountPage = () => {
   const navigate = useNavigate();
@@ -142,11 +144,22 @@ const AccountPage = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
       <div className="container mx-auto px-4 py-16">
-        <Card className="max-w-2xl mx-auto">
-          <CardHeader>
-            <CardTitle>Hesap Ayarları</CardTitle>
-          </CardHeader>
-          <CardContent>
+        <Tabs defaultValue="settings" className="max-w-2xl mx-auto">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="settings">Hesap Ayarları</TabsTrigger>
+            <TabsTrigger value="tracking">Sipariş Takibi</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="tracking">
+            <OrderTracking />
+          </TabsContent>
+
+          <TabsContent value="settings">
+            <Card>
+              <CardHeader>
+                <CardTitle>Hesap Ayarları</CardTitle>
+              </CardHeader>
+              <CardContent>
             <form onSubmit={handleUpdate} className="space-y-4">
               <div>
                 <Label>Email</Label>
@@ -310,8 +323,10 @@ const AccountPage = () => {
                 </Button>
               </form>
             </div>
-          </CardContent>
-        </Card>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
       <Footer />
     </div>

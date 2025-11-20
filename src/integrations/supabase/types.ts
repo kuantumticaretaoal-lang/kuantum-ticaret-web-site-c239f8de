@@ -264,6 +264,7 @@ export type Database = {
           delivery_address: string | null
           delivery_type: Database["public"]["Enums"]["delivery_type"]
           id: string
+          order_code: string
           preparation_time: number | null
           preparation_unit: string | null
           rejection_reason: string | null
@@ -277,6 +278,7 @@ export type Database = {
           delivery_address?: string | null
           delivery_type: Database["public"]["Enums"]["delivery_type"]
           id?: string
+          order_code?: string
           preparation_time?: number | null
           preparation_unit?: string | null
           rejection_reason?: string | null
@@ -290,6 +292,7 @@ export type Database = {
           delivery_address?: string | null
           delivery_type?: Database["public"]["Enums"]["delivery_type"]
           id?: string
+          order_code?: string
           preparation_time?: number | null
           preparation_unit?: string | null
           rejection_reason?: string | null
@@ -409,6 +412,7 @@ export type Database = {
           id: string
           price: number
           promotion_badges: string[] | null
+          stock_quantity: number | null
           stock_status: string | null
           title: string
           updated_at: string | null
@@ -419,6 +423,7 @@ export type Database = {
           id?: string
           price: number
           promotion_badges?: string[] | null
+          stock_quantity?: number | null
           stock_status?: string | null
           title: string
           updated_at?: string | null
@@ -429,6 +434,7 @@ export type Database = {
           id?: string
           price?: number
           promotion_badges?: string[] | null
+          stock_quantity?: number | null
           stock_status?: string | null
           title?: string
           updated_at?: string | null
@@ -614,6 +620,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      generate_order_code: { Args: never; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

@@ -374,18 +374,14 @@ export const AdminOrders = () => {
                     <div>
                       <Label>Durum Değiştir</Label>
                       <Select
-                        onValueChange={(value) => {
-                          if (value === "preparing") {
-                            // Hazırlık süresi gir
-                          } else {
-                            updateOrderStatus(order.id, value);
-                          }
-                        }}
+                        defaultValue={order.status}
+                        onValueChange={(value) => updateOrderStatus(order.id, value)}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Durum seç" />
                         </SelectTrigger>
                         <SelectContent>
+                          <SelectItem value="pending">Bekleyen</SelectItem>
                           <SelectItem value="confirmed">Onaylandı</SelectItem>
                           <SelectItem value="preparing">Hazırlanıyor</SelectItem>
                           <SelectItem value="ready">Hazır</SelectItem>
@@ -393,7 +389,6 @@ export const AdminOrders = () => {
                           <SelectItem value="delivered">Teslim Edildi</SelectItem>
                         </SelectContent>
                       </Select>
-                      <Button className="mt-2" onClick={() => updateOrderStatus(order.id, 'confirmed')}>Onayla</Button>
                     </div>
                     <div>
                       <Label>Ret Nedeni</Label>
