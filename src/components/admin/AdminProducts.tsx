@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Pencil, Upload, X } from "lucide-react";
@@ -194,11 +195,19 @@ export const AdminProducts = () => {
     }
   };
 
+  const totalPrice = products.reduce((sum, p) => sum + parseFloat(p.price), 0);
+  const totalProducts = products.length;
+
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex justify-between items-center">
-          <span>Ürünler</span>
+          <div className="flex flex-col gap-2">
+            <span>Ürünler</span>
+            <div className="text-sm font-normal text-muted-foreground">
+              Toplam Ürün Sayısı: {totalProducts} | Toplam Fiyat: {totalPrice.toFixed(2)} TL
+            </div>
+          </div>
           <Dialog>
             <DialogTrigger asChild>
               <Button>Yeni Ürün Ekle</Button>
@@ -322,9 +331,27 @@ export const AdminProducts = () => {
                   >
                     <Pencil className="h-4 w-4" />
                   </Button>
-                  <Button size="sm" variant="destructive" onClick={() => deleteProduct(product.id)}>
-                    Sil
-                  </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button size="sm" variant="destructive">
+                        Sil
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Ürünü silmek istediğinizden emin misiniz?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Bu işlem geri alınamaz.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Hayır</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => deleteProduct(product.id)}>
+                          Evet
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </TableCell>
               </TableRow>
             ))}

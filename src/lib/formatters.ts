@@ -5,7 +5,7 @@ export const formatPhoneNumber = (phone: string): string => {
   // Remove all non-digits
   const digits = phone.replace(/\D/g, "");
   
-  // Handle Turkish format (10 digits starting with 5, or 11 with leading 0)
+  // Handle Turkish format (10 digits starting with 5, or 11 with leading 0, or 12 with country code)
   if (digits.length === 10 && digits.startsWith("5")) {
     // 5550000005 -> +90 (555) 000 00 05
     return `+90 (${digits.slice(0, 3)}) ${digits.slice(3, 6)} ${digits.slice(6, 8)} ${digits.slice(8)}`;
@@ -14,6 +14,9 @@ export const formatPhoneNumber = (phone: string): string => {
     return `+90 (${digits.slice(1, 4)}) ${digits.slice(4, 7)} ${digits.slice(7, 9)} ${digits.slice(9)}`;
   } else if (digits.length === 12 && digits.startsWith("90")) {
     // 905550000005 -> +90 (555) 000 00 05
+    return `+90 (${digits.slice(2, 5)}) ${digits.slice(5, 8)} ${digits.slice(8, 10)} ${digits.slice(10)}`;
+  } else if (digits.length === 13 && digits.startsWith("90")) {
+    // +905550000005 -> +90 (555) 000 00 05
     return `+90 (${digits.slice(2, 5)}) ${digits.slice(5, 8)} ${digits.slice(8, 10)} ${digits.slice(10)}`;
   }
   

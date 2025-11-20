@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { logger } from "@/lib/logger";
+import { formatPhoneNumber, formatProvince, formatDistrict } from "@/lib/formatters";
 
 export const AdminOrders = () => {
   const [orders, setOrders] = useState<any[]>([]);
@@ -63,13 +64,18 @@ export const AdminOrders = () => {
       ordersData.map(async (order: any) => {
         const { data: profile } = await (supabase as any)
           .from("profiles")
-          .select("first_name, last_name, email, address, district, province")
+          .select("first_name, last_name, email, phone, address, district, province")
           .eq("id", order.user_id)
           .maybeSingle();
 
         return {
           ...order,
-          profiles: profile || null,
+          profiles: profile ? {
+            ...profile,
+            phone: formatPhoneNumber(profile.phone),
+            province: formatProvince(profile.province),
+            district: formatDistrict(profile.district),
+          } : null,
         };
       })
     );
@@ -214,13 +220,18 @@ export const AdminOrders = () => {
         ordersData.map(async (order: any) => {
           const { data: profile } = await (supabase as any)
             .from("profiles")
-            .select("first_name, last_name, email, address, district, province")
+            .select("first_name, last_name, email, phone, address, district, province")
             .eq("id", order.user_id)
             .maybeSingle();
 
           return {
             ...order,
-            profiles: profile || null,
+            profiles: profile ? {
+              ...profile,
+              phone: formatPhoneNumber(profile.phone),
+              province: formatProvince(profile.province),
+              district: formatDistrict(profile.district),
+            } : null,
           };
         })
       );
@@ -282,36 +293,51 @@ export const AdminOrders = () => {
     );
   };
 
-  const OrdersTable = ({ ordersList }: { ordersList: any[] }) => (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Sipariş No</TableHead>
-          <TableHead>Müşteri</TableHead>
-          <TableHead>Ürünler</TableHead>
-          <TableHead>Durum</TableHead>
-          <TableHead>Teslimat</TableHead>
-          <TableHead>Adres</TableHead>
-          <TableHead>İlçe</TableHead>
-          <TableHead>İl</TableHead>
-          <TableHead>Tarih</TableHead>
-          <TableHead>İşlemler</TableHead>
-        </TableRow>
-      </TableHeader>
+  const OrdersTable = ({ ordersList, showCount = true }: { ordersList: any[], showCount?: boolean }) => (
+    <>
+      {showCount && (
+        <div className="mb-4 text-sm font-medium text-muted-foreground">
+          Bu sekmedeki toplam sipariş sayısı: {ordersList.length}
+        </div>
+      )}
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Sipariş No</TableHead>
+            <TableHead>Müşteri</TableHead>
+            <TableHead>Telefon</TableHead>
+            <TableHead>Ürünler</TableHead>
+            <TableHead>Durum</TableHead>
+            <TableHead>Teslimat</TableHead>
+            <TableHead>Adres</TableHead>
+            <TableHead>İlçe</TableHead>
+            <TableHead>İl</TableHead>
+            <TableHead>Tarih</TableHead>
+            <TableHead>İşlemler</TableHead>
+          </TableRow>
+        </TableHeader>
       <TableBody>
-        {ordersList.map((order) => (
-          <TableRow key={order.id}>
-            <TableCell>{order.id.slice(0, 8)}</TableCell>
-            <TableCell>
-              {order.profiles?.first_name} {order.profiles?.last_name}
+        {ordersList.length === 0 ? (
+          <TableRow>
+            <TableCell colSpan={11} className="text-center text-muted-foreground py-8">
+              Bu sekmede sipariş yok
             </TableCell>
-            <TableCell>
-              {order.order_items?.map((item: any, idx: number) => (
-                <div key={idx} className="text-sm">
-                  {item.products?.title} x{item.quantity}
-                </div>
-              )) || "-"}
-            </TableCell>
+          </TableRow>
+        ) : (
+          ordersList.map((order) => (
+            <TableRow key={order.id}>
+              <TableCell>{order.id.slice(0, 8)}</TableCell>
+              <TableCell>
+                {order.profiles?.first_name} {order.profiles?.last_name}
+              </TableCell>
+              <TableCell>{order.profiles?.phone || "-"}</TableCell>
+              <TableCell>
+                {order.order_items?.map((item: any, idx: number) => (
+                  <div key={idx} className="text-sm">
+                    {item.products?.title} x{item.quantity}
+                  </div>
+                )) || "-"}
+              </TableCell>
             <TableCell>
               <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                 order.status === "confirmed" ? "bg-green-100 text-green-800" :
@@ -404,9 +430,11 @@ export const AdminOrders = () => {
               </Dialog>
             </TableCell>
           </TableRow>
-        ))}
+        ))
+        )}
       </TableBody>
     </Table>
+    </>
   );
 
   return (
@@ -420,6 +448,10 @@ export const AdminOrders = () => {
             <TabsTrigger value="all">Tümü</TabsTrigger>
             <TabsTrigger value="pending">Bekleyen</TabsTrigger>
             <TabsTrigger value="confirmed">Onaylanan</TabsTrigger>
+            <TabsTrigger value="preparing">Hazırlanıyor</TabsTrigger>
+            <TabsTrigger value="ready">Hazır</TabsTrigger>
+            <TabsTrigger value="in_delivery">Teslimde</TabsTrigger>
+            <TabsTrigger value="delivered">Teslim Edildi</TabsTrigger>
             <TabsTrigger value="rejected">Reddedilen</TabsTrigger>
             <TabsTrigger value="trash">Çöp Kutusu</TabsTrigger>
           </TabsList>
@@ -434,6 +466,22 @@ export const AdminOrders = () => {
 
           <TabsContent value="confirmed">
             <OrdersTable ordersList={filterOrders("confirmed")} />
+          </TabsContent>
+
+          <TabsContent value="preparing">
+            <OrdersTable ordersList={filterOrders("preparing")} />
+          </TabsContent>
+
+          <TabsContent value="ready">
+            <OrdersTable ordersList={filterOrders("ready")} />
+          </TabsContent>
+
+          <TabsContent value="in_delivery">
+            <OrdersTable ordersList={filterOrders("in_delivery")} />
+          </TabsContent>
+
+          <TabsContent value="delivered">
+            <OrdersTable ordersList={filterOrders("delivered")} />
           </TabsContent>
 
           <TabsContent value="rejected">

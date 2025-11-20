@@ -161,46 +161,41 @@ export const AdminMessages = () => {
     <>
       <Card>
         <CardHeader>
-          <CardTitle>İletişim Mesajları ({messages.length})</CardTitle>
+          <CardTitle>İletişim Mesajları</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          {messages.length === 0 ? (
-            <p className="text-center text-muted-foreground py-8">Henüz mesaj yok</p>
-          ) : (
-            messages.map((message) => (
-              <Card key={message.id}>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-semibold">{message.name}</p>
-                      <p className="text-sm text-muted-foreground">{message.email}</p>
-                      {message.phone && (
-                        <p className="text-sm text-muted-foreground">{message.phone}</p>
-                      )}
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      {new Date(message.created_at).toLocaleDateString("tr-TR")}{" "}
-                      {new Date(message.created_at).toLocaleTimeString("tr-TR")}
-                    </p>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <p className="text-sm text-muted-foreground mb-1">Mesaj:</p>
-                    <p>{message.message}</p>
-                  </div>
-                  <Button
-                    onClick={() => {
-                      setSelectedMessage(message);
-                      setReply("");
-                    }}
-                  >
-                    Yanıtla
-                  </Button>
-                </CardContent>
-              </Card>
-            ))
-          )}
+        <CardContent>
+          <Tabs defaultValue="unanswered">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="unanswered">
+                Cevaplanmayan ({unansweredMessages.length})
+              </TabsTrigger>
+              <TabsTrigger value="answered">
+                Cevaplanan ({answeredMessages.length})
+              </TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="unanswered" className="space-y-4 mt-4">
+              <div className="text-sm text-muted-foreground mb-2">
+                Bu sekmedeki toplam mesaj sayısı: {unansweredMessages.length}
+              </div>
+              {unansweredMessages.length === 0 ? (
+                <p className="text-center text-muted-foreground py-8">Cevaplanmayan mesaj yok</p>
+              ) : (
+                unansweredMessages.map((message) => <MessageCard key={message.id} message={message} />)
+              )}
+            </TabsContent>
+
+            <TabsContent value="answered" className="space-y-4 mt-4">
+              <div className="text-sm text-muted-foreground mb-2">
+                Bu sekmedeki toplam mesaj sayısı: {answeredMessages.length}
+              </div>
+              {answeredMessages.length === 0 ? (
+                <p className="text-center text-muted-foreground py-8">Cevaplanan mesaj yok</p>
+              ) : (
+                answeredMessages.map((message) => <MessageCard key={message.id} message={message} />)
+              )}
+            </TabsContent>
+          </Tabs>
         </CardContent>
       </Card>
 
