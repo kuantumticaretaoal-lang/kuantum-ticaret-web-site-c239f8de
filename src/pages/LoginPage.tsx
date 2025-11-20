@@ -12,7 +12,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 
 const formSchema = z.object({
@@ -28,6 +30,8 @@ const backupCodeSchema = z.object({
 const LoginPage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [forgotPasswordEmail, setForgotPasswordEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -144,6 +148,42 @@ const LoginPage = () => {
     }
   };
 
+  const handleForgotPassword = async () => {
+    if (!forgotPasswordEmail) {
+      toast({
+        variant: "destructive",
+        title: "Hata",
+        description: "Lütfen email adresinizi girin",
+      });
+      return;
+    }
+
+    const { error } = await supabase.auth.resetPasswordForEmail(
+      forgotPasswordEmail.toLowerCase(),
+      {
+        redirectTo: `${window.location.origin}/account`,
+      }
+    );
+
+    if (error) {
+      toast({
+        variant: "destructive",
+        title: "Hata",
+        description: "Email gönderilemedi: " + error.message,
+      });
+      return;
+    }
+
+    toast({
+      title: "Başarılı",
+      description: "Şifre sıfırlama linki email adresinize gönderildi. Birisi şifrenizi sıfırlama isteği gönderdi. Eğer bu işlem bilginiz / rızanız dışında ise lütfen bu maili görmezden geliniz. Hiçbir şey etkilenmeyecektir.",
+      duration: 8000,
+    });
+
+    setShowForgotPassword(false);
+    setForgotPasswordEmail("");
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -193,6 +233,15 @@ const LoginPage = () => {
                     </Button>
                   </form>
                 </Form>
+                <div className="mt-4 text-center">
+                  <Button
+                    variant="link"
+                    onClick={() => setShowForgotPassword(true)}
+                    className="text-sm"
+                  >
+                    Şifremi Unuttum
+                  </Button>
+                </div>
               </TabsContent>
               
               <TabsContent value="recovery">
@@ -244,6 +293,30 @@ const LoginPage = () => {
           </CardContent>
         </Card>
       </div>
+
+      <Dialog open={showForgotPassword} onOpenChange={setShowForgotPassword}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Şifremi Unuttum</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="forgot-email">Email Adresi</Label>
+              <Input
+                id="forgot-email"
+                type="email"
+                value={forgotPasswordEmail}
+                onChange={(e) => setForgotPasswordEmail(e.target.value)}
+                placeholder="ornek@email.com"
+              />
+            </div>
+            <Button onClick={handleForgotPassword} className="w-full">
+              Şifre Sıfırlama Linki Gönder
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+      
       <Footer />
     </div>
   );

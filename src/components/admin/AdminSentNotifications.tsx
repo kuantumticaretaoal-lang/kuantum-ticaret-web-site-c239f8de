@@ -36,7 +36,7 @@ export const AdminSentNotifications = () => {
       // Fetch profiles separately for each notification
       const notificationsWithProfiles = await Promise.all(
         data.map(async (notif) => {
-          if (!notif.user_id) return { ...notif, profiles: null };
+          if (!notif.user_id) return { ...notif, profiles: { first_name: "Tüm", last_name: "Kullanıcılar" } };
           
           const { data: profile } = await supabase
             .from("profiles")
@@ -44,7 +44,7 @@ export const AdminSentNotifications = () => {
             .eq("id", notif.user_id)
             .maybeSingle();
           
-          return { ...notif, profiles: profile };
+          return { ...notif, profiles: profile || { first_name: "Bilinmeyen", last_name: "Kullanıcı" } };
         })
       );
       

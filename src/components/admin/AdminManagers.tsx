@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 export const AdminManagers = () => {
   const [admins, setAdmins] = useState<any[]>([]);
@@ -182,13 +183,27 @@ export const AdminManagers = () => {
                 <TableCell>{admin.profiles?.email}</TableCell>
                 <TableCell>
                   {!admin.is_main_admin && (
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      onClick={() => removeAdmin(admin.user_id)}
-                    >
-                      Yetkiyi Kaldır
-                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button size="sm" variant="destructive">
+                          Yetkiyi Kaldır
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Yönetici yetkisini kaldırmak istediğinizden emin misiniz?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Bu işlem geri alınamaz.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Hayır</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => removeAdmin(admin.user_id)}>
+                            Evet
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   )}
                 </TableCell>
               </TableRow>
