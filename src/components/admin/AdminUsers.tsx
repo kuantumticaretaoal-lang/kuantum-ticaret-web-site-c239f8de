@@ -11,6 +11,8 @@ import { logger } from "@/lib/logger";
 export const AdminUsers = () => {
   const [users, setUsers] = useState<any[]>([]);
   const [isMainAdmin, setIsMainAdmin] = useState(false);
+  const [totalUsers, setTotalUsers] = useState(0);
+  const [lastRegistration, setLastRegistration] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -52,8 +54,32 @@ export const AdminUsers = () => {
     if (error) {
       logger.error("Kullanıcılar yüklenemedi", error);
       setUsers([]);
+      setTotalUsers(0);
+      setLastRegistration(null);
     } else {
-      setUsers(data || []);
+      const allUsers = data || [];
+      
+      // Admin ve yöneticileri filtrele
+      const { data: adminRoles } = await supabase
+        .from("user_roles")
+        .select("user_id")
+        .eq("role", "admin");
+      
+      const adminIds = new Set(adminRoles?.map(r => r.user_id) || []);
+      const regularUsers = allUsers.filter(u => !adminIds.has(u.id));
+      
+      setUsers(allUsers);
+      setTotalUsers(regularUsers.length);
+      
+      // En son kayıt olan normal kullanıcı
+      if (regularUsers.length > 0) {
+        const lastUser = regularUsers.sort((a, b) => 
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        )[0];
+        setLastRegistration(lastUser.created_at);
+      } else {
+        setLastRegistration(null);
+      }
     }
   };
 
@@ -86,6 +112,30 @@ export const AdminUsers = () => {
         <CardTitle>Kullanıcılar</CardTitle>
       </CardHeader>
       <CardContent>
+        <div className="grid grid-cols-2 gap-4 mb-6">
+          <Card>
+            <CardContent className="pt-6">
+              <div className="text-2xl font-bold">{totalUsers}</div>
+              <p className="text-sm text-muted-foreground">Toplam Kullanıcı Sayısı</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6">
+              <div className="text-lg font-semibold">
+                {lastRegistration 
+                  ? new Date(lastRegistration).toLocaleString("tr-TR", {
+                      year: "numeric",
+                      month: "2-digit",
+                      day: "2-digit",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })
+                  : "Henüz kayıt yok"}
+              </div>
+              <p className="text-sm text-muted-foreground">Son Kayıt Tarihi</p>
+            </CardContent>
+          </Card>
+        </div>
         <Table>
           <TableHeader>
             <TableRow>

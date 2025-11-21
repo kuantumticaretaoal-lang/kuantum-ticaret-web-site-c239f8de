@@ -50,10 +50,22 @@ const OrderTracking = () => {
       return;
     }
 
+    // Giriş kontrolü
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      toast({
+        variant: "destructive",
+        title: "Hata",
+        description: "Sipariş durumunu sorgulamak için giriş yapmalısınız.",
+      });
+      setOrderStatus(null);
+      return;
+    }
+
     setLoading(true);
     const { data, error } = await supabase
       .from("orders")
-      .select("status")
+      .select("status, user_id")
       .eq("order_code", orderCode.trim().toUpperCase())
       .maybeSingle();
 
@@ -64,6 +76,17 @@ const OrderTracking = () => {
         variant: "destructive",
         title: "Hata",
         description: "Sipariş bulunamadı. Lütfen kodu kontrol edin.",
+      });
+      setOrderStatus(null);
+      return;
+    }
+
+    // Kullanıcı sadece kendi siparişini görebilir
+    if (data.user_id !== user.id) {
+      toast({
+        variant: "destructive",
+        title: "Hata",
+        description: "Bu sipariş size ait değil.",
       });
       setOrderStatus(null);
       return;
