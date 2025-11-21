@@ -37,7 +37,7 @@ const Footer = () => {
           {/* Company Info */}
           <div>
             <h3 className="text-xl font-bold mb-3">Kuantum Ticaret</h3>
-            <p className="text-white/80">Kaliteli ürünler, güvenilir hizmet</p>
+            <p className="text-white/80">Kaliteli ürünler, güvenilir hizmet!</p>
           </div>
 
           {/* Quick Links */}
@@ -100,7 +100,7 @@ const Footer = () => {
 
         <div className="border-t border-white/20 pt-6 text-center text-white/70">
           <p>© {new Date().getFullYear()} Kuantum Ticaret. Tüm hakları saklıdır.</p>
-          <p className="mt-2">Yalnızca Garaj Mezunlarına Özel!</p>
+          <p className="mt-2">Yalnızca Garaj Mezunlarına Özel</p>
         </div>
       </div>
     </footer>
