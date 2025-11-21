@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { logger } from "@/lib/logger";
 
 export const AdminSocialMedia = () => {
   const [social, setSocial] = useState<any>(null);
@@ -31,7 +32,7 @@ export const AdminSocialMedia = () => {
       const { data } = await (supabase as any).from("social_media").select("*").single();
       if (data) setSocial(data);
     } catch (error) {
-      console.error("Error loading social media:", error);
+      logger.error("Sosyal medya yüklenemedi", error);
     } finally {
       setLoading(false);
     }

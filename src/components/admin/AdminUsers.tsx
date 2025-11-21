@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { formatPhoneNumber, formatProvince, formatDistrict } from "@/lib/formatters";
+import { logger } from "@/lib/logger";
 
 export const AdminUsers = () => {
   const [users, setUsers] = useState<any[]>([]);
@@ -49,7 +50,7 @@ export const AdminUsers = () => {
       .order("created_at", { ascending: true });
     
     if (error) {
-      console.error("Error loading users:", error);
+      logger.error("Kullanıcılar yüklenemedi", error);
       setUsers([]);
     } else {
       setUsers(data || []);

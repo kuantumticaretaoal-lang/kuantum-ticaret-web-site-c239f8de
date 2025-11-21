@@ -13,6 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Minus, Plus, Trash2 } from "lucide-react";
+import { logger } from "@/lib/logger";
 
 const CartPage = () => {
   const [cartItems, setCartItems] = useState<any[]>([]);
@@ -186,7 +187,7 @@ const CartPage = () => {
       
       navigate("/account");
     } catch (error) {
-      console.error("Checkout error:", error);
+      logger.error("Sipariş oluşturma hatası", error);
       toast({
         variant: "destructive",
         title: "Hata",
