@@ -9,7 +9,13 @@ export const getSessionId = () => {
   return sessionId;
 };
 
-export const addToCart = async (productId: string, quantity: number = 1) => {
+export const addToCart = async (
+  productId: string, 
+  quantity: number = 1, 
+  customName?: string, 
+  selectedSize?: string, 
+  customPhotoUrl?: string
+) => {
   // Validate quantity is safe integer
   if (!Number.isInteger(quantity) || quantity < 1 || quantity > 999) {
     return { 
@@ -47,6 +53,9 @@ export const addToCart = async (productId: string, quantity: number = 1) => {
         quantity,
         user_id: user?.id || null,
         session_id: sessionId,
+        custom_name: customName || null,
+        selected_size: selectedSize || null,
+        custom_photo_url: customPhotoUrl || null,
       });
     return { error };
   }

@@ -5,6 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { formatPhoneNumber, formatProvince, formatDistrict } from "@/lib/formatters";
 
 export const AdminUsers = () => {
   const [users, setUsers] = useState<any[]>([]);
@@ -111,9 +112,9 @@ export const AdminUsers = () => {
                   <TableCell>{isMainAdmin ? (user.first_name || "-") : "Bu bilgileri görme yetkiniz yok!"}</TableCell>
                   <TableCell>{isMainAdmin ? (user.last_name || "-") : "Bu bilgileri görme yetkiniz yok!"}</TableCell>
                   <TableCell>{isMainAdmin ? (user.email || "-") : "Bu bilgileri görme yetkiniz yok!"}</TableCell>
-                  <TableCell>{isMainAdmin ? (user.phone || "-") : "Bu bilgileri görme yetkiniz yok!"}</TableCell>
-                  <TableCell>{isMainAdmin ? (user.province || "-") : "Bu bilgileri görme yetkiniz yok!"}</TableCell>
-                  <TableCell>{isMainAdmin ? (user.district || "-") : "Bu bilgileri görme yetkiniz yok!"}</TableCell>
+                  <TableCell>{isMainAdmin ? (user.phone ? formatPhoneNumber(user.phone) : "-") : "Bu bilgileri görme yetkiniz yok!"}</TableCell>
+                  <TableCell>{isMainAdmin ? (user.province ? formatProvince(user.province) : "-") : "Bu bilgileri görme yetkiniz yok!"}</TableCell>
+                  <TableCell>{isMainAdmin ? (user.district ? formatDistrict(user.district) : "-") : "Bu bilgileri görme yetkiniz yok!"}</TableCell>
                   <TableCell>
                     {isMainAdmin && (
                       <AlertDialog>

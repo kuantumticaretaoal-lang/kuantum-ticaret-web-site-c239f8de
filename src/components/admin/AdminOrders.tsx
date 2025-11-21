@@ -333,8 +333,26 @@ export const AdminOrders = () => {
               <TableCell>{order.profiles?.phone || "-"}</TableCell>
               <TableCell>
                 {order.order_items?.map((item: any, idx: number) => (
-                  <div key={idx} className="text-sm">
-                    {item.products?.title} x{item.quantity}
+                  <div key={idx} className="text-sm space-y-1">
+                    <div className="font-medium">{item.products?.title} x{item.quantity}</div>
+                    {item.custom_name && (
+                      <div className="text-muted-foreground">İsim: {item.custom_name}</div>
+                    )}
+                    {item.selected_size && (
+                      <div className="text-muted-foreground">Beden: {item.selected_size}</div>
+                    )}
+                    {item.custom_photo_url && (
+                      <div>
+                        <a 
+                          href={item.custom_photo_url} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-xs text-primary hover:underline"
+                        >
+                          Özel Fotoğrafı Görüntüle
+                        </a>
+                      </div>
+                    )}
                   </div>
                 )) || "-"}
               </TableCell>

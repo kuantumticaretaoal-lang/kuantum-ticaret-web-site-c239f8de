@@ -13,7 +13,17 @@ import { Pencil, Upload, X } from "lucide-react";
 
 export const AdminProducts = () => {
   const [products, setProducts] = useState<any[]>([]);
-  const [newProduct, setNewProduct] = useState({ title: "", description: "", price: "", stock_status: "in_stock", stock_quantity: 0, promotion_badges: [] as string[] });
+  const [newProduct, setNewProduct] = useState({ 
+    title: "", 
+    description: "", 
+    price: "", 
+    stock_status: "in_stock", 
+    stock_quantity: 0, 
+    promotion_badges: [] as string[],
+    is_name_customizable: false,
+    available_sizes: [] as string[],
+    allows_custom_photo: false
+  });
   const [editProduct, setEditProduct] = useState<any>(null);
   const [editImages, setEditImages] = useState<any[]>([]);
   const [uploadingImages, setUploadingImages] = useState<File[]>([]);
@@ -28,6 +38,8 @@ export const AdminProducts = () => {
     "Sınırlı Stok",
     "İndirim"
   ];
+
+  const availableSizeOptions = ["XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL", "5XL", "6XL"];
 
   useEffect(() => {
     loadProducts();
@@ -123,6 +135,9 @@ export const AdminProducts = () => {
         stock_status: newProduct.stock_status,
         stock_quantity: newProduct.stock_quantity || 0,
         promotion_badges: newProduct.promotion_badges,
+        is_name_customizable: newProduct.is_name_customizable,
+        available_sizes: newProduct.available_sizes,
+        allows_custom_photo: newProduct.allows_custom_photo,
       })
       .select()
       .single();
@@ -141,7 +156,17 @@ export const AdminProducts = () => {
         title: "Başarılı",
         description: "Ürün eklendi",
       });
-      setNewProduct({ title: "", description: "", price: "", stock_status: "in_stock", stock_quantity: 0, promotion_badges: [] });
+      setNewProduct({ 
+        title: "", 
+        description: "", 
+        price: "", 
+        stock_status: "in_stock", 
+        stock_quantity: 0, 
+        promotion_badges: [],
+        is_name_customizable: false,
+        available_sizes: [],
+        allows_custom_photo: false
+      });
       setUploadingImages([]);
       loadProducts();
     }
@@ -166,6 +191,9 @@ export const AdminProducts = () => {
         stock_status: editProduct.stock_status,
         stock_quantity: editProduct.stock_quantity || 0,
         promotion_badges: editProduct.promotion_badges || [],
+        is_name_customizable: editProduct.is_name_customizable || false,
+        available_sizes: editProduct.available_sizes || [],
+        allows_custom_photo: editProduct.allows_custom_photo || false,
       })
       .eq("id", editProduct.id);
 
@@ -317,6 +345,47 @@ export const AdminProducts = () => {
                   </div>
                 </div>
                 <div>
+                  <label className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      checked={newProduct.is_name_customizable}
+                      onChange={(e) => setNewProduct({ ...newProduct, is_name_customizable: e.target.checked })}
+                    />
+                    <span className="text-sm font-medium">İsme Özel</span>
+                  </label>
+                </div>
+                <div>
+                  <Label>Beden Seçenekleri</Label>
+                  <div className="space-y-2">
+                    {availableSizeOptions.map((size) => (
+                      <label key={size} className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          checked={newProduct.available_sizes.includes(size)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setNewProduct({ ...newProduct, available_sizes: [...newProduct.available_sizes, size] });
+                            } else {
+                              setNewProduct({ ...newProduct, available_sizes: newProduct.available_sizes.filter(s => s !== size) });
+                            }
+                          }}
+                        />
+                        <span className="text-sm">{size}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <label className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      checked={newProduct.allows_custom_photo}
+                      onChange={(e) => setNewProduct({ ...newProduct, allows_custom_photo: e.target.checked })}
+                    />
+                    <span className="text-sm font-medium">Özel Fotoğraf Yükleme</span>
+                  </label>
+                </div>
+                <div>
                   <Label>Resimler</Label>
                   <Input
                     type="file"
@@ -461,28 +530,70 @@ export const AdminProducts = () => {
                   <p className="text-xs text-destructive mt-1">⚠️ Düşük stok uyarısı</p>
                 )}
               </div>
-              <div>
-                <Label>Fırsatlar</Label>
-                <div className="space-y-2">
-                  {availablePromotions.map((promo) => (
-                    <label key={promo} className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        checked={editProduct.promotion_badges?.includes(promo) || false}
-                        onChange={(e) => {
-                          const badges = editProduct.promotion_badges || [];
-                          if (e.target.checked) {
-                            setEditProduct({ ...editProduct, promotion_badges: [...badges, promo] });
-                          } else {
-                            setEditProduct({ ...editProduct, promotion_badges: badges.filter((p: string) => p !== promo) });
-                          }
-                        }}
-                      />
-                      <span className="text-sm">{promo}</span>
-                    </label>
-                  ))}
+                <div>
+                  <Label>Fırsatlar</Label>
+                  <div className="space-y-2">
+                    {availablePromotions.map((promo) => (
+                      <label key={promo} className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          checked={editProduct.promotion_badges?.includes(promo) || false}
+                          onChange={(e) => {
+                            const badges = editProduct.promotion_badges || [];
+                            if (e.target.checked) {
+                              setEditProduct({ ...editProduct, promotion_badges: [...badges, promo] });
+                            } else {
+                              setEditProduct({ ...editProduct, promotion_badges: badges.filter((p: string) => p !== promo) });
+                            }
+                          }}
+                        />
+                        <span className="text-sm">{promo}</span>
+                      </label>
+                    ))}
+                  </div>
                 </div>
-              </div>
+                <div>
+                  <label className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      checked={editProduct.is_name_customizable || false}
+                      onChange={(e) => setEditProduct({ ...editProduct, is_name_customizable: e.target.checked })}
+                    />
+                    <span className="text-sm font-medium">İsme Özel</span>
+                  </label>
+                </div>
+                <div>
+                  <Label>Beden Seçenekleri</Label>
+                  <div className="space-y-2">
+                    {availableSizeOptions.map((size) => (
+                      <label key={size} className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          checked={editProduct.available_sizes?.includes(size) || false}
+                          onChange={(e) => {
+                            const sizes = editProduct.available_sizes || [];
+                            if (e.target.checked) {
+                              setEditProduct({ ...editProduct, available_sizes: [...sizes, size] });
+                            } else {
+                              setEditProduct({ ...editProduct, available_sizes: sizes.filter((s: string) => s !== size) });
+                            }
+                          }}
+                        />
+                        <span className="text-sm">{size}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <label className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      checked={editProduct.allows_custom_photo || false}
+                      onChange={(e) => setEditProduct({ ...editProduct, allows_custom_photo: e.target.checked })}
+                    />
+                    <span className="text-sm font-medium">Özel Fotoğraf Yükleme</span>
+                  </label>
+                </div>
               <div>
                 <Label>Mevcut Resimler</Label>
                 <div className="grid grid-cols-3 gap-2 mt-2">
