@@ -130,9 +130,12 @@ const LoginPage = () => {
         return;
       }
 
+      // Generate new backup code immediately after successful recovery
+      await createBackupCode(userId);
+
       toast({
         title: "Hesabınız Güvenli Bir Şekilde Kurtarıldı!",
-        description: "Email adresinize şifre sıfırlama linki gönderildi. Lütfen email'inizi kontrol edin ve yeni şifrenizi belirleyin. Giriş yaptıktan sonra yeni backup kodunuz otomatik oluşturulacak.",
+        description: "Email adresinize şifre sıfırlama linki gönderildi. Lütfen email'inizi kontrol edin ve yeni şifrenizi belirleyin. Yeni yedek kodunuz oluşturuldu.",
         duration: 8000,
       });
       
