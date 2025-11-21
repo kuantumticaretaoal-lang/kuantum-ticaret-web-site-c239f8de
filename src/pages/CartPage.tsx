@@ -160,6 +160,9 @@ const CartPage = () => {
         product_id: item.product_id,
         quantity: item.quantity,
         price: item.products.price,
+        custom_name: item.custom_name || null,
+        selected_size: item.selected_size || null,
+        custom_photo_url: item.custom_photo_url || null,
       }));
 
       const { error: itemsError } = await (supabase as any)
@@ -274,6 +277,21 @@ const CartPage = () => {
                             >
                               {item.products.title}
                             </h3>
+                            {item.custom_name && (
+                              <p className="text-sm text-muted-foreground mb-1">
+                                İsim: <span className="font-medium">{item.custom_name}</span>
+                              </p>
+                            )}
+                            {item.selected_size && (
+                              <p className="text-sm text-muted-foreground mb-1">
+                                Beden: <span className="font-medium">{item.selected_size}</span>
+                              </p>
+                            )}
+                            {item.custom_photo_url && (
+                              <p className="text-sm text-muted-foreground mb-1">
+                                <span className="font-medium">Özel fotoğraf yüklendi ✓</span>
+                              </p>
+                            )}
                             <p className="text-lg font-bold text-primary mb-4">
                               ₺{parseFloat(item.products.price).toFixed(2)}
                             </p>

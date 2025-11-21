@@ -77,6 +77,22 @@ const Footer = () => {
                   {settings?.phone || "+90 (538) 371 39 23"}
                 </a>
               </li>
+              {settings?.address && (
+                <li className="text-white/80">
+                  {settings.location_url ? (
+                    <a 
+                      href={settings.location_url} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="hover:text-white transition-colors"
+                    >
+                      {settings.address}
+                    </a>
+                  ) : (
+                    <span>{settings.address}</span>
+                  )}
+                </li>
+              )}
             </ul>
           </div>
         </div>

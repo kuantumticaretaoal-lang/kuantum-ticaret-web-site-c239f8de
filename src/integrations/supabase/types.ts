@@ -83,27 +83,36 @@ export type Database = {
       cart: {
         Row: {
           created_at: string
+          custom_name: string | null
+          custom_photo_url: string | null
           id: string
           product_id: string
           quantity: number
+          selected_size: string | null
           session_id: string | null
           updated_at: string
           user_id: string | null
         }
         Insert: {
           created_at?: string
+          custom_name?: string | null
+          custom_photo_url?: string | null
           id?: string
           product_id: string
           quantity?: number
+          selected_size?: string | null
           session_id?: string | null
           updated_at?: string
           user_id?: string | null
         }
         Update: {
           created_at?: string
+          custom_name?: string | null
+          custom_photo_url?: string | null
           id?: string
           product_id?: string
           quantity?: number
+          selected_size?: string | null
           session_id?: string | null
           updated_at?: string
           user_id?: string | null
@@ -219,27 +228,36 @@ export type Database = {
       order_items: {
         Row: {
           created_at: string | null
+          custom_name: string | null
+          custom_photo_url: string | null
           id: string
           order_id: string
           price: number
           product_id: string
           quantity: number
+          selected_size: string | null
         }
         Insert: {
           created_at?: string | null
+          custom_name?: string | null
+          custom_photo_url?: string | null
           id?: string
           order_id: string
           price: number
           product_id: string
           quantity: number
+          selected_size?: string | null
         }
         Update: {
           created_at?: string | null
+          custom_name?: string | null
+          custom_photo_url?: string | null
           id?: string
           order_id?: string
           price?: number
           product_id?: string
           quantity?: number
+          selected_size?: string | null
         }
         Relationships: [
           {
@@ -407,9 +425,12 @@ export type Database = {
       }
       products: {
         Row: {
+          allows_custom_photo: boolean | null
+          available_sizes: string[] | null
           created_at: string | null
           description: string | null
           id: string
+          is_name_customizable: boolean | null
           price: number
           promotion_badges: string[] | null
           stock_quantity: number | null
@@ -418,9 +439,12 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          allows_custom_photo?: boolean | null
+          available_sizes?: string[] | null
           created_at?: string | null
           description?: string | null
           id?: string
+          is_name_customizable?: boolean | null
           price: number
           promotion_badges?: string[] | null
           stock_quantity?: number | null
@@ -429,9 +453,12 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          allows_custom_photo?: boolean | null
+          available_sizes?: string[] | null
           created_at?: string | null
           description?: string | null
           id?: string
+          is_name_customizable?: boolean | null
           price?: number
           promotion_badges?: string[] | null
           stock_quantity?: number | null

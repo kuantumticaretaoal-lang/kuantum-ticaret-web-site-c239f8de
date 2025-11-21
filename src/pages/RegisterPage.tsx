@@ -11,7 +11,9 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
+import { TURKISH_PROVINCES, getDistrictsByProvince } from "@/lib/turkish-locations";
 
 const registerSchema = z.object({
   email: z.string().email("Geçerli bir email adresi giriniz"),
@@ -32,6 +34,8 @@ const RegisterPage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedProvince, setSelectedProvince] = useState("");
+  const [districts, setDistricts] = useState<string[]>([]);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -126,10 +130,52 @@ const RegisterPage = () => {
                 )} />
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField control={form.control} name="province" render={({ field }) => (
-                    <FormItem><FormLabel>İl</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                    <FormItem>
+                      <FormLabel>İl</FormLabel>
+                      <Select 
+                        onValueChange={(value) => {
+                          field.onChange(value);
+                          setSelectedProvince(value);
+                          setDistricts(getDistrictsByProvince(value));
+                          form.setValue("district", "");
+                        }} 
+                        value={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="İl seçiniz" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {TURKISH_PROVINCES.map((province) => (
+                            <SelectItem key={province} value={province}>
+                              {province}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
                   )} />
                   <FormField control={form.control} name="district" render={({ field }) => (
-                    <FormItem><FormLabel>İlçe</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                    <FormItem>
+                      <FormLabel>İlçe</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value} disabled={!selectedProvince}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="İlçe seçiniz" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {districts.map((district) => (
+                            <SelectItem key={district} value={district}>
+                              {district}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
                   )} />
                 </div>
                 <FormField control={form.control} name="address" render={({ field }) => (

@@ -25,6 +25,9 @@ const ProductDetail = () => {
   const [comment, setComment] = useState("");
   const [question, setQuestion] = useState("");
   const [quantity, setQuantity] = useState(1);
+  const [customName, setCustomName] = useState("");
+  const [selectedSize, setSelectedSize] = useState("");
+  const [customPhotoFile, setCustomPhotoFile] = useState<File | null>(null);
 
   useEffect(() => {
     loadProduct();
@@ -232,7 +235,64 @@ const ProductDetail = () => {
       return;
     }
 
-    const { error } = await addToCart(id!, quantity);
+    // Check if size selection is required
+    if (product.available_sizes && product.available_sizes.length > 0 && !selectedSize) {
+      toast({
+        variant: "destructive",
+        title: "Beden Seçimi Gerekli",
+        description: "Lütfen bir beden seçiniz",
+      });
+      return;
+    }
+
+    // Check if custom name is required
+    if (product.is_name_customizable && !customName.trim()) {
+      toast({
+        variant: "destructive",
+        title: "İsim Gerekli",
+        description: "Lütfen isim giriniz",
+      });
+      return;
+    }
+
+    // Check if custom photo is required
+    if (product.allows_custom_photo && !customPhotoFile) {
+      toast({
+        variant: "destructive",
+        title: "Fotoğraf Gerekli",
+        description: "Lütfen bir fotoğraf yükleyiniz (jpg, jpeg, png veya webp formatında)",
+      });
+      return;
+    }
+
+    let customPhotoUrl = null;
+
+    // Upload custom photo if provided
+    if (customPhotoFile && user) {
+      const fileExt = customPhotoFile.name.split(".").pop();
+      const fileName = `${user.id}/${id}-${Date.now()}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("custom-photos")
+        .upload(fileName, customPhotoFile);
+
+      if (uploadError) {
+        toast({
+          variant: "destructive",
+          title: "Hata",
+          description: "Fotoğraf yüklenemedi",
+        });
+        return;
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from("custom-photos")
+        .getPublicUrl(fileName);
+
+      customPhotoUrl = publicUrl;
+    }
+
+    const { error } = await addToCart(id!, quantity, customName || undefined, selectedSize || undefined, customPhotoUrl || undefined);
     if (error) {
       toast({
         variant: "destructive",
@@ -244,6 +304,10 @@ const ProductDetail = () => {
         title: "Başarılı",
         description: "Ürün sepete eklendi",
       });
+      // Reset customization fields
+      setCustomName("");
+      setSelectedSize("");
+      setCustomPhotoFile(null);
     }
   };
 
@@ -329,6 +393,60 @@ const ProductDetail = () => {
                 </div>
               ) : (
                 <>
+                  {product.is_name_customizable && (
+                    <div>
+                      <label className="font-medium block mb-2">İsim *</label>
+                      <Input
+                        value={customName}
+                        onChange={(e) => setCustomName(e.target.value)}
+                        placeholder="İsim giriniz"
+                      />
+                    </div>
+                  )}
+                  {product.available_sizes && product.available_sizes.length > 0 && (
+                    <div>
+                      <label className="font-medium block mb-2">Beden *</label>
+                      <div className="flex flex-wrap gap-2">
+                        {product.available_sizes.map((size: string) => (
+                          <Button
+                            key={size}
+                            variant={selectedSize === size ? "default" : "outline"}
+                            onClick={() => setSelectedSize(size)}
+                            className="min-w-[60px]"
+                          >
+                            {size}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {product.allows_custom_photo && (
+                    <div>
+                      <label className="font-medium block mb-2">Fotoğraf Yükle * (jpg, jpeg, png, webp)</label>
+                      <Input
+                        type="file"
+                        accept=".jpg,.jpeg,.png,.webp"
+                        onChange={(e) => {
+                          const files = e.target.files;
+                          if (files && files.length === 1) {
+                            setCustomPhotoFile(files[0]);
+                          } else if (files && files.length > 1) {
+                            toast({
+                              variant: "destructive",
+                              title: "Hata",
+                              description: "Sadece 1 adet fotoğraf yükleyebilirsiniz",
+                            });
+                            e.target.value = "";
+                          }
+                        }}
+                      />
+                      {customPhotoFile && (
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Seçilen: {customPhotoFile.name}
+                        </p>
+                      )}
+                    </div>
+                  )}
                   <div className="flex items-center gap-4">
                     <label className="font-medium">Adet:</label>
                     <Input
