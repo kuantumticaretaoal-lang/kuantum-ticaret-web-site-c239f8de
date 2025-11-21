@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 import { Mail, Phone } from "lucide-react";
+import { logger } from "@/lib/logger";
 
 const Footer = () => {
   const [settings, setSettings] = useState<any>(null);
@@ -26,7 +27,7 @@ const Footer = () => {
       const { data } = await (supabase as any).from("site_settings").select("*").single();
       if (data) setSettings(data);
     } catch (error) {
-      console.error("Error loading settings:", error);
+      logger.error("Settings yüklenemedi", error);
     }
   };
   return (

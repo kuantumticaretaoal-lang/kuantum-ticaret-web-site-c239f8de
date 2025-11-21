@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Edit } from "lucide-react";
+import { logger } from "@/lib/logger";
 
 export const AdminMessages = () => {
   const [messages, setMessages] = useState<any[]>([]);
@@ -37,7 +38,7 @@ export const AdminMessages = () => {
       .order("created_at", { ascending: false });
     
     if (error) {
-      console.error("Error loading messages:", error);
+      logger.error("Mesajlar yüklenemedi", error);
       setMessages([]);
     } else {
       setMessages(data || []);

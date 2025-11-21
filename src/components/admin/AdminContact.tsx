@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { logger } from "@/lib/logger";
 
 export const AdminContact = () => {
   const [settings, setSettings] = useState<any>(null);
@@ -31,7 +32,7 @@ export const AdminContact = () => {
       const { data } = await (supabase as any).from("site_settings").select("*").single();
       if (data) setSettings(data);
     } catch (error) {
-      console.error("Error loading settings:", error);
+      logger.error("Settings yüklenemedi", error);
     } finally {
       setLoading(false);
     }

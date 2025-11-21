@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ShoppingCart } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { logger } from "@/lib/logger";
 
 const Products = () => {
   const [products, setProducts] = useState<any[]>([]);
@@ -60,7 +61,7 @@ const Products = () => {
         .order("created_at", { ascending: false });
       if (data) setProducts(data);
     } catch (error) {
-      console.error("Error loading products:", error);
+      logger.error("Ürünler yüklenemedi", error);
     }
   };
 

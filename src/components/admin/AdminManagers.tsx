@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { logger } from "@/lib/logger";
 
 export const AdminManagers = () => {
   const [admins, setAdmins] = useState<any[]>([]);
@@ -26,7 +27,7 @@ export const AdminManagers = () => {
       .order("created_at", { ascending: false });
 
     if (rolesError) {
-      console.error("Error loading admin roles:", rolesError);
+      logger.error("Admin rolleri yüklenemedi", rolesError);
       toast({
         variant: "destructive",
         title: "Hata",
@@ -48,7 +49,7 @@ export const AdminManagers = () => {
       .in("id", userIds);
 
     if (profilesError) {
-      console.error("Error loading profiles:", profilesError);
+      logger.error("Profiller yüklenemedi", profilesError);
       toast({
         variant: "destructive",
         title: "Hata",
@@ -63,7 +64,6 @@ export const AdminManagers = () => {
       profiles: profiles?.find(p => p.id === role.user_id) || null
     }));
 
-    console.log("Loaded admins:", adminsWithProfiles);
     setAdmins(adminsWithProfiles);
   };
 
