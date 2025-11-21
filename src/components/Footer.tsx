@@ -100,6 +100,7 @@ const Footer = () => {
 
         <div className="border-t border-white/20 pt-6 text-center text-white/70">
           <p>© {new Date().getFullYear()} Kuantum Ticaret. Tüm hakları saklıdır.</p>
+          <p className="mt-2">Yalnızca Garaj Mezunlarına Özel!</p>
         </div>
       </div>
     </footer>

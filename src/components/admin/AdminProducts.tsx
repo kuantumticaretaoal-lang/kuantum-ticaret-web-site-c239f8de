@@ -70,7 +70,7 @@ export const AdminProducts = () => {
     if (data) {
       setProducts(data);
       const total = data.reduce((sum, p) => sum + Number(p.price), 0);
-      const lowStock = data.filter(p => (p.stock_quantity || 0) < 10).length;
+      const lowStock = data.filter(p => (p.stock_quantity || 0) <= 5).length;
       setTotalProducts(data.length);
       setTotalValue(total);
       setLowStockProducts(lowStock);
@@ -289,7 +289,7 @@ export const AdminProducts = () => {
                     value={newProduct.stock_quantity}
                     onChange={(e) => setNewProduct({ ...newProduct, stock_quantity: parseInt(e.target.value) || 0 })}
                   />
-                  {newProduct.stock_quantity < 10 && (
+                  {newProduct.stock_quantity <= 5 && (
                     <p className="text-xs text-destructive mt-1">⚠️ Düşük stok uyarısı</p>
                   )}
                 </div>
@@ -425,9 +425,9 @@ export const AdminProducts = () => {
                    product.stock_status === 'limited_stock' ? 'Sınırlı' : 'Tükendi'}
                 </TableCell>
                 <TableCell>
-                  <span className={(product.stock_quantity || 0) < 10 ? "text-destructive font-semibold" : ""}>
+                  <span className={(product.stock_quantity || 0) <= 5 ? "text-destructive font-semibold" : ""}>
                     {product.stock_quantity || 0}
-                    {(product.stock_quantity || 0) < 10 && " ⚠️"}
+                    {(product.stock_quantity || 0) <= 5 && " ⚠️"}
                   </span>
                 </TableCell>
                 <TableCell>
