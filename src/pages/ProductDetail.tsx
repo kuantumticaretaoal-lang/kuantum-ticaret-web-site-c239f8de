@@ -386,6 +386,19 @@ const ProductDetail = () => {
               <p className="text-muted-foreground mb-6">{product.description}</p>
             )}
             
+            {product.stock_quantity !== null && (
+              <div className="mb-4">
+                <p className="text-sm font-medium text-muted-foreground">
+                  Stok Durumu: <span className="font-bold text-foreground">{product.stock_quantity} Adet</span>
+                </p>
+                {product.stock_quantity <= 5 && product.stock_quantity > 0 && (
+                  <p className="text-sm text-orange-600 dark:text-orange-400 font-semibold mt-1">
+                    ⚠️ Düşük Stok - Son {product.stock_quantity} Adet Kaldı!
+                  </p>
+                )}
+              </div>
+            )}
+            
             <div className="space-y-4">
               {product.stock_status === 'out_of_stock' ? (
                 <div className="p-4 bg-destructive/10 border border-destructive rounded-lg">

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
-import { Mail, Phone } from "lucide-react";
+import { Mail, Phone, MapPin } from "lucide-react";
 import { logger } from "@/lib/logger";
 
 const Footer = () => {
@@ -79,7 +79,8 @@ const Footer = () => {
                 </a>
               </li>
               {settings?.address && (
-                <li className="text-white/80">
+                <li className="flex items-start gap-2 text-white/80">
+                  <MapPin className="h-4 w-4 mt-1 flex-shrink-0" />
                   {settings.location_url ? (
                     <a 
                       href={settings.location_url} 
