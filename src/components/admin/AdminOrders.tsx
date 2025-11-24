@@ -102,7 +102,7 @@ export const AdminOrders = () => {
         description: "Sipariş güncellenemedi",
       });
     } else {
-      // If delivered, automatically log income once (idempotent by order_id)
+      // If delivered, automatically log income and decrease stock
       if (status === "delivered") {
         try {
           const { data: existing } = await (supabase as any)
@@ -114,7 +114,7 @@ export const AdminOrders = () => {
           if (!existing) {
             const { data: items } = await (supabase as any)
               .from("order_items")
-              .select("price, quantity")
+              .select("price, quantity, product_id")
               .eq("order_id", orderId);
 
             const total = (items || []).reduce((sum: number, it: any) => sum + (parseFloat(it.price) * it.quantity), 0);
@@ -127,9 +127,29 @@ export const AdminOrders = () => {
                 order_id: orderId,
               });
             }
+
+            // Decrease stock for each item
+            for (const item of items || []) {
+              const { data: product } = await (supabase as any)
+                .from("products")
+                .select("stock_quantity")
+                .eq("id", item.product_id)
+                .single();
+
+              if (product && product.stock_quantity !== null) {
+                const newStock = Math.max(0, product.stock_quantity - item.quantity);
+                await (supabase as any)
+                  .from("products")
+                  .update({ 
+                    stock_quantity: newStock,
+                    stock_status: newStock === 0 ? 'out_of_stock' : 'in_stock'
+                  })
+                  .eq("id", item.product_id);
+              }
+            }
           }
         } catch (e) {
-          logger.error("Failed to add income", e);
+          logger.error("Failed to add income or update stock", e);
         }
       }
 

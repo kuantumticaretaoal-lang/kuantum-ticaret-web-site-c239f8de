@@ -27,12 +27,22 @@ const backupCodeSchema = z.object({
   code: z.string().min(10, { message: "Geçerli bir yedek kod girin" }),
 });
 
+interface RateLimitData {
+  email: string;
+  attempts: number;
+  lockUntil: number;
+  level: number; // 0: no lock, 1: 30s, 2: 2m, 3: 5m, 4: 30m, 5: 24h
+}
+
+const LOCK_DURATIONS = [0, 30000, 120000, 300000, 1800000, 86400000]; // in milliseconds
+
 const LoginPage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [forgotPasswordEmail, setForgotPasswordEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [lockRemaining, setLockRemaining] = useState(0);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -66,20 +76,95 @@ const LoginPage = () => {
     return () => subscription.unsubscribe();
   }, [navigate]);
 
+  // Check rate limit on component mount and set up timer
+  useEffect(() => {
+    const checkRateLimit = () => {
+      const email = form.watch("email");
+      if (!email) return;
+
+      const rateLimitData = getRateLimitData(email);
+      if (rateLimitData && rateLimitData.lockUntil > Date.now()) {
+        setLockRemaining(rateLimitData.lockUntil - Date.now());
+      } else {
+        setLockRemaining(0);
+      }
+    };
+
+    checkRateLimit();
+    const interval = setInterval(checkRateLimit, 1000);
+    return () => clearInterval(interval);
+  }, [form.watch("email")]);
+
+  const getRateLimitData = (email: string): RateLimitData | null => {
+    const data = localStorage.getItem(`rateLimit_${email}`);
+    if (!data) return null;
+    return JSON.parse(data);
+  };
+
+  const setRateLimitData = (data: RateLimitData) => {
+    localStorage.setItem(`rateLimit_${data.email}`, JSON.stringify(data));
+  };
+
+  const formatTime = (ms: number) => {
+    const seconds = Math.floor(ms / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const hours = Math.floor(minutes / 60);
+    const days = Math.floor(hours / 24);
+
+    if (days > 0) return `${days} gün ${hours % 24} saat ${minutes % 60} dakika ${seconds % 60} saniye`;
+    if (hours > 0) return `${hours} saat ${minutes % 60} dakika ${seconds % 60} saniye`;
+    if (minutes > 0) return `${minutes} dakika ${seconds % 60} saniye`;
+    return `${seconds} saniye`;
+  };
+
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    const rateLimitData = getRateLimitData(values.email);
+
+    // Check if locked
+    if (rateLimitData && rateLimitData.lockUntil > Date.now()) {
+      const remaining = rateLimitData.lockUntil - Date.now();
+      toast({
+        variant: "destructive",
+        title: "Çok Fazla Başarısız Deneme",
+        description: `Güvenlik için lütfen ${formatTime(remaining)} bekleyiniz`,
+      });
+      return;
+    }
+
     setIsLoading(true);
     try {
       const { error } = await signIn(values.email, values.password);
       
       if (error) {
-        toast({
-          variant: "destructive",
-          title: "Giriş Başarısız",
-          description: error.message === "Invalid login credentials" 
-            ? "E-posta veya şifre hatalı" 
-            : error.message,
-        });
+        // Failed login - update rate limit
+        const currentData = rateLimitData || { email: values.email, attempts: 0, lockUntil: 0, level: 0 };
+        currentData.attempts += 1;
+
+        if (currentData.attempts >= 3) {
+          // Lock the account
+          currentData.level = Math.min(currentData.level + 1, LOCK_DURATIONS.length - 1);
+          currentData.lockUntil = Date.now() + LOCK_DURATIONS[currentData.level];
+          currentData.attempts = 0;
+
+          setRateLimitData(currentData);
+          setLockRemaining(currentData.lockUntil - Date.now());
+
+          toast({
+            variant: "destructive",
+            title: "Çok Fazla Başarısız Deneme",
+            description: `Güvenlik için lütfen ${formatTime(LOCK_DURATIONS[currentData.level])} bekleyiniz`,
+          });
+        } else {
+          setRateLimitData(currentData);
+          toast({
+            variant: "destructive",
+            title: "Giriş Başarısız",
+            description: `E-posta veya şifre hatalı (${3 - currentData.attempts} deneme hakkınız kaldı)`,
+          });
+        }
       } else {
+        // Successful login - reset rate limit
+        localStorage.removeItem(`rateLimit_${values.email}`);
         toast({
           title: "Giriş Başarılı",
           description: "Hoş geldiniz!",
@@ -187,6 +272,8 @@ const LoginPage = () => {
     setForgotPasswordEmail("");
   };
 
+  const isLocked = lockRemaining > 0;
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -203,6 +290,16 @@ const LoginPage = () => {
               </TabsList>
               
               <TabsContent value="normal">
+                {isLocked && (
+                  <div className="mb-4 p-4 bg-destructive/10 border border-destructive rounded-md">
+                    <p className="text-sm font-semibold text-destructive">
+                      ⏱️ Güvenlik nedeniyle geçici olarak kilitlendi
+                    </p>
+                    <p className="text-sm text-destructive mt-1">
+                      Kalan süre: {formatTime(lockRemaining)}
+                    </p>
+                  </div>
+                )}
                 <Form {...form}>
                   <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                     <FormField
@@ -212,7 +309,12 @@ const LoginPage = () => {
                         <FormItem>
                           <FormLabel>E-posta</FormLabel>
                           <FormControl>
-                            <Input type="email" placeholder="E-posta adresiniz" {...field} />
+                            <Input 
+                              type="email" 
+                              placeholder="E-posta adresiniz" 
+                              {...field} 
+                              disabled={isLocked}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -225,13 +327,18 @@ const LoginPage = () => {
                         <FormItem>
                           <FormLabel>Şifre</FormLabel>
                           <FormControl>
-                            <Input type="password" placeholder="Şifreniz" {...field} />
+                            <Input 
+                              type="password" 
+                              placeholder="Şifreniz" 
+                              {...field} 
+                              disabled={isLocked}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
-                    <Button type="submit" className="w-full" disabled={isLoading}>
+                    <Button type="submit" className="w-full" disabled={isLoading || isLocked}>
                       {isLoading ? "Giriş yapılıyor..." : "Giriş Yap"}
                     </Button>
                   </form>

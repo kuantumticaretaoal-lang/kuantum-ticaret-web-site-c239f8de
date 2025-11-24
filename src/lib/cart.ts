@@ -29,6 +29,21 @@ export const addToCart = async (
   const { data: { user } } = await supabase.auth.getUser();
   const sessionId = user ? null : getSessionId();
 
+  // Check product stock
+  const { data: product, error: productError } = await (supabase as any)
+    .from("products")
+    .select("stock_quantity, stock_status")
+    .eq("id", productId)
+    .single();
+
+  if (productError || !product) {
+    return { error: { message: "Ürün bulunamadı" } as any };
+  }
+
+  if (product.stock_status === 'out_of_stock') {
+    return { error: { message: "Ürün stokta yok" } as any };
+  }
+
   // Check if product already in cart
   const { data: existing } = await (supabase as any)
     .from("cart")
@@ -38,13 +53,24 @@ export const addToCart = async (
     .maybeSingle();
 
   if (existing) {
+    // Check if new total would exceed stock
+    const newQuantity = existing.quantity + quantity;
+    if (product.stock_quantity !== null && newQuantity > product.stock_quantity) {
+      return { error: { message: `Maksimum ${product.stock_quantity} adet ekleyebilirsiniz` } as any };
+    }
+
     // Update quantity
     const { error } = await (supabase as any)
       .from("cart")
-      .update({ quantity: existing.quantity + quantity })
+      .update({ quantity: newQuantity })
       .eq("id", existing.id);
     return { error };
   } else {
+    // Check stock for new item
+    if (product.stock_quantity !== null && quantity > product.stock_quantity) {
+      return { error: { message: `Maksimum ${product.stock_quantity} adet ekleyebilirsiniz` } as any };
+    }
+
     // Insert new
     const { error } = await (supabase as any)
       .from("cart")
