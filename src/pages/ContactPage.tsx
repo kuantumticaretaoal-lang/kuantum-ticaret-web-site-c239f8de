@@ -168,7 +168,7 @@ const ContactPage = () => {
               <CardTitle className="text-2xl">
                 Mesaj Gönder{" "}
                 <span className="text-sm font-normal text-muted-foreground block mt-1">
-                  (İstek, Öneri, Şikayet ve Söylemek İstediğiniz Herhangi Bir Şeyi Buradan Yazabilirsiniz...)
+                  (İstek, Öneri, Şikayet ve Mesajınızı Buradan Yazabilirsiniz...)
                 </span>
               </CardTitle>
             </CardHeader>

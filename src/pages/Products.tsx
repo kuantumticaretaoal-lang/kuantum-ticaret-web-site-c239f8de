@@ -198,10 +198,15 @@ const Products = () => {
                     />
                     <Button
                       size="default"
-                      className="absolute top-2 right-2 h-10 w-10 p-0 rounded-full shadow-lg"
+                      className="absolute top-2 right-2 group overflow-hidden rounded-full shadow-lg transition-all duration-300 hover:w-auto hover:px-4 w-10 h-10 p-0"
                       onClick={(e) => handleAddToCart(product.id, e)}
                     >
-                      <ShoppingCart className="h-5 w-5" />
+                      <div className="flex items-center gap-2 whitespace-nowrap">
+                        <ShoppingCart className="h-5 w-5 transition-transform duration-300 group-hover:-translate-x-1" />
+                        <span className="max-w-0 overflow-hidden opacity-0 transition-all duration-300 group-hover:max-w-xs group-hover:opacity-100">
+                          Sepete Ekle
+                        </span>
+                      </div>
                     </Button>
                     {product.promotion_badges && product.promotion_badges.length > 0 && (
                       <div className="absolute top-2 left-2 flex flex-col gap-1">
@@ -226,6 +231,13 @@ const Products = () => {
                       </Badge>
                     )}
                   </div>
+                  {product.stock_quantity !== null && product.stock_quantity <= 5 && product.stock_status !== 'out_of_stock' && (
+                    <div className="mt-2">
+                      <Badge variant="warning" className="text-xs">
+                        ⚠️ Son {product.stock_quantity} Adet
+                      </Badge>
+                    </div>
+                  )}
                 </CardHeader>
                 <CardContent>
                   {product.description && (
