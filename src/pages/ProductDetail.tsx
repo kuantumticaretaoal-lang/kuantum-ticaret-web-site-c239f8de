@@ -225,7 +225,8 @@ const ProductDetail = () => {
   };
 
   const handleAddToCart = async () => {
-    // Check stock status before adding
+    if (!product) return;
+
     if (product.stock_status === 'out_of_stock') {
       toast({
         variant: "destructive",

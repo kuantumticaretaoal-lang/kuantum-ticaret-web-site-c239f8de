@@ -68,9 +68,10 @@ const Products = () => {
   const handleAddToCart = async (productId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     
-    // Check stock status
     const product = products.find(p => p.id === productId);
-    if (product?.stock_status === "out_of_stock") {
+    if (!product) return;
+
+    if (product.stock_status === "out_of_stock") {
       toast({
         variant: "destructive",
         title: "Stokta Yok",
@@ -84,7 +85,7 @@ const Products = () => {
       toast({
         variant: "destructive",
         title: "Hata",
-        description: "Sepete eklenemedi",
+        description: error.message || "Sepete eklenemedi",
       });
     } else {
       toast({
