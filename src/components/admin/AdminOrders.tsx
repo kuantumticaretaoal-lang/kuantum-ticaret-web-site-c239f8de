@@ -84,6 +84,13 @@ export const AdminOrders = () => {
   };
 
   const updateOrderStatus = async (orderId: string, status: string, prepTime?: number, prepUnit?: string) => {
+    // Get current order status before updating
+    const { data: currentOrder } = await (supabase as any)
+      .from("orders")
+      .select("status")
+      .eq("id", orderId)
+      .single();
+
     const updateData: any = { status };
     if (prepTime && prepUnit) {
       updateData.preparation_time = prepTime;
@@ -102,8 +109,47 @@ export const AdminOrders = () => {
         description: "Sipariş güncellenemedi",
       });
     } else {
+      // If changing from delivered to rejected, restore stock
+      if (currentOrder?.status === "delivered" && status === "rejected") {
+        try {
+          const { data: items } = await (supabase as any)
+            .from("order_items")
+            .select("quantity, product_id")
+            .eq("order_id", orderId);
+
+          // Restore stock for each item
+          for (const item of items || []) {
+            const { data: product } = await (supabase as any)
+              .from("products")
+              .select("stock_quantity")
+              .eq("id", item.product_id)
+              .single();
+
+            if (product && product.stock_quantity !== null) {
+              const newStock = product.stock_quantity + item.quantity;
+              await (supabase as any)
+                .from("products")
+                .update({ 
+                  stock_quantity: newStock,
+                  stock_status: newStock > 0 ? 'in_stock' : 'out_of_stock'
+                })
+                .eq("id", item.product_id);
+            }
+          }
+
+          // Remove the income entry
+          await (supabase as any)
+            .from("expenses")
+            .delete()
+            .eq("order_id", orderId);
+
+        } catch (e) {
+          logger.error("Failed to restore stock", e);
+        }
+      }
+
       // If delivered, automatically log income and decrease stock
-      if (status === "delivered") {
+      if (status === "delivered" && currentOrder?.status !== "delivered") {
         try {
           const { data: existing } = await (supabase as any)
             .from("expenses")
