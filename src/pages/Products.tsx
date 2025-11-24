@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ShoppingCart } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { logger } from "@/lib/logger";
 
@@ -16,6 +17,7 @@ const Products = () => {
   const [products, setProducts] = useState<any[]>([]);
   const [sortBy, setSortBy] = useState<string>("newest");
   const [filterPromotion, setFilterPromotion] = useState<string>("all");
+  const [showOnlyInStock, setShowOnlyInStock] = useState<boolean>(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
@@ -101,8 +103,10 @@ const Products = () => {
     const desc = (p.description || "").toLowerCase();
     const matchesQuery = !query || title.includes(query) || desc.includes(query);
     
-    if (filterPromotion === "all") return matchesQuery;
-    return matchesQuery && p.promotion_badges?.includes(filterPromotion);
+    const matchesStock = !showOnlyInStock || p.stock_status === "in_stock";
+    
+    if (filterPromotion === "all") return matchesQuery && matchesStock;
+    return matchesQuery && matchesStock && p.promotion_badges?.includes(filterPromotion);
   });
 
   const sortedProducts = [...filtered].sort((a, b) => {
@@ -135,7 +139,7 @@ const Products = () => {
         <h1 className="text-4xl md:text-5xl font-bold text-center mb-8">Ürünlerimiz</h1>
         
         {products.length > 0 && (
-          <div className="flex gap-4 mb-8">
+          <div className="flex flex-wrap gap-4 mb-8 items-center">
             <div className="max-w-xs">
               <Select value={sortBy} onValueChange={setSortBy}>
                 <SelectTrigger>
@@ -165,6 +169,15 @@ const Products = () => {
                 </SelectContent>
               </Select>
             </div>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={showOnlyInStock}
+                onChange={(e) => setShowOnlyInStock(e.target.checked)}
+                className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
+              />
+              <span className="text-sm font-medium">Yalnızca Stokta Bulunanlar</span>
+            </label>
           </div>
         )}
 
