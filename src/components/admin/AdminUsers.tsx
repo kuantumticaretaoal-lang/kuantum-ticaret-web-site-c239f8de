@@ -19,15 +19,23 @@ export const AdminUsers = () => {
     checkMainAdmin();
     loadUsers();
 
-    const channel = supabase
+    const profilesChannel = supabase
       .channel("users-changes")
       .on("postgres_changes", { event: "*", schema: "public", table: "profiles" }, () => {
         loadUsers();
       })
       .subscribe();
 
+    const rolesChannel = supabase
+      .channel("user-roles-changes")
+      .on("postgres_changes", { event: "*", schema: "public", table: "user_roles" }, () => {
+        loadUsers();
+      })
+      .subscribe();
+
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(profilesChannel);
+      supabase.removeChannel(rolesChannel);
     };
   }, []);
 
@@ -46,26 +54,33 @@ export const AdminUsers = () => {
   };
 
   const loadUsers = async () => {
-    const { data, error } = await (supabase as any)
-      .from("profiles")
-      .select("*")
-      .order("created_at", { ascending: true });
-    
-    if (error) {
-      logger.error("Kullanıcılar yüklenemedi", error);
-      setUsers([]);
-      setTotalUsers(0);
-      setLastRegistration(null);
-    } else {
-      const allUsers = data || [];
+    try {
+      // Tüm profilleri çek
+      const { data: allProfiles, error: profileError } = await (supabase as any)
+        .from("profiles")
+        .select("*")
+        .order("created_at", { ascending: false });
+      
+      if (profileError) {
+        logger.error("Kullanıcılar yüklenemedi", profileError);
+        setUsers([]);
+        setTotalUsers(0);
+        setLastRegistration(null);
+        return;
+      }
       
       // Admin ve yöneticileri filtrele
-      const { data: adminRoles } = await supabase
+      const { data: adminRoles, error: rolesError } = await supabase
         .from("user_roles")
         .select("user_id")
         .eq("role", "admin");
       
+      if (rolesError) {
+        logger.error("Admin rolleri yüklenemedi", rolesError);
+      }
+      
       const adminIds = new Set(adminRoles?.map(r => r.user_id) || []);
+      const allUsers = allProfiles || [];
       const regularUsers = allUsers.filter(u => !adminIds.has(u.id));
       
       setUsers(allUsers);
@@ -73,13 +88,18 @@ export const AdminUsers = () => {
       
       // En son kayıt olan normal kullanıcı
       if (regularUsers.length > 0) {
-        const lastUser = regularUsers.sort((a, b) => 
+        const sortedRegularUsers = [...regularUsers].sort((a, b) => 
           new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-        )[0];
-        setLastRegistration(lastUser.created_at);
+        );
+        setLastRegistration(sortedRegularUsers[0].created_at);
       } else {
         setLastRegistration(null);
       }
+    } catch (error) {
+      logger.error("Kullanıcı yükleme hatası", error);
+      setUsers([]);
+      setTotalUsers(0);
+      setLastRegistration(null);
     }
   };
 
