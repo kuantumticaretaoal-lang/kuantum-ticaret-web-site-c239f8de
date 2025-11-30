@@ -184,10 +184,27 @@ const LoginPage = () => {
   const onBackupCodeSubmit = async (values: z.infer<typeof backupCodeSchema>) => {
     setIsLoading(true);
     try {
-      // Verify backup code first
-      const { userId, error: verifyError } = await verifyBackupCode(values.code);
+      // Get user ID from email first
+      const { data: userData, error: userError } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("email", values.email.toLowerCase())
+        .maybeSingle();
       
-      if (verifyError || !userId) {
+      if (userError || !userData) {
+        toast({
+          variant: "destructive",
+          title: "Hata",
+          description: "Bu email adresi ile kayıtlı bir kullanıcı bulunamadı",
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      // Verify backup code with user ID
+      const { valid, error: verifyError } = await verifyBackupCode(userData.id, values.code);
+      
+      if (verifyError || !valid) {
         toast({
           variant: "destructive",
           title: "Kod Geçersiz",
@@ -216,7 +233,7 @@ const LoginPage = () => {
       }
 
       // Generate new backup code immediately after successful recovery
-      await createBackupCode(userId);
+      await createBackupCode(userData.id);
 
       toast({
         title: "Hesabınız Güvenli Bir Şekilde Kurtarıldı!",

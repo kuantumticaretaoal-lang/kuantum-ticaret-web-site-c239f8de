@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { formatLocationData } from "@/lib/formatters";
-import { createBackupCode, getActiveBackupCode } from "@/lib/backup-codes";
+import { createBackupCode } from "@/lib/backup-codes";
 import { Copy, RefreshCw } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import OrderTracking from "@/components/OrderTracking";
@@ -54,14 +54,26 @@ const AccountPage = () => {
       setProfile(formatted);
     }
 
-    // Load backup code
-    const code = await getActiveBackupCode(session.user.id);
-    if (!code) {
+    // Check if user has a backup code, if not generate one
+    const { data: codeData } = await supabase
+      .from("backup_codes")
+      .select("id")
+      .eq("user_id", session.user.id)
+      .eq("used", false)
+      .maybeSingle();
+    
+    if (!codeData) {
       // Generate first code if doesn't exist
       const { code: newCode } = await createBackupCode(session.user.id);
       setBackupCode(newCode);
+      toast({
+        title: "Yedek Kod Oluşturuldu",
+        description: "Lütfen bu kodu güvenli bir yerde saklayın. Bu kod sadece şimdi görüntülenebilir!",
+        duration: 10000,
+      });
     } else {
-      setBackupCode(code);
+      // Code exists but cannot be displayed (it's hashed)
+      setBackupCode("********-***-***");
     }
 
     setLoading(false);
@@ -112,18 +124,25 @@ const AccountPage = () => {
     } else {
       setBackupCode(code);
       toast({
-        title: "Başarılı",
-        description: "Yeni yedek kod oluşturuldu",
+        title: "Yeni Yedek Kod Oluşturuldu",
+        description: "UYARI: Bu kod sadece şimdi görüntülenebilir! Lütfen güvenli bir yerde saklayın.",
+        duration: 10000,
       });
     }
   };
 
   const copyToClipboard = () => {
-    if (backupCode) {
+    if (backupCode && !backupCode.includes("*")) {
       navigator.clipboard.writeText(backupCode);
       toast({
         title: "Kopyalandı",
         description: "Yedek kod panoya kopyalandı",
+      });
+    } else {
+      toast({
+        variant: "destructive",
+        title: "Kopyalanamıyor",
+        description: "Kodunuz şifrelenmiş durumda. Yeni kod oluşturmak için yenile butonuna tıklayın.",
       });
     }
   };
