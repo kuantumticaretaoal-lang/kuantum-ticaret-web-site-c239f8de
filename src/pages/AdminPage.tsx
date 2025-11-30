@@ -9,6 +9,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { logger } from "@/lib/logger";
 import { AdminOrders } from "@/components/admin/AdminOrders";
 import { AdminUsers } from "@/components/admin/AdminUsers";
+import { AdminUserStats } from "@/components/admin/AdminUserStats";
 import { AdminProducts } from "@/components/admin/AdminProducts";
 import { AdminProductQuestions } from "@/components/admin/AdminProductQuestions";
 import { AdminContact } from "@/components/admin/AdminContact";
@@ -108,6 +109,7 @@ const AdminPage = () => {
               <SelectContent>
                 <SelectItem value="orders">Siparişler</SelectItem>
                 <SelectItem value="users">Kullanıcılar</SelectItem>
+                <SelectItem value="user-stats">Kullanıcı İstatistikleri</SelectItem>
                 <SelectItem value="products">Ürünler</SelectItem>
                 <SelectItem value="questions">Sorular</SelectItem>
                 <SelectItem value="contact">İletişim</SelectItem>
@@ -124,6 +126,7 @@ const AdminPage = () => {
 
             {activeTab === "orders" && <AdminOrders />}
             {activeTab === "users" && <AdminUsers />}
+            {activeTab === "user-stats" && <AdminUserStats />}
             {activeTab === "products" && <AdminProducts />}
             {activeTab === "questions" && <AdminProductQuestions />}
             {activeTab === "contact" && <AdminContact />}
@@ -142,6 +145,7 @@ const AdminPage = () => {
               <TabsList className="inline-flex w-auto min-w-full">
                 <TabsTrigger value="orders" className="min-w-[120px]">Siparişler</TabsTrigger>
                 <TabsTrigger value="users" className="min-w-[120px]">Kullanıcılar</TabsTrigger>
+                <TabsTrigger value="user-stats" className="min-w-[140px]">Kullanıcı İstatistikleri</TabsTrigger>
                 <TabsTrigger value="products" className="min-w-[120px]">Ürünler</TabsTrigger>
                 <TabsTrigger value="questions" className="min-w-[120px]">Sorular</TabsTrigger>
                 <TabsTrigger value="contact" className="min-w-[120px]">İletişim</TabsTrigger>
@@ -162,6 +166,10 @@ const AdminPage = () => {
 
             <TabsContent value="users">
               <AdminUsers />
+            </TabsContent>
+
+            <TabsContent value="user-stats">
+              <AdminUserStats />
             </TabsContent>
 
             <TabsContent value="products">

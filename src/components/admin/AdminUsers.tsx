@@ -55,11 +55,11 @@ export const AdminUsers = () => {
 
   const loadUsers = async () => {
     try {
-      // Tüm profilleri çek
+      // Tüm profilleri çek - EN YENİ KAYITLAR EN ÜSTTE
       const { data: allProfiles, error: profileError } = await (supabase as any)
         .from("profiles")
         .select("*")
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false }); // EN YENİ KAYITLAR EN ÜSTTE
       
       if (profileError) {
         logger.error("Kullanıcılar yüklenemedi", profileError);
