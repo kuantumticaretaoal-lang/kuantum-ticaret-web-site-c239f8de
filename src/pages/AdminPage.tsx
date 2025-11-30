@@ -4,6 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { logger } from "@/lib/logger";
 import { AdminOrders } from "@/components/admin/AdminOrders";
 import { AdminUsers } from "@/components/admin/AdminUsers";
@@ -21,8 +23,10 @@ import { AdminAbout } from "@/components/admin/AdminAbout";
 
 const AdminPage = () => {
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState("orders");
 
   useEffect(() => {
     checkAdminAccess();
@@ -95,77 +99,116 @@ const AdminPage = () => {
       <div className="container mx-auto px-4 py-8">
         <h1 className="text-4xl font-bold mb-8">Admin Paneli</h1>
         
-        <Tabs defaultValue="orders" className="w-full">
-          <div className="overflow-x-auto pb-2">
-            <TabsList className="inline-flex w-auto min-w-full">
-              <TabsTrigger value="orders" className="min-w-[120px]">Siparişler</TabsTrigger>
-              <TabsTrigger value="users" className="min-w-[120px]">Kullanıcılar</TabsTrigger>
-              <TabsTrigger value="products" className="min-w-[120px]">Ürünler</TabsTrigger>
-              <TabsTrigger value="questions" className="min-w-[120px]">Sorular</TabsTrigger>
-              <TabsTrigger value="contact" className="min-w-[120px]">İletişim</TabsTrigger>
-              <TabsTrigger value="social" className="min-w-[120px]">Sosyal Medya</TabsTrigger>
-              <TabsTrigger value="sponsors" className="min-w-[120px]">Sponsorlar</TabsTrigger>
-              <TabsTrigger value="analytics" className="min-w-[120px]">Ziyaretçiler</TabsTrigger>
-              <TabsTrigger value="finances" className="min-w-[120px]">Gelir-Gider</TabsTrigger>
-              <TabsTrigger value="messages" className="min-w-[120px]">Mesajlar</TabsTrigger>
-              <TabsTrigger value="notifications" className="min-w-[120px]">Bildirimler</TabsTrigger>
-              <TabsTrigger value="managers" className="min-w-[120px]">Yöneticiler</TabsTrigger>
-              <TabsTrigger value="about" className="min-w-[120px]">Hakkımızda</TabsTrigger>
-            </TabsList>
+        {isMobile ? (
+          <div className="space-y-4">
+            <Select value={activeTab} onValueChange={setActiveTab}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Sekme Seçin" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="orders">Siparişler</SelectItem>
+                <SelectItem value="users">Kullanıcılar</SelectItem>
+                <SelectItem value="products">Ürünler</SelectItem>
+                <SelectItem value="questions">Sorular</SelectItem>
+                <SelectItem value="contact">İletişim</SelectItem>
+                <SelectItem value="social">Sosyal Medya</SelectItem>
+                <SelectItem value="sponsors">Sponsorlar</SelectItem>
+                <SelectItem value="analytics">Ziyaretçiler</SelectItem>
+                <SelectItem value="finances">Gelir-Gider</SelectItem>
+                <SelectItem value="messages">Mesajlar</SelectItem>
+                <SelectItem value="notifications">Bildirimler</SelectItem>
+                <SelectItem value="managers">Yöneticiler</SelectItem>
+                <SelectItem value="about">Hakkımızda</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {activeTab === "orders" && <AdminOrders />}
+            {activeTab === "users" && <AdminUsers />}
+            {activeTab === "products" && <AdminProducts />}
+            {activeTab === "questions" && <AdminProductQuestions />}
+            {activeTab === "contact" && <AdminContact />}
+            {activeTab === "social" && <AdminSocialMedia />}
+            {activeTab === "sponsors" && <AdminSponsors />}
+            {activeTab === "analytics" && <AdminAnalytics />}
+            {activeTab === "finances" && <AdminFinances />}
+            {activeTab === "messages" && <AdminMessages />}
+            {activeTab === "notifications" && <AdminNotifications />}
+            {activeTab === "managers" && <AdminManagers />}
+            {activeTab === "about" && <AdminAbout />}
           </div>
+        ) : (
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <div className="overflow-x-auto pb-2">
+              <TabsList className="inline-flex w-auto min-w-full">
+                <TabsTrigger value="orders" className="min-w-[120px]">Siparişler</TabsTrigger>
+                <TabsTrigger value="users" className="min-w-[120px]">Kullanıcılar</TabsTrigger>
+                <TabsTrigger value="products" className="min-w-[120px]">Ürünler</TabsTrigger>
+                <TabsTrigger value="questions" className="min-w-[120px]">Sorular</TabsTrigger>
+                <TabsTrigger value="contact" className="min-w-[120px]">İletişim</TabsTrigger>
+                <TabsTrigger value="social" className="min-w-[120px]">Sosyal Medya</TabsTrigger>
+                <TabsTrigger value="sponsors" className="min-w-[120px]">Sponsorlar</TabsTrigger>
+                <TabsTrigger value="analytics" className="min-w-[120px]">Ziyaretçiler</TabsTrigger>
+                <TabsTrigger value="finances" className="min-w-[120px]">Gelir-Gider</TabsTrigger>
+                <TabsTrigger value="messages" className="min-w-[120px]">Mesajlar</TabsTrigger>
+                <TabsTrigger value="notifications" className="min-w-[120px]">Bildirimler</TabsTrigger>
+                <TabsTrigger value="managers" className="min-w-[120px]">Yöneticiler</TabsTrigger>
+                <TabsTrigger value="about" className="min-w-[120px]">Hakkımızda</TabsTrigger>
+              </TabsList>
+            </div>
 
-          <TabsContent value="orders">
-            <AdminOrders />
-          </TabsContent>
+            <TabsContent value="orders">
+              <AdminOrders />
+            </TabsContent>
 
-          <TabsContent value="users">
-            <AdminUsers />
-          </TabsContent>
+            <TabsContent value="users">
+              <AdminUsers />
+            </TabsContent>
 
-          <TabsContent value="products">
-            <AdminProducts />
-          </TabsContent>
+            <TabsContent value="products">
+              <AdminProducts />
+            </TabsContent>
 
-          <TabsContent value="questions">
-            <AdminProductQuestions />
-          </TabsContent>
+            <TabsContent value="questions">
+              <AdminProductQuestions />
+            </TabsContent>
 
-          <TabsContent value="contact">
-            <AdminContact />
-          </TabsContent>
+            <TabsContent value="contact">
+              <AdminContact />
+            </TabsContent>
 
-          <TabsContent value="social">
-            <AdminSocialMedia />
-          </TabsContent>
+            <TabsContent value="social">
+              <AdminSocialMedia />
+            </TabsContent>
 
-          <TabsContent value="sponsors">
-            <AdminSponsors />
-          </TabsContent>
+            <TabsContent value="sponsors">
+              <AdminSponsors />
+            </TabsContent>
 
-          <TabsContent value="analytics">
-            <AdminAnalytics />
-          </TabsContent>
+            <TabsContent value="analytics">
+              <AdminAnalytics />
+            </TabsContent>
 
-          <TabsContent value="finances">
-            <AdminFinances />
-          </TabsContent>
+            <TabsContent value="finances">
+              <AdminFinances />
+            </TabsContent>
 
-          <TabsContent value="notifications">
-            <AdminNotifications />
-          </TabsContent>
+            <TabsContent value="notifications">
+              <AdminNotifications />
+            </TabsContent>
 
-          <TabsContent value="messages">
-            <AdminMessages />
-          </TabsContent>
+            <TabsContent value="messages">
+              <AdminMessages />
+            </TabsContent>
 
-          <TabsContent value="managers">
-            <AdminManagers />
-          </TabsContent>
+            <TabsContent value="managers">
+              <AdminManagers />
+            </TabsContent>
 
-          <TabsContent value="about">
-            <AdminAbout />
-          </TabsContent>
-        </Tabs>
+            <TabsContent value="about">
+              <AdminAbout />
+            </TabsContent>
+          </Tabs>
+        )}
       </div>
       <Footer />
     </div>

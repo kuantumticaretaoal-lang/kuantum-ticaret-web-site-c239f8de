@@ -103,7 +103,8 @@ const Products = () => {
     const desc = (p.description || "").toLowerCase();
     const matchesQuery = !query || title.includes(query) || desc.includes(query);
     
-    const matchesStock = !showOnlyInStock || p.stock_status === "in_stock";
+    // Filtre işaretliyse SADECE stokta olanları göster, değilse HEPSİNI göster
+    const matchesStock = !showOnlyInStock || (p.stock_status === "in_stock" || p.stock_status === "limited_stock");
     
     if (filterPromotion === "all") return matchesQuery && matchesStock;
     return matchesQuery && matchesStock && p.promotion_badges?.includes(filterPromotion);
