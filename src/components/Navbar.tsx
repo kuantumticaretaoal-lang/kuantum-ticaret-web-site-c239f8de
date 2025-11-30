@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Search, User, Settings, Shield, ShoppingCart, Bell } from "lucide-react";
+import { Search, User, Settings, Shield, ShoppingCart, Bell, Menu } from "lucide-react";
 import logo from "@/assets/logo.jpg";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -16,12 +16,20 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 
 const Navbar = () => {
   const [user, setUser] = useState<any>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [cartCount, setCartCount] = useState(0);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -136,6 +144,127 @@ const Navbar = () => {
     <nav className="bg-gradient-to-r from-primary via-primary-glow to-secondary text-white py-4 sticky top-0 z-50 shadow-lg">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between gap-4">
+          {/* Mobile Menu Button */}
+          <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon" className="lg:hidden text-white hover:text-white hover:bg-white/20">
+                <Menu className="h-6 w-6" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="w-[300px] bg-background">
+              <SheetHeader>
+                <SheetTitle>Menü</SheetTitle>
+              </SheetHeader>
+              <div className="flex flex-col gap-4 mt-6">
+                {/* Mobile Search */}
+                <div className="relative">
+                  <Input 
+                    id="mobile-search-input"
+                    placeholder="Ürün ara..." 
+                    className="bg-background text-foreground border pr-10"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        const q = (e.target as HTMLInputElement).value.trim();
+                        if (q) {
+                          navigate(`/products?query=${encodeURIComponent(q)}`);
+                          setMobileMenuOpen(false);
+                        }
+                      }
+                    }}
+                  />
+                  <Search 
+                    className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground cursor-pointer hover:text-foreground transition-colors" 
+                    onClick={() => {
+                      const input = document.getElementById('mobile-search-input') as HTMLInputElement;
+                      const q = input?.value.trim();
+                      if (q) {
+                        navigate(`/products?query=${encodeURIComponent(q)}`);
+                        setMobileMenuOpen(false);
+                      }
+                    }}
+                  />
+                </div>
+
+                {/* Mobile Navigation Links */}
+                <Link 
+                  to="/products" 
+                  className="text-foreground hover:text-primary transition-colors py-2 border-b"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Ürünler
+                </Link>
+                <Link 
+                  to="/contact" 
+                  className="text-foreground hover:text-primary transition-colors py-2 border-b"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  İletişim
+                </Link>
+                <Link 
+                  to="/sponsors" 
+                  className="text-foreground hover:text-primary transition-colors py-2 border-b"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Sponsorlarımız
+                </Link>
+                <Link 
+                  to="/follow" 
+                  className="text-foreground hover:text-primary transition-colors py-2 border-b"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Bizi Takip Edin!
+                </Link>
+
+                {/* Mobile User Actions */}
+                {user ? (
+                  <>
+                    <Link 
+                      to="/account" 
+                      className="text-foreground hover:text-primary transition-colors py-2 border-b flex items-center gap-2"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <Settings className="h-4 w-4" />
+                      Hesap Ayarları
+                    </Link>
+                    {isAdmin && (
+                      <Link 
+                        to="/admin" 
+                        className="text-foreground hover:text-primary transition-colors py-2 border-b flex items-center gap-2"
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        <Shield className="h-4 w-4" />
+                        Admin Paneli
+                      </Link>
+                    )}
+                    <Button
+                      variant="outline"
+                      className="w-full mt-2"
+                      onClick={() => {
+                        handleSignOut();
+                        setMobileMenuOpen(false);
+                      }}
+                    >
+                      Çıkış Yap
+                    </Button>
+                  </>
+                ) : (
+                  <div className="flex flex-col gap-2 mt-2">
+                    <Link to="/login" onClick={() => setMobileMenuOpen(false)}>
+                      <Button variant="outline" className="w-full">
+                        Giriş Yap
+                      </Button>
+                    </Link>
+                    <Link to="/register" onClick={() => setMobileMenuOpen(false)}>
+                      <Button className="w-full">
+                        Kayıt Ol
+                      </Button>
+                    </Link>
+                  </div>
+                )}
+              </div>
+            </SheetContent>
+          </Sheet>
+
           <Link to="/" className="flex items-center gap-3">
             <img src={logo} alt="Kuantum Ticaret" className="h-10 w-auto bg-white p-1 rounded" />
             <span className="font-bold text-lg hidden sm:block">KUANTUM TİCARET</span>
@@ -166,13 +295,13 @@ const Navbar = () => {
           </div>
           
           <div className="flex items-center gap-2 lg:gap-4">
-            <Link to="/products" className="text-white hover:text-white/80 transition-colors text-sm lg:text-base hidden sm:block">
+            <Link to="/products" className="text-white hover:text-white/80 transition-colors text-sm lg:text-base hidden lg:block">
               Ürünler
             </Link>
-            <Link to="/contact" className="text-white hover:text-white/80 transition-colors text-sm lg:text-base hidden sm:block">
+            <Link to="/contact" className="text-white hover:text-white/80 transition-colors text-sm lg:text-base hidden lg:block">
               İletişim
             </Link>
-            <Link to="/sponsors" className="text-white hover:text-white/80 transition-colors text-sm lg:text-base hidden md:block">
+            <Link to="/sponsors" className="text-white hover:text-white/80 transition-colors text-sm lg:text-base hidden lg:block">
               Sponsorlarımız
             </Link>
             <Link to="/follow" className="text-white hover:text-white/80 transition-colors text-sm lg:text-base hidden lg:block">
@@ -207,7 +336,7 @@ const Navbar = () => {
             {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="text-white hover:text-white hover:bg-white/20 text-sm lg:text-base">
+                  <Button variant="ghost" className="text-white hover:text-white hover:bg-white/20 text-sm lg:text-base hidden lg:flex">
                     <User className="h-4 w-4 mr-2" />
                     Hesabım
                   </Button>
@@ -234,12 +363,12 @@ const Navbar = () => {
               </DropdownMenu>
             ) : (
               <>
-                <Link to="/login">
+                <Link to="/login" className="hidden lg:block">
                   <Button variant="ghost" className="text-white hover:text-white hover:bg-white/20 text-sm lg:text-base">
                     Giriş Yap
                   </Button>
                 </Link>
-                <Link to="/register">
+                <Link to="/register" className="hidden lg:block">
                   <Button className="bg-secondary hover:bg-secondary/90 text-white text-sm lg:text-base">
                     Kayıt Ol
                   </Button>
