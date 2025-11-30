@@ -650,12 +650,21 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      generate_hashed_backup_code: {
+        Args: { user_id_param: string }
+        Returns: string
+      }
       generate_order_code: { Args: never; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      hash_backup_code: { Args: { plain_code: string }; Returns: string }
+      verify_backup_code: {
+        Args: { plain_code: string; user_id_param: string }
         Returns: boolean
       }
     }

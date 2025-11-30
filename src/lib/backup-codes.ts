@@ -1,91 +1,55 @@
 import { supabase } from "@/integrations/supabase/client";
 
-// Generate a random backup code in format: AB12-CD3-456E
-export const generateBackupCode = (): string => {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // Excluding ambiguous characters
-  const segments = [4, 3, 4]; // Length of each segment
-  
-  const code = segments.map(length => {
-    let segment = "";
-    for (let i = 0; i < length; i++) {
-      segment += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return segment;
-  }).join("-");
-  
-  return code;
-};
-
-// Create or regenerate backup code for user
+// Create or regenerate backup code for user using secure hashed storage
 export const createBackupCode = async (userId: string): Promise<{ code: string | null; error: any }> => {
-  // Generate unique code with increased retry attempts (DB constraint guarantees uniqueness)
-  let code = generateBackupCode();
-  let attempts = 0;
-  
-  while (attempts < 100) {
-    const { data: existing } = await supabase
-      .from("backup_codes")
-      .select("id")
-      .eq("code", code)
-      .maybeSingle();
+  try {
+    // Call the secure database function to generate and store hashed backup code
+    const { data, error } = await supabase.rpc('generate_hashed_backup_code', {
+      user_id_param: userId
+    });
     
-    if (!existing) break;
-    code = generateBackupCode();
-    attempts++;
-  }
-  
-  if (attempts >= 100) {
-    return { code: null, error: new Error("Failed to generate unique code after 100 attempts") };
-  }
-  
-  // Mark all previous codes as used
-  await supabase
-    .from("backup_codes")
-    .update({ used: true })
-    .eq("user_id", userId);
-  
-  // Insert new code
-  const { error } = await supabase
-    .from("backup_codes")
-    .insert({ user_id: userId, code });
-  
-  if (error) {
+    if (error) {
+      return { code: null, error };
+    }
+    
+    // Return the plain code (only time it will be visible)
+    return { code: data, error: null };
+  } catch (error) {
     return { code: null, error };
   }
-  
-  return { code, error: null };
 };
 
-// Get active backup code for user
-export const getActiveBackupCode = async (userId: string): Promise<string | null> => {
-  const { data } = await supabase
-    .from("backup_codes")
-    .select("code")
-    .eq("user_id", userId)
-    .eq("used", false)
-    .maybeSingle();
-  
-  return data?.code || null;
-};
-
-// Verify and use backup code
-export const verifyBackupCode = async (code: string): Promise<{ userId: string | null; error: any }> => {
-  const { data, error } = await supabase
-    .from("backup_codes")
-    .select("user_id, used")
-    .eq("code", code.toUpperCase())
-    .eq("used", false)
-    .maybeSingle();
-  
-  if (error || !data) {
-    return { userId: null, error: error || new Error("Invalid code") };
+// Verify backup code using secure database function
+export const verifyBackupCode = async (userId: string, code: string): Promise<{ valid: boolean; error: any }> => {
+  try {
+    // Call the secure database function to verify the hashed code
+    const { data, error } = await supabase.rpc('verify_backup_code', {
+      user_id_param: userId,
+      plain_code: code.toUpperCase().trim()
+    });
+    
+    if (error) {
+      return { valid: false, error };
+    }
+    
+    if (data === true) {
+      // Mark the code as used by updating the backup_codes table
+      // We need to hash the code first to find it
+      const { data: hashData } = await supabase.rpc('hash_backup_code', {
+        plain_code: code.toUpperCase().trim()
+      });
+      
+      if (hashData) {
+        await supabase
+          .from("backup_codes")
+          .update({ used: true, used_at: new Date().toISOString() })
+          .eq("user_id", userId)
+          .eq("code", hashData);
+      }
+    }
+    
+    return { valid: data === true, error: null };
+  } catch (error) {
+    return { valid: false, error };
   }
-  
-  // Mark as used
-  await supabase
-    .from("backup_codes")
-    .update({ used: true, used_at: new Date().toISOString() })
-    .eq("code", code.toUpperCase());
-  
-  return { userId: data.user_id, error: null };
 };
