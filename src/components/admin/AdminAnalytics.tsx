@@ -2,7 +2,10 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
 import { logger } from "@/lib/logger";
+import { exportToExcel, formatDateForExport } from "@/lib/excel-export";
+import { Download } from "lucide-react";
 
 export const AdminAnalytics = () => {
   const [analytics, setAnalytics] = useState<any[]>([]);
@@ -120,6 +123,19 @@ export const AdminAnalytics = () => {
     }
   };
 
+  const exportAnalytics = () => {
+    const exportData = analytics.map(visit => ({
+      "Kullanıcı": visit.profile?.first_name && visit.profile?.last_name
+        ? `${visit.profile.first_name} ${visit.profile.last_name}`
+        : "Misafir",
+      "Sayfa": visit.page_path,
+      "Ziyaret Zamanı": formatDateForExport(visit.visited_at),
+      "Ayrılış Zamanı": formatDateForExport(visit.left_at),
+      "Süre (Dakika)": visit.duration ? Math.round(visit.duration / 60) : '-',
+    }));
+    exportToExcel(exportData, 'ziyaretci-raporu', 'Ziyaretçiler');
+  };
+
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
@@ -216,7 +232,13 @@ export const AdminAnalytics = () => {
 
       <Card>
         <CardHeader>
-          <CardTitle>Ziyaretçi Geçmişi</CardTitle>
+          <CardTitle className="flex justify-between items-center">
+            <span>Ziyaretçi Geçmişi</span>
+            <Button onClick={exportAnalytics} variant="outline" size="sm">
+              <Download className="h-4 w-4 mr-2" />
+              Excel İndir
+            </Button>
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <Table>

@@ -162,25 +162,21 @@ const Navbar = () => {
                     id="mobile-search-input"
                     placeholder="Ürün ara..." 
                     className="bg-background text-foreground border pr-10"
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        const q = (e.target as HTMLInputElement).value.trim();
-                        if (q) {
-                          navigate(`/products?query=${encodeURIComponent(q)}`);
-                          setMobileMenuOpen(false);
-                        }
-                      }
-                    }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    const q = (e.target as HTMLInputElement).value.trim();
+                    navigate(q ? `/products?query=${encodeURIComponent(q)}` : '/products');
+                    setMobileMenuOpen(false);
+                  }
+                }}
                   />
                   <Search 
                     className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground cursor-pointer hover:text-foreground transition-colors" 
                     onClick={() => {
                       const input = document.getElementById('mobile-search-input') as HTMLInputElement;
                       const q = input?.value.trim();
-                      if (q) {
-                        navigate(`/products?query=${encodeURIComponent(q)}`);
-                        setMobileMenuOpen(false);
-                      }
+                      navigate(q ? `/products?query=${encodeURIComponent(q)}` : '/products');
+                      setMobileMenuOpen(false);
                     }}
                   />
                 </div>
@@ -279,7 +275,7 @@ const Navbar = () => {
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
                     const q = (e.target as HTMLInputElement).value.trim();
-                    if (q) navigate(`/products?query=${encodeURIComponent(q)}`);
+                    navigate(q ? `/products?query=${encodeURIComponent(q)}` : '/products');
                   }
                 }}
               />
@@ -288,7 +284,7 @@ const Navbar = () => {
                 onClick={() => {
                   const input = document.getElementById('navbar-search-input') as HTMLInputElement;
                   const q = input?.value.trim();
-                  if (q) navigate(`/products?query=${encodeURIComponent(q)}`);
+                  navigate(q ? `/products?query=${encodeURIComponent(q)}` : '/products');
                 }}
               />
             </div>

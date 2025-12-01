@@ -9,6 +9,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { useToast } from "@/hooks/use-toast";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { exportToExcel, formatDateForExport, formatCurrencyForExport } from "@/lib/excel-export";
+import { Download } from "lucide-react";
 
 export const AdminFinances = () => {
   const [expenses, setExpenses] = useState<any[]>([]);
@@ -142,6 +144,16 @@ export const AdminFinances = () => {
     }
   };
 
+  const exportFinances = () => {
+    const exportData = expenses.map(expense => ({
+      "Tarih": new Date(expense.created_at).toLocaleDateString("tr-TR"),
+      "Açıklama": expense.description,
+      "Tür": expense.type === "income" ? "Gelir" : "Gider",
+      "Tutar": formatCurrencyForExport(expense.amount),
+    }));
+    exportToExcel(exportData, 'gelir-gider-raporu', 'Finansal Rapor');
+  };
+
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-3 gap-4">
@@ -183,11 +195,16 @@ export const AdminFinances = () => {
         <CardHeader>
           <CardTitle className="flex justify-between items-center">
             <span>Gelir-Gider Geçmişi</span>
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button>Manuel İşlem Ekle</Button>
-              </DialogTrigger>
-              <DialogContent>
+            <div className="flex gap-2">
+              <Button onClick={exportFinances} variant="outline" size="sm">
+                <Download className="h-4 w-4 mr-2" />
+                Excel İndir
+              </Button>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button>Manuel İşlem Ekle</Button>
+                </DialogTrigger>
+                <DialogContent>
                 <DialogHeader>
                   <DialogTitle>Yeni İşlem</DialogTitle>
                 </DialogHeader>
@@ -231,6 +248,7 @@ export const AdminFinances = () => {
                 </div>
               </DialogContent>
             </Dialog>
+            </div>
           </CardTitle>
         </CardHeader>
         <CardContent>
