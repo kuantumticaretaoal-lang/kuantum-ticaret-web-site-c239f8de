@@ -7,6 +7,8 @@ import { useToast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { formatPhoneNumber, formatProvince, formatDistrict } from "@/lib/formatters";
 import { logger } from "@/lib/logger";
+import { exportToExcel, formatDateForExport } from "@/lib/excel-export";
+import { Download } from "lucide-react";
 
 export const AdminUsers = () => {
   const [users, setUsers] = useState<any[]>([]);
@@ -134,10 +136,34 @@ export const AdminUsers = () => {
     }
   };
 
+  const exportUsers = () => {
+    const exportData = users.map(user => ({
+      "Ad": user.first_name,
+      "Soyad": user.last_name,
+      "E-posta": user.email,
+      "Telefon": user.phone,
+      "İl": user.province,
+      "İlçe": user.district,
+      "Adres": user.address,
+      "Kayıt Tarihi": formatDateForExport(user.created_at),
+    }));
+    exportToExcel(exportData, 'kullanici-listesi', 'Kullanıcılar');
+    toast({
+      title: "Başarılı",
+      description: "Kullanıcı listesi Excel olarak indirildi",
+    });
+  };
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Kullanıcılar</CardTitle>
+        <CardTitle className="flex justify-between items-center">
+          <span>Kullanıcılar</span>
+          <Button onClick={exportUsers} variant="outline" size="sm">
+            <Download className="h-4 w-4 mr-2" />
+            Excel İndir
+          </Button>
+        </CardTitle>
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-2 gap-4 mb-6">

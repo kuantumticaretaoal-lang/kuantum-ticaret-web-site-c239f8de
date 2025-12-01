@@ -12,6 +12,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { logger } from "@/lib/logger";
 import { formatPhoneNumber, formatProvince, formatDistrict } from "@/lib/formatters";
+import { exportToExcel, formatDateForExport, formatCurrencyForExport } from "@/lib/excel-export";
+import { Download } from "lucide-react";
 
 export const AdminOrders = () => {
   const [orders, setOrders] = useState<any[]>([]);
@@ -268,6 +270,35 @@ export const AdminOrders = () => {
     }
   };
 
+  const exportOrders = (status: string = "all") => {
+    const filteredOrders = filterOrders(status);
+    const exportData = filteredOrders.flatMap(order => 
+      (order.order_items || []).map((item: any) => ({
+        "Sipariş Kodu": order.order_code,
+        "Sipariş No": order.id.slice(0, 8),
+        "Müşteri": order.profiles ? `${order.profiles.first_name} ${order.profiles.last_name}` : '-',
+        "Telefon": order.profiles?.phone || '-',
+        "Ürün": item.products?.title || '-',
+        "Adet": item.quantity,
+        "Fiyat": formatCurrencyForExport(item.price),
+        "Özel İsim": item.custom_name || '-',
+        "Beden": item.selected_size || '-',
+        "Durum": getStatusText(order.status),
+        "Teslimat": order.delivery_type === "home_delivery" ? "Adrese Teslim" : "Yerinden Teslim",
+        "Adres": order.profiles?.address || '-',
+        "İlçe": order.profiles?.district || '-',
+        "İl": order.profiles?.province || '-',
+        "Sipariş Tarihi": formatDateForExport(order.created_at),
+      }))
+    );
+    const fileName = status === "all" ? "tum-siparisler" : `siparisler-${status}`;
+    exportToExcel(exportData, fileName, 'Siparişler');
+    toast({
+      title: "Başarılı",
+      description: "Sipariş raporu Excel olarak indirildi",
+    });
+  };
+
   const loadTrashedOrders = async () => {
     const { data: ordersData } = await (supabase as any)
       .from("orders")
@@ -519,7 +550,13 @@ export const AdminOrders = () => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Siparişler</CardTitle>
+        <CardTitle className="flex justify-between items-center">
+          <span>Siparişler</span>
+          <Button onClick={() => exportOrders("all")} variant="outline" size="sm">
+            <Download className="h-4 w-4 mr-2" />
+            Excel İndir (Tümü)
+          </Button>
+        </CardTitle>
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="all">

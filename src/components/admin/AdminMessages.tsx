@@ -6,8 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Edit } from "lucide-react";
+import { Edit, Download } from "lucide-react";
 import { logger } from "@/lib/logger";
+import { exportToExcel, formatDateForExport } from "@/lib/excel-export";
 
 export const AdminMessages = () => {
   const [messages, setMessages] = useState<any[]>([]);
@@ -95,6 +96,25 @@ export const AdminMessages = () => {
     loadMessages();
   };
 
+  const exportMessages = (type: 'unanswered' | 'answered' = 'unanswered') => {
+    const messagesToExport = type === 'unanswered' ? unansweredMessages : answeredMessages;
+    const exportData = messagesToExport.map(message => ({
+      "Ad": message.name,
+      "E-posta": message.email,
+      "Telefon": message.phone || '-',
+      "Mesaj": message.message,
+      "Gönderilme Tarihi": formatDateForExport(message.created_at),
+      "Cevaplanma Tarihi": message.replied_at ? formatDateForExport(message.replied_at) : '-',
+      "Cevap": message.reply_message || '-',
+    }));
+    const fileName = type === 'unanswered' ? 'cevaplanmamis-mesajlar' : 'cevaplanan-mesajlar';
+    exportToExcel(exportData, fileName, 'Mesajlar');
+    toast({
+      title: "Başarılı",
+      description: "Mesajlar Excel olarak indirildi",
+    });
+  };
+
   const unansweredMessages = messages.filter(m => !m.replied);
   const answeredMessages = messages.filter(m => m.replied);
 
@@ -176,8 +196,14 @@ export const AdminMessages = () => {
             </TabsList>
             
             <TabsContent value="unanswered" className="space-y-4 mt-4">
-              <div className="text-sm text-muted-foreground mb-2">
-                Bu sekmedeki toplam mesaj sayısı: {unansweredMessages.length}
+              <div className="flex justify-between items-center mb-2">
+                <div className="text-sm text-muted-foreground">
+                  Bu sekmedeki toplam mesaj sayısı: {unansweredMessages.length}
+                </div>
+                <Button onClick={() => exportMessages('unanswered')} variant="outline" size="sm">
+                  <Download className="h-4 w-4 mr-2" />
+                  Excel İndir
+                </Button>
               </div>
               {unansweredMessages.length === 0 ? (
                 <p className="text-center text-muted-foreground py-8">Cevaplanmayan mesaj yok</p>
@@ -187,8 +213,14 @@ export const AdminMessages = () => {
             </TabsContent>
 
             <TabsContent value="answered" className="space-y-4 mt-4">
-              <div className="text-sm text-muted-foreground mb-2">
-                Bu sekmedeki toplam mesaj sayısı: {answeredMessages.length}
+              <div className="flex justify-between items-center mb-2">
+                <div className="text-sm text-muted-foreground">
+                  Bu sekmedeki toplam mesaj sayısı: {answeredMessages.length}
+                </div>
+                <Button onClick={() => exportMessages('answered')} variant="outline" size="sm">
+                  <Download className="h-4 w-4 mr-2" />
+                  Excel İndir
+                </Button>
               </div>
               {answeredMessages.length === 0 ? (
                 <p className="text-center text-muted-foreground py-8">Cevaplanan mesaj yok</p>

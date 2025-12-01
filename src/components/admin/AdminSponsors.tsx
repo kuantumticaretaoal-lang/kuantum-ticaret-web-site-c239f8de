@@ -8,6 +8,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { exportToExcel } from "@/lib/excel-export";
+import { Download } from "lucide-react";
 
 export const AdminSponsors = () => {
   const [sponsors, setSponsors] = useState<any[]>([]);
@@ -117,16 +119,36 @@ export const AdminSponsors = () => {
     }
   };
 
+  const exportSponsors = () => {
+    const exportData = sponsors.map(sponsor => ({
+      "Ad": sponsor.name,
+      "Link": sponsor.link || '-',
+      "Açıklama": sponsor.description || '-',
+      "Logo URL": sponsor.logo_url || '-',
+      "Eklenme Tarihi": new Date(sponsor.created_at).toLocaleDateString('tr-TR'),
+    }));
+    exportToExcel(exportData, 'sponsor-listesi', 'Sponsorlar');
+    toast({
+      title: "Başarılı",
+      description: "Sponsor listesi Excel olarak indirildi",
+    });
+  };
+
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex justify-between items-center">
           <span>Sponsorlar</span>
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button>Yeni Sponsor Ekle</Button>
-            </DialogTrigger>
-            <DialogContent>
+          <div className="flex gap-2">
+            <Button onClick={exportSponsors} variant="outline" size="sm">
+              <Download className="h-4 w-4 mr-2" />
+              Excel İndir
+            </Button>
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button>Yeni Sponsor Ekle</Button>
+              </DialogTrigger>
+              <DialogContent>
               <DialogHeader>
                 <DialogTitle>Yeni Sponsor</DialogTitle>
               </DialogHeader>
@@ -167,6 +189,7 @@ export const AdminSponsors = () => {
               </div>
             </DialogContent>
           </Dialog>
+          </div>
         </CardTitle>
       </CardHeader>
       <CardContent>

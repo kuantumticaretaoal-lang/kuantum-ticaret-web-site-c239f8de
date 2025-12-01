@@ -9,7 +9,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Pencil, Upload, X } from "lucide-react";
+import { Pencil, Upload, X, Download } from "lucide-react";
+import { exportToExcel, formatDateForExport, formatCurrencyForExport } from "@/lib/excel-export";
 
 export const AdminProducts = () => {
   const [products, setProducts] = useState<any[]>([]);
@@ -235,10 +236,38 @@ export const AdminProducts = () => {
     }
   };
 
+  const exportProducts = () => {
+    const exportData = products.map(product => ({
+      "Başlık": product.title,
+      "Açıklama": product.description || '-',
+      "Fiyat": formatCurrencyForExport(product.price),
+      "Stok Durumu": product.stock_status === 'in_stock' ? 'Stokta' : 
+                     product.stock_status === 'limited_stock' ? 'Sınırlı' : 'Tükendi',
+      "Stok Miktarı": product.stock_quantity || 0,
+      "Fırsatlar": product.promotion_badges?.length > 0 ? product.promotion_badges.join(", ") : "-",
+      "İsme Özel": product.is_name_customizable ? "Evet" : "Hayır",
+      "Bedenler": product.available_sizes?.length > 0 ? product.available_sizes.join(", ") : "-",
+      "Özel Fotoğraf": product.allows_custom_photo ? "Evet" : "Hayır",
+      "Resim Sayısı": product.product_images?.length || 0,
+      "Eklenme Tarihi": formatDateForExport(product.created_at),
+    }));
+    exportToExcel(exportData, 'urun-listesi', 'Ürünler');
+    toast({
+      title: "Başarılı",
+      description: "Ürün listesi Excel olarak indirildi",
+    });
+  };
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Ürünler</CardTitle>
+        <CardTitle className="flex justify-between items-center">
+          <span>Ürünler</span>
+          <Button onClick={exportProducts} variant="outline" size="sm">
+            <Download className="h-4 w-4 mr-2" />
+            Excel İndir
+          </Button>
+        </CardTitle>
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-3 gap-4 mb-6">

@@ -5,7 +5,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Trash2 } from "lucide-react";
+import { Trash2, Download } from "lucide-react";
+import { exportToExcel, formatDateForExport } from "@/lib/excel-export";
 
 export const AdminSentNotifications = () => {
   const [notifications, setNotifications] = useState<any[]>([]);
@@ -83,10 +84,26 @@ export const AdminSentNotifications = () => {
     });
   };
 
+  const exportNotifications = () => {
+    const exportData = notifications.map(notif => ({
+      "Alıcı": notif.profiles ? `${notif.profiles.first_name} ${notif.profiles.last_name}` : "Kullanıcı",
+      "Mesaj": notif.message,
+      "Gönderilme Tarihi": formatDateForExport(notif.created_at),
+      "Okundu mu?": notif.read ? "Evet" : "Hayır",
+    }));
+    exportToExcel(exportData, 'gonderilmis-bildirimler', 'Bildirimler');
+  };
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Gönderilmiş Bildirimler</CardTitle>
+        <CardTitle className="flex justify-between items-center">
+          <span>Gönderilmiş Bildirimler</span>
+          <Button onClick={exportNotifications} variant="outline" size="sm">
+            <Download className="h-4 w-4 mr-2" />
+            Excel İndir
+          </Button>
+        </CardTitle>
       </CardHeader>
       <CardContent>
         {notifications.length === 0 ? (
