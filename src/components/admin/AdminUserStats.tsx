@@ -37,6 +37,14 @@ export const AdminUserStats = () => {
     };
   }, []);
 
+  // Çevrimiçi kullanıcı sayısı değiştiğinde aktiflik oranını güncelle
+  useEffect(() => {
+    if (totalUsers > 0) {
+      const rate = Math.round((onlineUsers.length / totalUsers) * 100);
+      setActiveRate(rate);
+    }
+  }, [onlineUsers.length, totalUsers]);
+
   const setupOnlineTracking = () => {
     const presenceChannel = supabase.channel("online-users", {
       config: {
@@ -148,15 +156,8 @@ export const AdminUserStats = () => {
 
       setMonthlyStats(monthlyChartData);
 
-      // Aktif kullanıcı oranı hesapla (son 7 günde giriş yapan)
-      const sevenDaysAgo = new Date();
-      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-
-      // Bu örnekte tüm kullanıcıları aktif kabul ediyoruz
-      // Gerçek uygulamada auth.users tablosundan last_sign_in_at kullanılabilir
-      const activeCount = regularUsers.length;
-      const rate = regularUsers.length > 0 ? Math.round((activeCount / regularUsers.length) * 100) : 0;
-      setActiveRate(rate);
+      // Aktiflik oranı: çevrimiçi kullanıcı sayısı / toplam kullanıcı sayısı
+      // Not: Bu değer onlineUsers state güncellendiğinde useEffect ile tekrar hesaplanacak
 
     } catch (error) {
       logger.error("İstatistik yükleme hatası", error);

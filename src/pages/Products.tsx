@@ -12,9 +12,11 @@ import { ShoppingCart } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { logger } from "@/lib/logger";
+import { ProductSkeleton } from "@/components/ProductSkeleton";
 
 const Products = () => {
   const [products, setProducts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState<string>("newest");
   const [filterPromotion, setFilterPromotion] = useState<string>("all");
   const [showOnlyInStock, setShowOnlyInStock] = useState<boolean>(false);
@@ -48,6 +50,7 @@ const Products = () => {
 
   const loadProducts = async () => {
     try {
+      setLoading(true);
       const { data } = await (supabase as any)
         .from("products")
         .select(`
@@ -64,6 +67,8 @@ const Products = () => {
       if (data) setProducts(data);
     } catch (error) {
       logger.error("Ürünler yüklenemedi", error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -182,7 +187,13 @@ const Products = () => {
           </div>
         )}
 
-        {products.length === 0 ? (
+        {loading ? (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <ProductSkeleton key={i} />
+            ))}
+          </div>
+        ) : products.length === 0 ? (
           <Card className="max-w-2xl mx-auto">
             <CardHeader>
               <CardTitle>Ürünler Yakında</CardTitle>
