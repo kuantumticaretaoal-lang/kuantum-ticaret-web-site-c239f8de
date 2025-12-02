@@ -4,14 +4,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { addToCart } from "@/lib/cart";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { Star, ShoppingCart } from "lucide-react";
+import { Star, ShoppingCart, Package, AlertCircle, Upload, User } from "lucide-react";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
+import { ProductDetailSkeleton } from "@/components/ProductSkeleton";
 
 const ProductDetail = () => {
   const { id } = useParams();
@@ -92,7 +95,6 @@ const ProductDetail = () => {
       return;
     }
 
-    // Fetch profiles for each review
     const reviewsWithProfiles = await Promise.all(
       (reviewsData || []).map(async (review) => {
         const { data: profile } = await supabase
@@ -123,7 +125,6 @@ const ProductDetail = () => {
       return;
     }
 
-    // Fetch profiles for each question
     const questionsWithProfiles = await Promise.all(
       (questionsData || []).map(async (question) => {
         const { data: profile } = await supabase
@@ -236,7 +237,6 @@ const ProductDetail = () => {
       return;
     }
 
-    // Check if size selection is required
     if (product.available_sizes && product.available_sizes.length > 0 && !selectedSize) {
       toast({
         variant: "destructive",
@@ -246,7 +246,6 @@ const ProductDetail = () => {
       return;
     }
 
-    // Check if custom name is required
     if (product.is_name_customizable && !customName.trim()) {
       toast({
         variant: "destructive",
@@ -256,7 +255,6 @@ const ProductDetail = () => {
       return;
     }
 
-    // Check if custom photo is required
     if (product.allows_custom_photo && !customPhotoFile) {
       toast({
         variant: "destructive",
@@ -268,7 +266,6 @@ const ProductDetail = () => {
 
     let customPhotoUrl = null;
 
-    // Upload custom photo if provided
     if (customPhotoFile && user) {
       const fileExt = customPhotoFile.name.split(".").pop();
       const fileName = `${user.id}/${id}-${Date.now()}.${fileExt}`;
@@ -305,7 +302,6 @@ const ProductDetail = () => {
         title: "Başarılı",
         description: "Ürün sepete eklendi",
       });
-      // Reset customization fields
       setCustomName("");
       setSelectedSize("");
       setCustomPhotoFile(null);
@@ -316,9 +312,7 @@ const ProductDetail = () => {
     return (
       <div className="min-h-screen bg-background">
         <Navbar />
-        <div className="container mx-auto px-4 py-16 text-center">
-          <p>Yükleniyor...</p>
-        </div>
+        <ProductDetailSkeleton />
         <Footer />
       </div>
     );
@@ -328,88 +322,115 @@ const ProductDetail = () => {
     ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
     : 0;
 
+  const getStockBadge = () => {
+    if (product.stock_status === 'out_of_stock') {
+      return <Badge variant="destructive" className="gap-1"><AlertCircle className="h-3 w-3" />Stokta Yok</Badge>;
+    }
+    if (product.stock_quantity <= 5 && product.stock_quantity > 0) {
+      return <Badge variant="secondary" className="gap-1 bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200"><AlertCircle className="h-3 w-3" />Son {product.stock_quantity} Adet</Badge>;
+    }
+    return <Badge variant="secondary" className="gap-1 bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"><Package className="h-3 w-3" />Stokta Var</Badge>;
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <div className="container mx-auto px-4 py-16">
-        <Button variant="outline" onClick={() => navigate("/products")} className="mb-6">
-          ← Geri
+      <div className="container mx-auto px-4 py-8 lg:py-12">
+        <Button variant="ghost" onClick={() => navigate("/products")} className="mb-6">
+          ← Ürünlere Dön
         </Button>
 
-        <div className="grid md:grid-cols-2 gap-8 mb-12">
-          <div>
+        <div className="grid lg:grid-cols-2 gap-8 lg:gap-12">
+          {/* Resim Galerisi */}
+          <div className="space-y-4">
             {product.product_images && product.product_images.length > 0 ? (
               <Carousel className="w-full">
                 <CarouselContent>
                   {product.product_images.map((image: any) => (
                     <CarouselItem key={image.id}>
-                      <img
-                        src={image.image_url}
-                        alt={product.title}
-                        className="w-full h-96 object-cover rounded-lg"
-                      />
+                      <div className="relative aspect-square rounded-xl overflow-hidden bg-muted">
+                        <img
+                          src={image.image_url}
+                          alt={product.title}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
                     </CarouselItem>
                   ))}
                 </CarouselContent>
-                <CarouselPrevious />
-                <CarouselNext />
+                {product.product_images.length > 1 && (
+                  <>
+                    <CarouselPrevious className="left-4" />
+                    <CarouselNext className="right-4" />
+                  </>
+                )}
               </Carousel>
             ) : (
-              <div className="w-full h-96 bg-muted rounded-lg flex items-center justify-center">
+              <div className="w-full aspect-square bg-muted rounded-xl flex items-center justify-center">
                 <p className="text-muted-foreground">Resim yok</p>
+              </div>
+            )}
+            
+            {/* Promosyon Rozetleri */}
+            {product.promotion_badges && product.promotion_badges.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {product.promotion_badges.map((badge: string, idx: number) => (
+                  <Badge key={idx} variant="outline">{badge}</Badge>
+                ))}
               </div>
             )}
           </div>
 
-          <div>
-            <h1 className="text-4xl font-bold mb-4">{product.title}</h1>
-            <div className="text-3xl font-bold text-primary mb-4">
-              ₺{parseFloat(product.price).toFixed(2)}
+          {/* Ürün Bilgileri */}
+          <div className="space-y-6">
+            <div>
+              <div className="flex items-start justify-between gap-4 mb-2">
+                <h1 className="text-3xl lg:text-4xl font-bold">{product.title}</h1>
+                {getStockBadge()}
+              </div>
+              
+              {averageRating > 0 && (
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="flex">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <Star
+                        key={star}
+                        className={`h-4 w-4 ${
+                          star <= averageRating ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground"
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  <span className="text-sm text-muted-foreground">
+                    {averageRating.toFixed(1)} ({reviews.length} değerlendirme)
+                  </span>
+                </div>
+              )}
+
+              <div className="text-4xl font-bold text-primary mb-4">
+                ₺{parseFloat(product.price).toFixed(2)}
+              </div>
+
+              {product.description && (
+                <p className="text-muted-foreground leading-relaxed">{product.description}</p>
+              )}
             </div>
-            {averageRating > 0 && (
-              <div className="flex items-center gap-2 mb-4">
-                <div className="flex">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <Star
-                      key={star}
-                      className={`h-5 w-5 ${
-                        star <= averageRating ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
-                      }`}
-                    />
-                  ))}
-                </div>
-                <span className="text-sm text-muted-foreground">
-                  ({reviews.length} yorum)
-                </span>
-              </div>
-            )}
-            {product.description && (
-              <p className="text-muted-foreground mb-6">{product.description}</p>
-            )}
-            
-            {product.stock_quantity !== null && (
-              <div className="mb-4">
-                <p className="text-sm font-medium text-muted-foreground">
-                  Stok Durumu: <span className="font-bold text-foreground">{product.stock_quantity} Adet</span>
-                </p>
-                {product.stock_quantity <= 5 && product.stock_quantity > 0 && (
-                  <p className="text-sm text-orange-600 dark:text-orange-400 font-semibold mt-1">
-                    ⚠️ Düşük Stok - Son {product.stock_quantity} Adet Kaldı!
-                  </p>
-                )}
-              </div>
-            )}
-            
-            <div className="space-y-4">
-              {product.stock_status === 'out_of_stock' ? (
-                <div className="p-4 bg-destructive/10 border border-destructive rounded-lg">
-                  <p className="text-destructive font-semibold">Bu ürün şu anda stokta bulunmamaktadır</p>
-                </div>
-              ) : (
-                <>
+
+            <Separator />
+
+            {/* Özelleştirme Seçenekleri */}
+            {product.stock_status !== 'out_of_stock' && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Ürün Seçenekleri</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
                   {product.is_name_customizable && (
-                    <div>
-                      <label className="font-medium block mb-2">İsim *</label>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium flex items-center gap-2">
+                        <User className="h-4 w-4" />
+                        İsim Özelleştirme <span className="text-destructive">*</span>
+                      </label>
                       <Input
                         value={customName}
                         onChange={(e) => setCustomName(e.target.value)}
@@ -417,16 +438,19 @@ const ProductDetail = () => {
                       />
                     </div>
                   )}
+
                   {product.available_sizes && product.available_sizes.length > 0 && (
-                    <div>
-                      <label className="font-medium block mb-2">Beden *</label>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">
+                        Beden Seçimi <span className="text-destructive">*</span>
+                      </label>
                       <div className="flex flex-wrap gap-2">
                         {product.available_sizes.map((size: string) => (
                           <Button
                             key={size}
                             variant={selectedSize === size ? "default" : "outline"}
                             onClick={() => setSelectedSize(size)}
-                            className="min-w-[60px]"
+                            size="sm"
                           >
                             {size}
                           </Button>
@@ -434,9 +458,13 @@ const ProductDetail = () => {
                       </div>
                     </div>
                   )}
+
                   {product.allows_custom_photo && (
-                    <div>
-                      <label className="font-medium block mb-2">Fotoğraf Yükle * (jpg, jpeg, png, webp)</label>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium flex items-center gap-2">
+                        <Upload className="h-4 w-4" />
+                        Fotoğraf Yükle <span className="text-destructive">*</span>
+                      </label>
                       <Input
                         type="file"
                         accept=".jpg,.jpeg,.png,.webp"
@@ -455,14 +483,15 @@ const ProductDetail = () => {
                         }}
                       />
                       {customPhotoFile && (
-                        <p className="text-sm text-muted-foreground mt-1">
+                        <p className="text-xs text-muted-foreground">
                           Seçilen: {customPhotoFile.name}
                         </p>
                       )}
                     </div>
                   )}
-                  <div className="flex items-center gap-4">
-                    <label className="font-medium">Adet:</label>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Adet</label>
                     <Input
                       type="number"
                       min="1"
@@ -471,154 +500,182 @@ const ProductDetail = () => {
                       className="w-24"
                     />
                   </div>
-                  <Button onClick={handleAddToCart} size="lg" className="w-full">
-                    <ShoppingCart className="mr-2 h-5 w-5" />
-                    Sepete Ekle
-                  </Button>
-                </>
-              )}
-            </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Sepete Ekle Butonu */}
+            {product.stock_status === 'out_of_stock' ? (
+              <Card className="border-destructive bg-destructive/5">
+                <CardContent className="pt-6">
+                  <p className="text-center text-destructive font-medium">
+                    Bu ürün şu anda stokta bulunmamaktadır
+                  </p>
+                </CardContent>
+              </Card>
+            ) : (
+              <Button onClick={handleAddToCart} size="lg" className="w-full text-lg h-14">
+                <ShoppingCart className="mr-2 h-5 w-5" />
+                Sepete Ekle
+              </Button>
+            )}
           </div>
         </div>
 
-        <Tabs defaultValue="reviews" className="w-full">
+        {/* Yorumlar ve Sorular */}
+        <Tabs defaultValue="reviews" className="mt-12">
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="reviews">Yorumlar</TabsTrigger>
-            <TabsTrigger value="questions">Soru & Cevap</TabsTrigger>
+            <TabsTrigger value="reviews">Değerlendirmeler ({reviews.length})</TabsTrigger>
+            <TabsTrigger value="questions">Sorular ({questions.length})</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="reviews" className="space-y-6">
+          <TabsContent value="reviews" className="mt-6 space-y-6">
             {user && (
               <Card>
                 <CardHeader>
-                  <CardTitle>Yorum Yap</CardTitle>
+                  <CardTitle>Değerlendirme Yap</CardTitle>
+                  <CardDescription>Ürün hakkındaki düşüncelerinizi paylaşın</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div>
-                    <p className="mb-2 text-sm font-medium">Puan Verin *</p>
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium">Puan <span className="text-destructive">*</span></p>
                     <div className="flex gap-1">
                       {[1, 2, 3, 4, 5].map((star) => (
-                        <Star
+                        <button
                           key={star}
-                          className={`h-8 w-8 cursor-pointer ${
-                            star <= rating ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
-                          }`}
+                          type="button"
                           onClick={() => setRating(star)}
-                        />
+                          className="hover:scale-110 transition-transform"
+                        >
+                          <Star
+                            className={`h-8 w-8 ${
+                              star <= rating ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground"
+                            }`}
+                          />
+                        </button>
                       ))}
                     </div>
                   </div>
-                  <Textarea
-                    value={comment}
-                    onChange={(e) => setComment(e.target.value)}
-                    placeholder="Yorumunuzu yazın (isteğe bağlı)"
-                    rows={4}
-                  />
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium">Yorum</p>
+                    <Textarea
+                      value={comment}
+                      onChange={(e) => setComment(e.target.value)}
+                      placeholder="Ürün hakkındaki görüşlerinizi yazın... (isteğe bağlı)"
+                      rows={4}
+                    />
+                  </div>
                   <Button onClick={submitReview} className="w-full">
-                    Gönder
+                    Değerlendirmeyi Gönder
                   </Button>
                 </CardContent>
               </Card>
             )}
 
-            <div className="space-y-4">
-              {reviews.length === 0 ? (
-                <p className="text-center text-muted-foreground py-8">Henüz yorum yapılmamış</p>
-              ) : (
-                reviews.map((review) => (
+            {reviews.length === 0 ? (
+              <Card>
+                <CardContent className="py-12 text-center text-muted-foreground">
+                  Henüz değerlendirme yok. İlk değerlendirmeyi siz yapın!
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-4">
+                {reviews.map((review) => (
                   <Card key={review.id}>
-                    <CardHeader>
-                      <div className="flex items-center justify-between">
+                    <CardContent className="pt-6">
+                      <div className="flex items-start justify-between mb-3">
                         <div>
-                          <p className="font-semibold">
+                          <p className="font-medium">
                             {review.profiles?.first_name} {review.profiles?.last_name}
                           </p>
-                          <div className="flex gap-1 mt-1">
-                            {[1, 2, 3, 4, 5].map((star) => (
-                              <Star
-                                key={star}
-                                className={`h-4 w-4 ${
-                                  star <= review.rating ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
-                                }`}
-                              />
-                            ))}
-                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            {new Date(review.created_at).toLocaleDateString('tr-TR')}
+                          </p>
                         </div>
-                        <p className="text-sm text-muted-foreground">
-                          {new Date(review.created_at).toLocaleDateString("tr-TR")}
-                        </p>
+                        <div className="flex">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <Star
+                              key={star}
+                              className={`h-4 w-4 ${
+                                star <= review.rating ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground"
+                              }`}
+                            />
+                          ))}
+                        </div>
                       </div>
-                    </CardHeader>
-                    {review.comment && (
-                      <CardContent>
-                        <p>{review.comment}</p>
-                      </CardContent>
-                    )}
+                      {review.comment && <p className="text-muted-foreground">{review.comment}</p>}
+                    </CardContent>
                   </Card>
-                ))
-              )}
-            </div>
+                ))}
+              </div>
+            )}
           </TabsContent>
 
-          <TabsContent value="questions" className="space-y-6">
+          <TabsContent value="questions" className="mt-6 space-y-6">
             {user && (
               <Card>
                 <CardHeader>
                   <CardTitle>Soru Sor</CardTitle>
+                  <CardDescription>Ürün hakkında merak ettiklerinizi sorun</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <Textarea
                     value={question}
                     onChange={(e) => setQuestion(e.target.value)}
-                    placeholder="Sorunuzu yazın"
-                    rows={4}
+                    placeholder="Sorunuzu buraya yazın..."
+                    rows={3}
                   />
                   <Button onClick={submitQuestion} className="w-full">
-                    Gönder
+                    Soruyu Gönder
                   </Button>
                 </CardContent>
               </Card>
             )}
 
-            <div className="space-y-4">
-              {questions.length === 0 ? (
-                <p className="text-center text-muted-foreground py-8">Henüz soru sorulmamış</p>
-              ) : (
-                questions.map((q) => (
+            {questions.length === 0 ? (
+              <Card>
+                <CardContent className="py-12 text-center text-muted-foreground">
+                  Henüz soru yok. İlk soruyu siz sorun!
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-4">
+                {questions.map((q) => (
                   <Card key={q.id}>
-                    <CardHeader>
-                      <div className="flex items-center justify-between">
-                        <p className="font-semibold">
-                          {q.profiles?.first_name && q.profiles?.last_name
-                            ? `${q.profiles.first_name} ${q.profiles.last_name}`
-                            : "Kullanıcı"}
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          {new Date(q.created_at).toLocaleDateString("tr-TR")} {new Date(q.created_at).toLocaleTimeString("tr-TR")}
-                        </p>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
+                    <CardContent className="pt-6 space-y-4">
                       <div>
-                        <p className="text-sm text-muted-foreground mb-1">Soru:</p>
-                        <p>{q.question}</p>
+                        <div className="flex items-start gap-3 mb-2">
+                          <Badge variant="secondary">S</Badge>
+                          <div className="flex-1">
+                            <p className="font-medium mb-1">
+                              {q.profiles?.first_name} {q.profiles?.last_name}
+                            </p>
+                            <p className="text-sm text-muted-foreground mb-2">
+                              {new Date(q.created_at).toLocaleDateString('tr-TR')}
+                            </p>
+                            <p>{q.question}</p>
+                          </div>
+                        </div>
                       </div>
                       {q.answer && (
-                        <div className="bg-muted p-4 rounded-lg">
-                          <p className="text-sm text-muted-foreground mb-1">Cevap:</p>
-                          <p>{q.answer}</p>
-                          {q.answered_at && (
-                            <p className="text-xs text-muted-foreground mt-2">
-                              {new Date(q.answered_at).toLocaleDateString("tr-TR")} {new Date(q.answered_at).toLocaleTimeString("tr-TR")}
-                            </p>
-                          )}
+                        <div className="pl-10 border-l-2 border-primary/20">
+                          <div className="flex items-start gap-3">
+                            <Badge variant="default">C</Badge>
+                            <div className="flex-1">
+                              <p className="font-medium text-primary mb-1">Satıcı Yanıtı</p>
+                              <p className="text-sm text-muted-foreground mb-2">
+                                {new Date(q.answered_at).toLocaleDateString('tr-TR')}
+                              </p>
+                              <p>{q.answer}</p>
+                            </div>
+                          </div>
                         </div>
                       )}
                     </CardContent>
                   </Card>
-                ))
-              )}
-            </div>
+                ))}
+              </div>
+            )}
           </TabsContent>
         </Tabs>
       </div>

@@ -9,12 +9,19 @@ export const createBackupCode = async (userId: string): Promise<{ code: string |
     });
     
     if (error) {
+      console.error("Backup code generation error:", error);
       return { code: null, error };
     }
     
+    if (!data) {
+      console.error("No backup code returned from function");
+      return { code: null, error: "No code generated" };
+    }
+    
     // Return the plain code (only time it will be visible)
-    return { code: data, error: null };
+    return { code: data as string, error: null };
   } catch (error) {
+    console.error("Backup code creation exception:", error);
     return { code: null, error };
   }
 };
