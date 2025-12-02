@@ -33,7 +33,7 @@ export const AdminMessages = () => {
   }, []);
 
   const loadMessages = async () => {
-    const { data, error } = await (supabase as any)
+    const { data, error } = await supabase
       .from("contact_messages")
       .select("*")
       .order("created_at", { ascending: false });
