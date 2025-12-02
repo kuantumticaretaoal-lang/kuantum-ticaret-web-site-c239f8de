@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
@@ -138,105 +139,122 @@ export const AdminProductQuestions = () => {
     }
   };
 
-  const unansweredCount = questions.filter((q) => !q.answer).length;
+  const unansweredQuestions = questions.filter((q) => !q.answer);
+  const answeredQuestions = questions.filter((q) => q.answer);
+
+  const QuestionCard = ({ question }: { question: any }) => (
+    <Card key={question.id}>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="font-semibold">
+              {question.profile?.first_name && question.profile?.last_name
+                ? `${question.profile.first_name} ${question.profile.last_name}`
+                : "Kullanıcı"}
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Ürün: {question.productTitle || "Bilinmiyor"}
+            </p>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            {new Date(question.created_at).toLocaleDateString("tr-TR")} {new Date(question.created_at).toLocaleTimeString("tr-TR")}
+          </p>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div>
+          <p className="text-sm text-muted-foreground mb-1">Soru:</p>
+          <p>{question.question}</p>
+        </div>
+        {question.answer && (
+          <div className="bg-muted p-4 rounded-lg">
+            <p className="text-sm text-muted-foreground mb-1">Cevap:</p>
+            <p>{question.answer}</p>
+            {question.answered_at && (
+              <p className="text-xs text-muted-foreground mt-2">
+                {new Date(question.answered_at).toLocaleDateString("tr-TR")} {new Date(question.answered_at).toLocaleTimeString("tr-TR")}
+              </p>
+            )}
+          </div>
+        )}
+        <div className="flex gap-2">
+          <Button
+            variant={question.answer ? "outline" : "default"}
+            onClick={() => {
+              setSelectedQuestion(question);
+              setAnswer(question.answer || "");
+              setIsEditing(!!question.answer);
+            }}
+          >
+            {question.answer ? (
+              <>
+                <Edit className="h-4 w-4 mr-2" />
+                Cevabı Düzenle
+              </>
+            ) : (
+              "Cevapla"
+            )}
+          </Button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive" size="sm">
+                <Trash2 className="h-4 w-4 mr-2" />
+                Sil
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Soruyu sil</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Bu soruyu silmek istediğinizden emin misiniz?
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>İptal</AlertDialogCancel>
+                <AlertDialogAction onClick={() => deleteQuestion(question.id)}>
+                  Sil
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
+      </CardContent>
+    </Card>
+  );
 
   return (
     <>
       <Card>
         <CardHeader>
-          <CardTitle>
-            Ürün Soruları
-            {unansweredCount > 0 && (
-              <span className="ml-2 text-sm text-destructive">
-                ({unansweredCount} cevaplanmamış)
-              </span>
-            )}
-          </CardTitle>
+          <CardTitle>Ürün Soruları</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          {questions.length === 0 ? (
-            <p className="text-center text-muted-foreground py-8">Henüz soru yok</p>
-          ) : (
-            questions.map((question) => (
-              <Card key={question.id} className={!question.answer ? "border-destructive" : ""}>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-semibold">
-                        {question.profile?.first_name && question.profile?.last_name
-                          ? `${question.profile.first_name} ${question.profile.last_name}`
-                          : "Kullanıcı"}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        Ürün: {question.productTitle || "Bilinmiyor"}
-                      </p>
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      {new Date(question.created_at).toLocaleDateString("tr-TR")} {new Date(question.created_at).toLocaleTimeString("tr-TR")}
-                    </p>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <p className="text-sm text-muted-foreground mb-1">Soru:</p>
-                    <p>{question.question}</p>
-                  </div>
-                  {question.answer ? (
-                    <div className="bg-muted p-4 rounded-lg">
-                      <p className="text-sm text-muted-foreground mb-1">Cevap:</p>
-                      <p>{question.answer}</p>
-                      {question.answered_at && (
-                        <p className="text-xs text-muted-foreground mt-2">
-                          {new Date(question.answered_at).toLocaleDateString("tr-TR")} {new Date(question.answered_at).toLocaleTimeString("tr-TR")}
-                        </p>
-                      )}
-                    </div>
-                  ) : null}
-                  <div className="flex gap-2">
-                    <Button
-                      variant={question.answer ? "outline" : "default"}
-                      onClick={() => {
-                        setSelectedQuestion(question);
-                        setAnswer(question.answer || "");
-                        setIsEditing(!!question.answer);
-                      }}
-                    >
-                      {question.answer ? (
-                        <>
-                          <Edit className="h-4 w-4 mr-2" />
-                          Cevabı Düzenle
-                        </>
-                      ) : (
-                        "Cevapla"
-                      )}
-                    </Button>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="destructive" size="sm">
-                          <Trash2 className="h-4 w-4 mr-2" />
-                          Sil
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Soruyu sil</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Bu soruyu silmek istediğinizden emin misiniz?
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>İptal</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => deleteQuestion(question.id)}>
-                            Sil
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </div>
-                </CardContent>
-              </Card>
-            ))
-          )}
+        <CardContent>
+          <Tabs defaultValue="unanswered">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="unanswered">
+                Cevaplanmayanlar ({unansweredQuestions.length})
+              </TabsTrigger>
+              <TabsTrigger value="answered">
+                Cevaplananlar ({answeredQuestions.length})
+              </TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="unanswered" className="space-y-4 mt-4">
+              {unansweredQuestions.length === 0 ? (
+                <p className="text-center text-muted-foreground py-8">Cevaplanmayan soru yok</p>
+              ) : (
+                unansweredQuestions.map((question) => <QuestionCard key={question.id} question={question} />)
+              )}
+            </TabsContent>
+
+            <TabsContent value="answered" className="space-y-4 mt-4">
+              {answeredQuestions.length === 0 ? (
+                <p className="text-center text-muted-foreground py-8">Cevaplanan soru yok</p>
+              ) : (
+                answeredQuestions.map((question) => <QuestionCard key={question.id} question={question} />)
+              )}
+            </TabsContent>
+          </Tabs>
         </CardContent>
       </Card>
 

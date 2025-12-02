@@ -258,18 +258,29 @@ export const AdminAnalytics = () => {
                   </TableCell>
                 </TableRow>
               ) : (
-                analytics.map((visit) => (
-                  <TableRow key={visit.id}>
-                    <TableCell>
-                      {visit.profile?.first_name && visit.profile?.last_name
-                        ? `${visit.profile.first_name} ${visit.profile.last_name}`
-                        : "Misafir"}
-                    </TableCell>
-                    <TableCell>{visit.page_path}</TableCell>
-                    <TableCell>{new Date(visit.visited_at).toLocaleString("tr-TR")}</TableCell>
-                    <TableCell>{visit.duration ? `${Math.round(visit.duration / 60)} dk` : "-"}</TableCell>
-                  </TableRow>
-                ))
+                analytics.map((visit) => {
+                  let durationDisplay = "-";
+                  if (visit.duration) {
+                    const totalSeconds = visit.duration;
+                    const minutes = Math.floor(totalSeconds / 60);
+                    const seconds = Math.floor(totalSeconds % 60);
+                    const milliseconds = Math.floor((totalSeconds % 1) * 1000);
+                    durationDisplay = `${minutes}dk ${seconds}sn ${milliseconds}ms`;
+                  }
+                  
+                  return (
+                    <TableRow key={visit.id}>
+                      <TableCell>
+                        {visit.profile?.first_name && visit.profile?.last_name
+                          ? `${visit.profile.first_name} ${visit.profile.last_name}`
+                          : "Misafir"}
+                      </TableCell>
+                      <TableCell>{visit.page_path}</TableCell>
+                      <TableCell>{new Date(visit.visited_at).toLocaleString("tr-TR")}</TableCell>
+                      <TableCell>{durationDisplay}</TableCell>
+                    </TableRow>
+                  );
+                })
               )}
             </TableBody>
           </Table>
