@@ -247,16 +247,17 @@ const AccountPage = () => {
               </p>
               <div className="flex gap-2 items-center">
                 <Input
-                  value={backupCode || "Yükleniyor..."}
+                  value={regeneratingCode ? "Oluşturuluyor..." : (backupCode || "Yükleniyor...")}
                   disabled
-                  className="font-mono text-lg"
+                  className="font-mono text-lg tracking-wider"
                 />
                 <Button
                   type="button"
                   size="icon"
                   variant="outline"
                   onClick={copyToClipboard}
-                  disabled={!backupCode}
+                  disabled={!backupCode || backupCode.includes("*") || regeneratingCode}
+                  title="Kodu Kopyala"
                 >
                   <Copy className="h-4 w-4" />
                 </Button>
@@ -265,11 +266,22 @@ const AccountPage = () => {
                   size="icon"
                   variant="outline"
                   onClick={handleRegenerateCode}
-                  disabled={regeneratingCode || !backupCode}
+                  disabled={regeneratingCode}
+                  title="Yeni Kod Oluştur"
                 >
                   <RefreshCw className={`h-4 w-4 ${regeneratingCode ? "animate-spin" : ""}`} />
                 </Button>
               </div>
+              {backupCode && !backupCode.includes("*") && (
+                <p className="text-xs text-primary mt-2 font-medium">
+                  ✓ Bu kod sadece şimdi görüntülenebilir! Lütfen güvenli bir yerde saklayın.
+                </p>
+              )}
+              {backupCode && backupCode.includes("*") && (
+                <p className="text-xs text-muted-foreground mt-2">
+                  Mevcut kodunuz şifrelenmiş durumda. Yeni kod oluşturmak için yenile butonuna tıklayın.
+                </p>
+              )}
               <p className="text-xs text-destructive mt-2">
                 ⚠️ Eski kod kullanıldıktan sonra otomatik olarak yeni kod oluşturulur
               </p>
