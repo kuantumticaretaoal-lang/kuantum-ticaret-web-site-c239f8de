@@ -12,14 +12,16 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { Star, ShoppingCart, Package, AlertCircle, Upload, User } from "lucide-react";
+import { Star, ShoppingCart, Package, AlertCircle, Upload, User, Heart } from "lucide-react";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { ProductDetailSkeleton } from "@/components/ProductSkeleton";
+import { useFavorites } from "@/hooks/use-favorites";
 
 const ProductDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { toggleFavorite, isFavorite } = useFavorites();
   const [product, setProduct] = useState<any>(null);
   const [reviews, setReviews] = useState<any[]>([]);
   const [questions, setQuestions] = useState<any[]>([]);
@@ -514,10 +516,26 @@ const ProductDetail = () => {
                 </CardContent>
               </Card>
             ) : (
-              <Button onClick={handleAddToCart} size="lg" className="w-full text-lg h-14">
-                <ShoppingCart className="mr-2 h-5 w-5" />
-                Sepete Ekle
-              </Button>
+              <div className="flex gap-3">
+                <Button onClick={handleAddToCart} size="lg" className="flex-1 text-lg h-14">
+                  <ShoppingCart className="mr-2 h-5 w-5" />
+                  Sepete Ekle
+                </Button>
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="h-14 w-14 p-0"
+                  onClick={() => id && toggleFavorite(id)}
+                >
+                  <Heart
+                    className={`h-6 w-6 ${
+                      id && isFavorite(id)
+                        ? "fill-red-500 text-red-500"
+                        : "text-muted-foreground"
+                    }`}
+                  />
+                </Button>
+              </div>
             )}
           </div>
         </div>

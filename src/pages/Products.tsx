@@ -9,10 +9,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ShoppingCart } from "lucide-react";
-import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { logger } from "@/lib/logger";
 import { ProductSkeleton } from "@/components/ProductSkeleton";
+import { useFavorites } from "@/hooks/use-favorites";
+import FavoriteButton from "@/components/FavoriteButton";
 
 const Products = () => {
   const [products, setProducts] = useState<any[]>([]);
@@ -23,6 +24,7 @@ const Products = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
+  const { toggleFavorite, isFavorite } = useFavorites();
 
   const getPromoVariant = (badge: string): any => {
     const b = (badge || "").toLowerCase();
@@ -222,18 +224,25 @@ const Products = () => {
                       alt={product.title}
                       className="w-full h-full object-cover"
                     />
-                    <Button
-                      size="default"
-                      className="absolute top-2 right-2 group overflow-hidden rounded-full shadow-lg transition-all duration-300 hover:w-auto hover:px-4 w-10 h-10 p-0"
-                      onClick={(e) => handleAddToCart(product.id, e)}
-                    >
-                      <div className="flex items-center gap-2 whitespace-nowrap">
-                        <ShoppingCart className="h-5 w-5 transition-transform duration-300 group-hover:-translate-x-1" />
-                        <span className="max-w-0 overflow-hidden opacity-0 transition-all duration-300 group-hover:max-w-xs group-hover:opacity-100">
-                          Sepete Ekle
-                        </span>
-                      </div>
-                    </Button>
+                    <div className="absolute top-2 right-2 flex gap-1">
+                      <FavoriteButton
+                        isFavorite={isFavorite(product.id)}
+                        onClick={() => toggleFavorite(product.id)}
+                        className="bg-background/80 backdrop-blur-sm rounded-full w-10 h-10"
+                      />
+                      <Button
+                        size="default"
+                        className="group overflow-hidden rounded-full shadow-lg transition-all duration-300 hover:w-auto hover:px-4 w-10 h-10 p-0"
+                        onClick={(e) => handleAddToCart(product.id, e)}
+                      >
+                        <div className="flex items-center gap-2 whitespace-nowrap">
+                          <ShoppingCart className="h-5 w-5 transition-transform duration-300 group-hover:-translate-x-1" />
+                          <span className="max-w-0 overflow-hidden opacity-0 transition-all duration-300 group-hover:max-w-xs group-hover:opacity-100">
+                            Sepete Ekle
+                          </span>
+                        </div>
+                      </Button>
+                    </div>
                     {product.promotion_badges && product.promotion_badges.length > 0 && (
                       <div className="absolute top-2 left-2 flex flex-col gap-1">
                         {product.promotion_badges.map((badge: string, idx: number) => (
