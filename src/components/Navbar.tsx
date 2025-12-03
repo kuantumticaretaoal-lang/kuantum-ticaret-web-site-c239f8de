@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Search, User, Settings, Shield, ShoppingCart, Bell, Menu } from "lucide-react";
+import { Search, User, Settings, Shield, ShoppingCart, Bell, Menu, Heart } from "lucide-react";
 import logo from "@/assets/logo.jpg";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -215,6 +215,14 @@ const Navbar = () => {
                 {user ? (
                   <>
                     <Link 
+                      to="/favorites" 
+                      className="text-foreground hover:text-primary transition-colors py-2 border-b flex items-center gap-2"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <Heart className="h-4 w-4" />
+                      Favorilerim
+                    </Link>
+                    <Link 
                       to="/account" 
                       className="text-foreground hover:text-primary transition-colors py-2 border-b flex items-center gap-2"
                       onClick={() => setMobileMenuOpen(false)}
@@ -303,6 +311,14 @@ const Navbar = () => {
             <Link to="/follow" className="text-white hover:text-white/80 transition-colors text-sm lg:text-base hidden lg:block">
               Bizi Takip Edin!
             </Link>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="relative text-white hover:text-white hover:bg-white/20"
+              onClick={() => navigate("/favorites")}
+            >
+              <Heart className="h-5 w-5" />
+            </Button>
             <Button
               variant="ghost"
               size="icon"
