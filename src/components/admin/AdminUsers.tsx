@@ -71,8 +71,6 @@ export const AdminUsers = () => {
         return;
       }
       
-      console.log("📊 Toplam profil sayısı:", allProfiles?.length || 0);
-      
       // Admin ve yöneticileri filtrele
       const { data: adminRoles, error: rolesError } = await supabase
         .from("user_roles")
@@ -83,15 +81,9 @@ export const AdminUsers = () => {
         logger.error("Admin rolleri yüklenemedi", rolesError);
       }
       
-      console.log("👑 Admin sayısı:", adminRoles?.length || 0);
-      console.log("👑 Admin ID'leri:", adminRoles?.map(r => r.user_id));
-      
       const adminIds = new Set(adminRoles?.map(r => r.user_id) || []);
       const allUsers = allProfiles || [];
       const regularUsers = allUsers.filter(u => !adminIds.has(u.id));
-      
-      console.log("👥 Normal kullanıcı sayısı:", regularUsers.length);
-      console.log("👥 Normal kullanıcılar:", regularUsers.map(u => ({ email: u.email, id: u.id })));
       
       setUsers(allUsers);
       setTotalUsers(regularUsers.length);

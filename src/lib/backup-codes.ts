@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { logger } from "@/lib/logger";
 
 // Create or regenerate backup code for user using secure hashed storage
 export const createBackupCode = async (userId: string): Promise<{ code: string | null; error: any }> => {
@@ -9,19 +10,19 @@ export const createBackupCode = async (userId: string): Promise<{ code: string |
     });
     
     if (error) {
-      console.error("Backup code generation error:", error);
+      logger.error("Backup code generation error:", error);
       return { code: null, error };
     }
     
     if (!data) {
-      console.error("No backup code returned from function");
+      logger.error("No backup code returned from function");
       return { code: null, error: "No code generated" };
     }
     
     // Return the plain code (only time it will be visible)
     return { code: data as string, error: null };
   } catch (error) {
-    console.error("Backup code creation exception:", error);
+    logger.error("Backup code creation exception:", error);
     return { code: null, error };
   }
 };
