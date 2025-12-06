@@ -1,11 +1,15 @@
-import DOMPurify from "dompurify";
-
-// XSS koruması - HTML temizleme
+// XSS koruması - HTML temizleme (DOMPurify yerine native)
 export const sanitizeHtml = (html: string): string => {
-  return DOMPurify.sanitize(html, {
-    ALLOWED_TAGS: ["b", "i", "em", "strong", "a", "p", "br"],
-    ALLOWED_ATTR: ["href", "target", "rel"],
-  });
+  if (!html) return "";
+  
+  // Temel HTML tag'lerini temizle
+  const allowedTags = ["b", "i", "em", "strong", "p", "br"];
+  const tagRegex = new RegExp(`<(?!\/?(${allowedTags.join("|")})\s*\/?)[^>]+>`, "gi");
+  
+  return html
+    .replace(tagRegex, "")
+    .replace(/javascript:/gi, "")
+    .replace(/on\w+\s*=/gi, "");
 };
 
 // Input doğrulama - zararlı karakterleri temizle
@@ -13,17 +17,15 @@ export const sanitizeInput = (input: string): string => {
   if (!input) return "";
   return input
     .replace(/<[^>]*>/g, "") // HTML taglarını kaldır
-    .replace(/[<>'"&]/g, (char) => {
+    .replace(/[<>]/g, (char) => {
       const entities: Record<string, string> = {
         "<": "&lt;",
         ">": "&gt;",
-        "'": "&#39;",
-        '"': "&quot;",
-        "&": "&amp;",
       };
       return entities[char] || char;
     })
-    .trim();
+    .trim()
+    .slice(0, 1000); // Max 1000 karakter
 };
 
 // SQL injection koruması - sadece alfanumerik ve izin verilen karakterler
@@ -83,7 +85,6 @@ export const checkClientRateLimit = (
   const data = JSON.parse(stored);
   
   if (now - data.timestamp > windowMs) {
-    // Pencere süresi dolmuş, sıfırla
     localStorage.setItem(storageKey, JSON.stringify({ count: 1, timestamp: now }));
     return true;
   }
@@ -92,7 +93,6 @@ export const checkClientRateLimit = (
     return false;
   }
 
-  // İstek sayısını artır
   localStorage.setItem(storageKey, JSON.stringify({ count: data.count + 1, timestamp: data.timestamp }));
   return true;
 };
