@@ -16,12 +16,15 @@ import { Star, ShoppingCart, Package, AlertCircle, Upload, User, Heart } from "l
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { ProductDetailSkeleton } from "@/components/ProductSkeleton";
 import { useFavorites } from "@/hooks/use-favorites";
+import { useRateLimit } from "@/hooks/use-rate-limit";
+import { sanitizeInput } from "@/lib/security";
 
 const ProductDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
   const { toggleFavorite, isFavorite } = useFavorites();
+  const { checkDailyLimit, DAILY_LIMIT } = useRateLimit();
   const [product, setProduct] = useState<any>(null);
   const [reviews, setReviews] = useState<any[]>([]);
   const [questions, setQuestions] = useState<any[]>([]);
@@ -164,11 +167,24 @@ const ProductDetail = () => {
       return;
     }
 
+    // Rate limit kontrolü
+    const { allowed, remaining } = await checkDailyLimit("product_reviews");
+    if (!allowed) {
+      toast({
+        variant: "destructive",
+        title: "Günlük Limit Aşıldı",
+        description: `Günde en fazla ${DAILY_LIMIT} yorum yapabilirsiniz. Yarın tekrar deneyin.`,
+      });
+      return;
+    }
+
+    const sanitizedComment = sanitizeInput(comment);
+
     const { error } = await (supabase as any).from("product_reviews").insert({
       product_id: id,
       user_id: user.id,
       rating,
-      comment: comment || null,
+      comment: sanitizedComment || null,
     });
 
     if (error) {
@@ -180,7 +196,7 @@ const ProductDetail = () => {
     } else {
       toast({
         title: "Başarılı",
-        description: "Yorumunuz eklendi",
+        description: `Yorumunuz eklendi. Bugün ${remaining - 1} yorum hakkınız kaldı.`,
       });
       setRating(0);
       setComment("");
@@ -206,10 +222,23 @@ const ProductDetail = () => {
       return;
     }
 
+    // Rate limit kontrolü
+    const { allowed, remaining } = await checkDailyLimit("product_questions");
+    if (!allowed) {
+      toast({
+        variant: "destructive",
+        title: "Günlük Limit Aşıldı",
+        description: `Günde en fazla ${DAILY_LIMIT} soru sorabilirsiniz. Yarın tekrar deneyin.`,
+      });
+      return;
+    }
+
+    const sanitizedQuestion = sanitizeInput(question);
+
     const { error } = await (supabase as any).from("product_questions").insert({
       product_id: id,
       user_id: user.id,
-      question,
+      question: sanitizedQuestion,
     });
 
     if (error) {
@@ -221,7 +250,7 @@ const ProductDetail = () => {
     } else {
       toast({
         title: "Başarılı",
-        description: "Sorunuz eklendi",
+        description: `Sorunuz eklendi. Bugün ${remaining - 1} soru hakkınız kaldı.`,
       });
       setQuestion("");
     }

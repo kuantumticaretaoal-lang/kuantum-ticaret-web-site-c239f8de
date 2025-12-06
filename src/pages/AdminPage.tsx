@@ -21,6 +21,7 @@ import { AdminManagers } from "@/components/admin/AdminManagers";
 import { AdminFinances } from "@/components/admin/AdminFinances";
 import { AdminMessages } from "@/components/admin/AdminMessages";
 import { AdminAbout } from "@/components/admin/AdminAbout";
+import { AdminCoupons } from "@/components/admin/AdminCoupons";
 
 const AdminPage = () => {
   const navigate = useNavigate();
@@ -120,6 +121,7 @@ const AdminPage = () => {
                 <SelectItem value="messages">Mesajlar</SelectItem>
                 <SelectItem value="notifications">Bildirimler</SelectItem>
                 <SelectItem value="managers">Yöneticiler</SelectItem>
+                <SelectItem value="coupons">Kuponlar</SelectItem>
                 <SelectItem value="about">Hakkımızda</SelectItem>
               </SelectContent>
             </Select>
@@ -137,6 +139,7 @@ const AdminPage = () => {
             {activeTab === "messages" && <AdminMessages />}
             {activeTab === "notifications" && <AdminNotifications />}
             {activeTab === "managers" && <AdminManagers />}
+            {activeTab === "coupons" && <AdminCoupons />}
             {activeTab === "about" && <AdminAbout />}
           </div>
         ) : (
@@ -156,6 +159,7 @@ const AdminPage = () => {
                 <TabsTrigger value="messages" className="min-w-[120px]">Mesajlar</TabsTrigger>
                 <TabsTrigger value="notifications" className="min-w-[120px]">Bildirimler</TabsTrigger>
                 <TabsTrigger value="managers" className="min-w-[120px]">Yöneticiler</TabsTrigger>
+                <TabsTrigger value="coupons" className="min-w-[120px]">Kuponlar</TabsTrigger>
                 <TabsTrigger value="about" className="min-w-[120px]">Hakkımızda</TabsTrigger>
               </TabsList>
             </div>
@@ -210,6 +214,10 @@ const AdminPage = () => {
 
             <TabsContent value="managers">
               <AdminManagers />
+            </TabsContent>
+
+            <TabsContent value="coupons">
+              <AdminCoupons />
             </TabsContent>
 
             <TabsContent value="about">

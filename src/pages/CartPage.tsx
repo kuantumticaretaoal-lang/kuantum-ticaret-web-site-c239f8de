@@ -12,14 +12,25 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Minus, Plus, Trash2 } from "lucide-react";
+import { Minus, Plus, Trash2, Tag, X, Check } from "lucide-react";
 import { logger } from "@/lib/logger";
+import { Badge } from "@/components/ui/badge";
+
+interface AppliedCoupon {
+  id: string;
+  code: string;
+  discount_type: string;
+  discount_value: number;
+}
 
 const CartPage = () => {
   const [cartItems, setCartItems] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [deliveryType, setDeliveryType] = useState<"home_delivery" | "pickup">("home_delivery");
+  const [couponCode, setCouponCode] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
+  const [couponLoading, setCouponLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -105,10 +116,90 @@ const CartPage = () => {
     }
   };
 
-  const total = cartItems.reduce(
+  const subtotal = cartItems.reduce(
     (sum, item) => sum + parseFloat(item.products.price) * item.quantity,
     0
   );
+
+  const discount = appliedCoupon
+    ? appliedCoupon.discount_type === "percentage"
+      ? (subtotal * appliedCoupon.discount_value) / 100
+      : Math.min(appliedCoupon.discount_value, subtotal)
+    : 0;
+
+  const total = Math.max(0, subtotal - discount);
+
+  const applyCoupon = async () => {
+    if (!couponCode.trim()) {
+      toast({
+        variant: "destructive",
+        title: "Hata",
+        description: "Kupon kodu giriniz",
+      });
+      return;
+    }
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      toast({
+        variant: "destructive",
+        title: "Giriş Gerekli",
+        description: "Kupon kullanmak için giriş yapmalısınız",
+      });
+      navigate("/login");
+      return;
+    }
+
+    setCouponLoading(true);
+
+    const { data, error } = await supabase.rpc("validate_coupon", {
+      p_code: couponCode.trim(),
+      p_user_id: user.id,
+      p_order_total: subtotal,
+    });
+
+    setCouponLoading(false);
+
+    if (error) {
+      toast({
+        variant: "destructive",
+        title: "Hata",
+        description: "Kupon doğrulanamadı",
+      });
+      return;
+    }
+
+    const result = data?.[0];
+    if (!result?.is_valid) {
+      toast({
+        variant: "destructive",
+        title: "Geçersiz Kupon",
+        description: result?.error_message || "Kupon uygulanamadı",
+      });
+      return;
+    }
+
+    setAppliedCoupon({
+      id: result.coupon_id,
+      code: couponCode.toUpperCase(),
+      discount_type: result.discount_type,
+      discount_value: result.discount_value,
+    });
+    setCouponCode("");
+
+    toast({
+      title: "Kupon Uygulandı",
+      description: `${couponCode.toUpperCase()} kodlu kupon uygulandı`,
+    });
+  };
+
+  const removeCoupon = () => {
+    setAppliedCoupon(null);
+    toast({
+      title: "Kupon Kaldırıldı",
+      description: "İndirim kodu kaldırıldı",
+    });
+  };
 
   const handleCheckout = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -172,6 +263,20 @@ const CartPage = () => {
 
       if (itemsError) throw itemsError;
 
+      // Kupon kullanımını kaydet
+      if (appliedCoupon) {
+        await supabase.from("coupon_usages").insert({
+          coupon_id: appliedCoupon.id,
+          user_id: user.id,
+          order_id: order.id,
+        });
+
+        // Kupon kullanım sayısını artır
+        await supabase.rpc("increment_coupon_usage", {
+          p_coupon_id: appliedCoupon.id,
+        });
+      }
+
       // Clear cart
       const { error: clearError } = await (supabase as any)
         .from("cart")
@@ -179,6 +284,8 @@ const CartPage = () => {
         .eq("user_id", user.id);
 
       if (clearError) throw clearError;
+
+      setAppliedCoupon(null);
 
       toast({
         title: "Sipariş Oluşturuldu",
@@ -359,9 +466,65 @@ const CartPage = () => {
                   </p>
                 )}
               </div>
-              <div className="flex justify-between text-lg">
-                <span>Toplam:</span>
-                <span className="font-bold text-primary">₺{total.toFixed(2)}</span>
+
+              {/* Kupon Kodu */}
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <Tag className="h-4 w-4" />
+                  İndirim Kodu
+                </Label>
+                {appliedCoupon ? (
+                  <div className="flex items-center justify-between p-2 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md">
+                    <div className="flex items-center gap-2">
+                      <Check className="h-4 w-4 text-green-600" />
+                      <span className="font-mono font-bold text-green-700 dark:text-green-400">
+                        {appliedCoupon.code}
+                      </span>
+                      <Badge variant="secondary" className="text-xs">
+                        {appliedCoupon.discount_type === "percentage"
+                          ? `%${appliedCoupon.discount_value}`
+                          : `₺${appliedCoupon.discount_value}`}
+                      </Badge>
+                    </div>
+                    <Button size="sm" variant="ghost" onClick={removeCoupon}>
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex gap-2">
+                    <Input
+                      value={couponCode}
+                      onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                      placeholder="KUPONKODU"
+                      className="font-mono"
+                      maxLength={20}
+                    />
+                    <Button 
+                      onClick={applyCoupon} 
+                      disabled={couponLoading}
+                      variant="outline"
+                    >
+                      {couponLoading ? "..." : "Uygula"}
+                    </Button>
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-2 pt-2 border-t">
+                <div className="flex justify-between text-sm">
+                  <span>Ara Toplam:</span>
+                  <span>₺{subtotal.toFixed(2)}</span>
+                </div>
+                {appliedCoupon && (
+                  <div className="flex justify-between text-sm text-green-600">
+                    <span>İndirim:</span>
+                    <span>-₺{discount.toFixed(2)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between text-lg font-bold pt-2 border-t">
+                  <span>Toplam:</span>
+                  <span className="text-primary">₺{total.toFixed(2)}</span>
+                </div>
               </div>
               <Button className="w-full" size="lg" onClick={handleCheckout}>Sipariş Ver</Button>
               <Button variant="outline" className="w-full" onClick={() => navigate("/products")}>
