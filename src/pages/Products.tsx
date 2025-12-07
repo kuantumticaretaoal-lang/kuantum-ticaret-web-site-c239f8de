@@ -8,19 +8,34 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ShoppingCart } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { ShoppingCart, Search, X, Filter } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { logger } from "@/lib/logger";
 import { ProductSkeleton } from "@/components/ProductSkeleton";
 import { useFavorites } from "@/hooks/use-favorites";
 import FavoriteButton from "@/components/FavoriteButton";
+import * as LucideIcons from "lucide-react";
+
+interface Category {
+  id: string;
+  name: string;
+  description: string | null;
+  icon: string | null;
+  sort_order: number;
+}
 
 const Products = () => {
   const [products, setProducts] = useState<any[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState<string>("newest");
   const [filterPromotion, setFilterPromotion] = useState<string>("all");
+  const [filterCategory, setFilterCategory] = useState<string>("all");
   const [showOnlyInStock, setShowOnlyInStock] = useState<boolean>(false);
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [priceRange, setPriceRange] = useState({ min: "", max: "" });
+  const [showFilters, setShowFilters] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
@@ -37,11 +52,15 @@ const Products = () => {
 
   useEffect(() => {
     loadProducts();
+    loadCategories();
 
     const channel = supabase
       .channel("products-page-changes")
       .on("postgres_changes", { event: "*", schema: "public", table: "products" }, () => {
         loadProducts();
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "categories" }, () => {
+        loadCategories();
       })
       .subscribe();
 
@@ -49,6 +68,12 @@ const Products = () => {
       supabase.removeChannel(channel);
     };
   }, []);
+
+  // URL'den arama sorgusunu al
+  useEffect(() => {
+    const urlQuery = new URLSearchParams(location.search).get("query") || "";
+    setSearchQuery(urlQuery);
+  }, [location.search]);
 
   const loadProducts = async () => {
     try {
@@ -63,6 +88,11 @@ const Products = () => {
           ),
           product_reviews (
             rating
+          ),
+          categories (
+            id,
+            name,
+            icon
           )
         `)
         .order("created_at", { ascending: false });
@@ -72,6 +102,14 @@ const Products = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const loadCategories = async () => {
+    const { data } = await supabase
+      .from("categories")
+      .select("*")
+      .order("sort_order", { ascending: true });
+    if (data) setCategories(data);
   };
 
   const handleAddToCart = async (productId: string, e: React.MouseEvent) => {
@@ -104,17 +142,39 @@ const Products = () => {
     }
   };
 
-  const query = new URLSearchParams(location.search).get("query")?.toLowerCase() || "";
+  const getIconComponent = (iconName: string | null) => {
+    if (!iconName) return null;
+    const IconComponent = (LucideIcons as any)[iconName];
+    return IconComponent ? <IconComponent className="h-4 w-4" /> : null;
+  };
+
+  const clearFilters = () => {
+    setFilterPromotion("all");
+    setFilterCategory("all");
+    setShowOnlyInStock(false);
+    setPriceRange({ min: "", max: "" });
+    setSearchQuery("");
+  };
+
+  const hasActiveFilters = filterPromotion !== "all" || filterCategory !== "all" || showOnlyInStock || priceRange.min || priceRange.max || searchQuery;
+
   const filtered = products.filter((p) => {
     const title = (p.title || "").toLowerCase();
     const desc = (p.description || "").toLowerCase();
+    const query = searchQuery.toLowerCase();
     const matchesQuery = !query || title.includes(query) || desc.includes(query);
     
-    // Filtre işaretliyse SADECE stokta olanları göster, değilse HEPSİNI göster
     const matchesStock = !showOnlyInStock || (p.stock_status === "in_stock" || p.stock_status === "limited_stock");
     
-    if (filterPromotion === "all") return matchesQuery && matchesStock;
-    return matchesQuery && matchesStock && p.promotion_badges?.includes(filterPromotion);
+    const matchesCategory = filterCategory === "all" || p.category_id === filterCategory;
+    
+    const price = parseFloat(p.price);
+    const minPrice = priceRange.min ? parseFloat(priceRange.min) : 0;
+    const maxPrice = priceRange.max ? parseFloat(priceRange.max) : Infinity;
+    const matchesPrice = price >= minPrice && price <= maxPrice;
+    
+    if (filterPromotion === "all") return matchesQuery && matchesStock && matchesCategory && matchesPrice;
+    return matchesQuery && matchesStock && matchesCategory && matchesPrice && p.promotion_badges?.includes(filterPromotion);
   });
 
   const sortedProducts = [...filtered].sort((a, b) => {
@@ -146,48 +206,150 @@ const Products = () => {
       <div className="container mx-auto px-4 py-16">
         <h1 className="text-4xl md:text-5xl font-bold text-center mb-8">Ürünlerimiz</h1>
         
-        {products.length > 0 && (
-          <div className="flex flex-wrap gap-4 mb-8 items-center">
-            <div className="max-w-xs">
-              <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Sırala" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="newest">En Yeni</SelectItem>
-                  <SelectItem value="price-asc">Fiyat (Artan)</SelectItem>
-                  <SelectItem value="price-desc">Fiyat (Azalan)</SelectItem>
-                  <SelectItem value="name-asc">A'dan Z'ye</SelectItem>
-                  <SelectItem value="name-desc">Z'den A'ya</SelectItem>
-                  <SelectItem value="rating">En Çok Değerlendirilen</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="max-w-xs">
-              <Select value={filterPromotion} onValueChange={setFilterPromotion}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Filtrele" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tüm Ürünler</SelectItem>
-                  <SelectItem value="En Geç Yarın Kargoda">En Geç Yarın Kargoda</SelectItem>
-                  <SelectItem value="Hızlı Teslimat">Hızlı Teslimat</SelectItem>
-                  <SelectItem value="Sınırlı Stok">Sınırlı Stok</SelectItem>
-                  <SelectItem value="İndirim">İndirim</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={showOnlyInStock}
-                onChange={(e) => setShowOnlyInStock(e.target.checked)}
-                className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
-              />
-              <span className="text-sm font-medium">Yalnızca Stokta Bulunanlar</span>
-            </label>
+        {/* Kategoriler */}
+        {categories.length > 0 && (
+          <div className="flex flex-wrap gap-2 justify-center mb-6">
+            <Button
+              variant={filterCategory === "all" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setFilterCategory("all")}
+            >
+              Tümü
+            </Button>
+            {categories.map((cat) => (
+              <Button
+                key={cat.id}
+                variant={filterCategory === cat.id ? "default" : "outline"}
+                size="sm"
+                onClick={() => setFilterCategory(cat.id)}
+                className="flex items-center gap-1"
+              >
+                {getIconComponent(cat.icon)}
+                {cat.name}
+              </Button>
+            ))}
           </div>
         )}
+
+        {/* Arama ve Filtreler */}
+        <div className="space-y-4 mb-8">
+          {/* Arama */}
+          <div className="flex gap-2 max-w-xl mx-auto">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Ürün ara..."
+                className="pl-10"
+              />
+            </div>
+            <Button
+              variant="outline"
+              onClick={() => setShowFilters(!showFilters)}
+              className="flex items-center gap-2"
+            >
+              <Filter className="h-4 w-4" />
+              Filtreler
+              {hasActiveFilters && (
+                <Badge variant="secondary" className="ml-1">!</Badge>
+              )}
+            </Button>
+          </div>
+
+          {/* Gelişmiş Filtreler */}
+          {showFilters && (
+            <Card className="max-w-4xl mx-auto">
+              <CardContent className="pt-6">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  {/* Sıralama */}
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Sırala</label>
+                    <Select value={sortBy} onValueChange={setSortBy}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Sırala" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="newest">En Yeni</SelectItem>
+                        <SelectItem value="price-asc">Fiyat (Artan)</SelectItem>
+                        <SelectItem value="price-desc">Fiyat (Azalan)</SelectItem>
+                        <SelectItem value="name-asc">A'dan Z'ye</SelectItem>
+                        <SelectItem value="name-desc">Z'den A'ya</SelectItem>
+                        <SelectItem value="rating">En Çok Değerlendirilen</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Promosyon Filtresi */}
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Promosyon</label>
+                    <Select value={filterPromotion} onValueChange={setFilterPromotion}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Filtrele" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Tüm Promosyonlar</SelectItem>
+                        <SelectItem value="En Geç Yarın Kargoda">En Geç Yarın Kargoda</SelectItem>
+                        <SelectItem value="Hızlı Teslimat">Hızlı Teslimat</SelectItem>
+                        <SelectItem value="Sınırlı Stok">Sınırlı Stok</SelectItem>
+                        <SelectItem value="İndirim">İndirim</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Fiyat Aralığı */}
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Fiyat Aralığı</label>
+                    <div className="flex gap-2">
+                      <Input
+                        type="number"
+                        placeholder="Min ₺"
+                        value={priceRange.min}
+                        onChange={(e) => setPriceRange({ ...priceRange, min: e.target.value })}
+                        className="w-full"
+                      />
+                      <Input
+                        type="number"
+                        placeholder="Max ₺"
+                        value={priceRange.max}
+                        onChange={(e) => setPriceRange({ ...priceRange, max: e.target.value })}
+                        className="w-full"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Stok Filtresi */}
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Stok Durumu</label>
+                    <div className="flex items-center h-10">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={showOnlyInStock}
+                          onChange={(e) => setShowOnlyInStock(e.target.checked)}
+                          className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
+                        />
+                        <span className="text-sm">Sadece Stokta</span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+                {hasActiveFilters && (
+                  <div className="mt-4 pt-4 border-t flex justify-between items-center">
+                    <p className="text-sm text-muted-foreground">
+                      {sortedProducts.length} ürün bulundu
+                    </p>
+                    <Button variant="ghost" size="sm" onClick={clearFilters}>
+                      <X className="h-4 w-4 mr-1" />
+                      Filtreleri Temizle
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+        </div>
 
         {loading ? (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -207,6 +369,15 @@ const Products = () => {
               <p className="text-muted-foreground">
                 Kaliteli ve özenle seçilmiş ürünlerimizi sizler için hazırlıyoruz.
               </p>
+            </CardContent>
+          </Card>
+        ) : sortedProducts.length === 0 ? (
+          <Card className="max-w-2xl mx-auto">
+            <CardContent className="py-12 text-center">
+              <p className="text-muted-foreground mb-4">Arama kriterlerinize uygun ürün bulunamadı</p>
+              <Button variant="outline" onClick={clearFilters}>
+                Filtreleri Temizle
+              </Button>
             </CardContent>
           </Card>
         ) : (
@@ -250,6 +421,14 @@ const Products = () => {
                             {badge}
                           </Badge>
                         ))}
+                      </div>
+                    )}
+                    {product.categories && (
+                      <div className="absolute bottom-2 left-2">
+                        <Badge variant="secondary" className="text-xs flex items-center gap-1">
+                          {getIconComponent(product.categories.icon)}
+                          {product.categories.name}
+                        </Badge>
                       </div>
                     )}
                   </div>

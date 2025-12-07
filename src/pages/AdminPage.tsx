@@ -22,6 +22,7 @@ import { AdminFinances } from "@/components/admin/AdminFinances";
 import { AdminMessages } from "@/components/admin/AdminMessages";
 import { AdminAbout } from "@/components/admin/AdminAbout";
 import { AdminCoupons } from "@/components/admin/AdminCoupons";
+import { AdminCategories } from "@/components/admin/AdminCategories";
 
 const AdminPage = () => {
   const navigate = useNavigate();
@@ -112,6 +113,7 @@ const AdminPage = () => {
                 <SelectItem value="users">Kullanıcılar</SelectItem>
                 <SelectItem value="user-stats">Kullanıcı İstatistikleri</SelectItem>
                 <SelectItem value="products">Ürünler</SelectItem>
+                <SelectItem value="categories">Kategoriler</SelectItem>
                 <SelectItem value="questions">Sorular</SelectItem>
                 <SelectItem value="contact">İletişim</SelectItem>
                 <SelectItem value="social">Sosyal Medya</SelectItem>
@@ -130,6 +132,7 @@ const AdminPage = () => {
             {activeTab === "users" && <AdminUsers />}
             {activeTab === "user-stats" && <AdminUserStats />}
             {activeTab === "products" && <AdminProducts />}
+            {activeTab === "categories" && <AdminCategories />}
             {activeTab === "questions" && <AdminProductQuestions />}
             {activeTab === "contact" && <AdminContact />}
             {activeTab === "social" && <AdminSocialMedia />}
@@ -150,6 +153,7 @@ const AdminPage = () => {
                 <TabsTrigger value="users" className="min-w-[120px]">Kullanıcılar</TabsTrigger>
                 <TabsTrigger value="user-stats" className="min-w-[140px]">Kullanıcı İstatistikleri</TabsTrigger>
                 <TabsTrigger value="products" className="min-w-[120px]">Ürünler</TabsTrigger>
+                <TabsTrigger value="categories" className="min-w-[120px]">Kategoriler</TabsTrigger>
                 <TabsTrigger value="questions" className="min-w-[120px]">Sorular</TabsTrigger>
                 <TabsTrigger value="contact" className="min-w-[120px]">İletişim</TabsTrigger>
                 <TabsTrigger value="social" className="min-w-[120px]">Sosyal Medya</TabsTrigger>
@@ -178,6 +182,10 @@ const AdminPage = () => {
 
             <TabsContent value="products">
               <AdminProducts />
+            </TabsContent>
+
+            <TabsContent value="categories">
+              <AdminCategories />
             </TabsContent>
 
             <TabsContent value="questions">
