@@ -9,11 +9,18 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Pencil, Upload, X, Download } from "lucide-react";
 import { exportToExcel, formatDateForExport, formatCurrencyForExport } from "@/lib/excel-export";
 
+interface Category {
+  id: string;
+  name: string;
+}
+
 export const AdminProducts = () => {
   const [products, setProducts] = useState<any[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [newProduct, setNewProduct] = useState({ 
     title: "", 
     description: "", 
@@ -23,7 +30,8 @@ export const AdminProducts = () => {
     promotion_badges: [] as string[],
     is_name_customizable: false,
     available_sizes: [] as string[],
-    allows_custom_photo: false
+    allows_custom_photo: false,
+    category_id: ""
   });
   const [editProduct, setEditProduct] = useState<any>(null);
   const [editImages, setEditImages] = useState<any[]>([]);
@@ -44,11 +52,15 @@ export const AdminProducts = () => {
 
   useEffect(() => {
     loadProducts();
+    loadCategories();
 
     const channel = supabase
       .channel("products-changes")
       .on("postgres_changes", { event: "*", schema: "public", table: "products" }, () => {
         loadProducts();
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "categories" }, () => {
+        loadCategories();
       })
       .subscribe();
 
@@ -56,6 +68,14 @@ export const AdminProducts = () => {
       supabase.removeChannel(channel);
     };
   }, []);
+
+  const loadCategories = async () => {
+    const { data } = await supabase
+      .from("categories")
+      .select("id, name")
+      .order("sort_order", { ascending: true });
+    if (data) setCategories(data);
+  };
 
   const loadProducts = async () => {
     const { data } = await (supabase as any)
@@ -65,13 +85,17 @@ export const AdminProducts = () => {
         product_images (
           id,
           image_url
+        ),
+        categories (
+          id,
+          name
         )
       `)
       .order("created_at", { ascending: false });
     if (data) {
       setProducts(data);
-      const total = data.reduce((sum, p) => sum + Number(p.price), 0);
-      const lowStock = data.filter(p => (p.stock_quantity || 0) <= 5).length;
+      const total = data.reduce((sum: number, p: any) => sum + Number(p.price), 0);
+      const lowStock = data.filter((p: any) => (p.stock_quantity || 0) <= 5).length;
       setTotalProducts(data.length);
       setTotalValue(total);
       setLowStockProducts(lowStock);
@@ -139,6 +163,7 @@ export const AdminProducts = () => {
         is_name_customizable: newProduct.is_name_customizable,
         available_sizes: newProduct.available_sizes,
         allows_custom_photo: newProduct.allows_custom_photo,
+        category_id: newProduct.category_id || null,
       })
       .select()
       .single();
@@ -166,7 +191,8 @@ export const AdminProducts = () => {
         promotion_badges: [],
         is_name_customizable: false,
         available_sizes: [],
-        allows_custom_photo: false
+        allows_custom_photo: false,
+        category_id: ""
       });
       setUploadingImages([]);
       loadProducts();
@@ -195,6 +221,7 @@ export const AdminProducts = () => {
         is_name_customizable: editProduct.is_name_customizable || false,
         available_sizes: editProduct.available_sizes || [],
         allows_custom_photo: editProduct.allows_custom_photo || false,
+        category_id: editProduct.category_id || null,
       })
       .eq("id", editProduct.id);
 
@@ -239,6 +266,7 @@ export const AdminProducts = () => {
   const exportProducts = () => {
     const exportData = products.map(product => ({
       "Başlık": product.title,
+      "Kategori": product.categories?.name || '-',
       "Açıklama": product.description || '-',
       "Fiyat": formatCurrencyForExport(product.price),
       "Stok Durumu": product.stock_status === 'in_stock' ? 'Stokta' : 
@@ -309,6 +337,20 @@ export const AdminProducts = () => {
                     onChange={(e) => setNewProduct({ ...newProduct, title: e.target.value })}
                     placeholder="Ürün başlığı"
                   />
+                </div>
+                <div>
+                  <Label>Kategori</Label>
+                  <Select value={newProduct.category_id} onValueChange={(v) => setNewProduct({ ...newProduct, category_id: v })}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Kategori seçin" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">Kategorisiz</SelectItem>
+                      {categories.map((cat) => (
+                        <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div>
                   <Label>Stok Miktarı</Label>
