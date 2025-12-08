@@ -449,8 +449,6 @@ const Products = () => {
                         <span className="text-2xl font-bold text-primary">₺{parseFloat(product.price).toFixed(2)}</span>
                       )}
                     </div>
-                      ₺{parseFloat(product.price).toFixed(2)}
-                    </div>
                     {product.stock_status !== 'in_stock' && (
                       <Badge variant={product.stock_status === 'out_of_stock' ? 'destructive' : 'secondary'}>
                         {product.stock_status === 'limited_stock' ? 'Sınırlı' : 'Tükendi'}
