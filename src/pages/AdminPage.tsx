@@ -23,6 +23,7 @@ import { AdminMessages } from "@/components/admin/AdminMessages";
 import { AdminAbout } from "@/components/admin/AdminAbout";
 import { AdminCoupons } from "@/components/admin/AdminCoupons";
 import { AdminCategories } from "@/components/admin/AdminCategories";
+import { AdminOrderStats } from "@/components/admin/AdminOrderStats";
 
 const AdminPage = () => {
   const navigate = useNavigate();
@@ -110,6 +111,7 @@ const AdminPage = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="orders">Siparişler</SelectItem>
+                <SelectItem value="order-stats">Sipariş İstatistikleri</SelectItem>
                 <SelectItem value="users">Kullanıcılar</SelectItem>
                 <SelectItem value="user-stats">Kullanıcı İstatistikleri</SelectItem>
                 <SelectItem value="products">Ürünler</SelectItem>
@@ -129,6 +131,7 @@ const AdminPage = () => {
             </Select>
 
             {activeTab === "orders" && <AdminOrders />}
+            {activeTab === "order-stats" && <AdminOrderStats />}
             {activeTab === "users" && <AdminUsers />}
             {activeTab === "user-stats" && <AdminUserStats />}
             {activeTab === "products" && <AdminProducts />}
@@ -148,8 +151,9 @@ const AdminPage = () => {
         ) : (
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <div className="overflow-x-auto pb-2">
-              <TabsList className="inline-flex w-auto min-w-full">
+            <TabsList className="inline-flex w-auto min-w-full">
                 <TabsTrigger value="orders" className="min-w-[120px]">Siparişler</TabsTrigger>
+                <TabsTrigger value="order-stats" className="min-w-[150px]">Sipariş İstatistikleri</TabsTrigger>
                 <TabsTrigger value="users" className="min-w-[120px]">Kullanıcılar</TabsTrigger>
                 <TabsTrigger value="user-stats" className="min-w-[140px]">Kullanıcı İstatistikleri</TabsTrigger>
                 <TabsTrigger value="products" className="min-w-[120px]">Ürünler</TabsTrigger>
@@ -170,6 +174,10 @@ const AdminPage = () => {
 
             <TabsContent value="orders">
               <AdminOrders />
+            </TabsContent>
+
+            <TabsContent value="order-stats">
+              <AdminOrderStats />
             </TabsContent>
 
             <TabsContent value="users">

@@ -455,6 +455,42 @@ export type Database = {
         }
         Relationships: []
       }
+      product_categories: {
+        Row: {
+          category_id: string
+          created_at: string
+          id: string
+          product_id: string
+        }
+        Insert: {
+          category_id: string
+          created_at?: string
+          id?: string
+          product_id: string
+        }
+        Update: {
+          category_id?: string
+          created_at?: string
+          id?: string
+          product_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_categories_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_categories_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_images: {
         Row: {
           created_at: string | null
@@ -564,6 +600,7 @@ export type Database = {
           category_id: string | null
           created_at: string | null
           description: string | null
+          discounted_price: number | null
           id: string
           is_name_customizable: boolean | null
           price: number
@@ -579,6 +616,7 @@ export type Database = {
           category_id?: string | null
           created_at?: string | null
           description?: string | null
+          discounted_price?: number | null
           id?: string
           is_name_customizable?: boolean | null
           price: number
@@ -594,6 +632,7 @@ export type Database = {
           category_id?: string | null
           created_at?: string | null
           description?: string | null
+          discounted_price?: number | null
           id?: string
           is_name_customizable?: boolean | null
           price?: number
