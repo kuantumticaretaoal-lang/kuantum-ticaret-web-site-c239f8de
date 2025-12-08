@@ -89,10 +89,13 @@ const Products = () => {
           product_reviews (
             rating
           ),
-          categories (
-            id,
-            name,
-            icon
+          product_categories (
+            category_id,
+            categories (
+              id,
+              name,
+              icon
+            )
           )
         `)
         .order("created_at", { ascending: false });
@@ -166,7 +169,8 @@ const Products = () => {
     
     const matchesStock = !showOnlyInStock || (p.stock_status === "in_stock" || p.stock_status === "limited_stock");
     
-    const matchesCategory = filterCategory === "all" || p.category_id === filterCategory;
+    const productCategoryIds = p.product_categories?.map((pc: any) => pc.category_id) || [];
+    const matchesCategory = filterCategory === "all" || productCategoryIds.includes(filterCategory);
     
     const price = parseFloat(p.price);
     const minPrice = priceRange.min ? parseFloat(priceRange.min) : 0;
@@ -423,12 +427,19 @@ const Products = () => {
                         ))}
                       </div>
                     )}
-                    {product.categories && (
-                      <div className="absolute bottom-2 left-2">
-                        <Badge variant="secondary" className="text-xs flex items-center gap-1">
-                          {getIconComponent(product.categories.icon)}
-                          {product.categories.name}
-                        </Badge>
+                    {product.product_categories && product.product_categories.length > 0 && (
+                      <div className="absolute bottom-2 left-2 flex flex-wrap gap-1">
+                        {product.product_categories.slice(0, 2).map((pc: any, idx: number) => (
+                          <Badge key={idx} variant="secondary" className="text-xs flex items-center gap-1">
+                            {getIconComponent(pc.categories?.icon)}
+                            {pc.categories?.name}
+                          </Badge>
+                        ))}
+                        {product.product_categories.length > 2 && (
+                          <Badge variant="outline" className="text-xs">
+                            +{product.product_categories.length - 2}
+                          </Badge>
+                        )}
                       </div>
                     )}
                   </div>
