@@ -90,12 +90,45 @@ const CartPage = () => {
   };
 
   const handleUpdateQuantity = async (cartId: string, newQuantity: number) => {
+    // Find the cart item to get product info
+    const cartItem = cartItems.find(item => item.id === cartId);
+    if (!cartItem) return;
+
+    // Check stock limit before updating
+    const { data: product } = await (supabase as any)
+      .from("products")
+      .select("stock_quantity, stock_status")
+      .eq("id", cartItem.product_id)
+      .single();
+
+    if (product) {
+      // Check if product is out of stock
+      if (product.stock_status === 'out_of_stock') {
+        toast({
+          variant: "destructive",
+          title: "Stok Tükendi",
+          description: "Bu ürün stokta kalmadı",
+        });
+        return;
+      }
+
+      // Check stock quantity limit
+      if (product.stock_quantity !== null && newQuantity > product.stock_quantity) {
+        toast({
+          variant: "destructive",
+          title: "Stok Yetersiz",
+          description: `Bu üründen maksimum ${product.stock_quantity} adet ekleyebilirsiniz`,
+        });
+        return;
+      }
+    }
+
     const { error } = await updateCartQuantity(cartId, newQuantity);
     if (error) {
       toast({
         variant: "destructive",
         title: "Hata",
-        description: "Miktar güncellenemedi",
+        description: error.message || "Miktar güncellenemedi",
       });
     }
   };
