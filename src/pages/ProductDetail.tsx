@@ -17,7 +17,11 @@ import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious
 import { ProductDetailSkeleton } from "@/components/ProductSkeleton";
 import { useFavorites } from "@/hooks/use-favorites";
 import { useRateLimit } from "@/hooks/use-rate-limit";
+import { useRecentlyViewed } from "@/hooks/use-recently-viewed";
 import { sanitizeInput } from "@/lib/security";
+import { RecentlyViewedProducts } from "@/components/RecentlyViewedProducts";
+import { SimilarProducts } from "@/components/SimilarProducts";
+import { ShareButtons } from "@/components/ShareButtons";
 
 const ProductDetail = () => {
   const { id } = useParams();
@@ -25,6 +29,7 @@ const ProductDetail = () => {
   const { toast } = useToast();
   const { toggleFavorite, isFavorite } = useFavorites();
   const { checkDailyLimit, DAILY_LIMIT } = useRateLimit();
+  const { addToRecentlyViewed } = useRecentlyViewed();
   const [product, setProduct] = useState<any>(null);
   const [reviews, setReviews] = useState<any[]>([]);
   const [questions, setQuestions] = useState<any[]>([]);
@@ -83,6 +88,14 @@ const ProductDetail = () => {
     
     if (data) {
       setProduct(data);
+      // Track recently viewed
+      addToRecentlyViewed({
+        id: data.id,
+        title: data.title,
+        price: parseFloat(data.price),
+        discounted_price: data.discounted_price ? parseFloat(data.discounted_price) : undefined,
+        image_url: data.product_images?.[0]?.image_url,
+      });
     } else {
       navigate("/products");
     }
@@ -725,6 +738,15 @@ const ProductDetail = () => {
             )}
           </TabsContent>
         </Tabs>
+
+        {/* Similar Products */}
+        <SimilarProducts 
+          currentProductId={id || ''} 
+          categoryIds={product?.product_categories?.map((pc: any) => pc.category_id) || []}
+        />
+
+        {/* Recently Viewed Products */}
+        <RecentlyViewedProducts currentProductId={id} />
       </div>
       <Footer />
     </div>
