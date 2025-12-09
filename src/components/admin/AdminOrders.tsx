@@ -250,6 +250,13 @@ export const AdminOrders = () => {
   };
 
   const moveToTrash = async (orderId: string) => {
+    // Get current order status before trashing
+    const { data: currentOrder } = await (supabase as any)
+      .from("orders")
+      .select("status")
+      .eq("id", orderId)
+      .single();
+
     const { error } = await (supabase as any)
       .from("orders")
       .update({ trashed: true })
@@ -262,6 +269,45 @@ export const AdminOrders = () => {
         description: "Sipariş çöp kutusuna taşınamadı",
       });
     } else {
+      // If the order was delivered, restore stock and remove income
+      if (currentOrder?.status === "delivered") {
+        try {
+          const { data: items } = await (supabase as any)
+            .from("order_items")
+            .select("quantity, product_id")
+            .eq("order_id", orderId);
+
+          // Restore stock for each item
+          for (const item of items || []) {
+            const { data: product } = await (supabase as any)
+              .from("products")
+              .select("stock_quantity")
+              .eq("id", item.product_id)
+              .single();
+
+            if (product && product.stock_quantity !== null) {
+              const newStock = product.stock_quantity + item.quantity;
+              await (supabase as any)
+                .from("products")
+                .update({ 
+                  stock_quantity: newStock,
+                  stock_status: newStock > 0 ? 'in_stock' : 'out_of_stock'
+                })
+                .eq("id", item.product_id);
+            }
+          }
+
+          // Remove the income entry
+          await (supabase as any)
+            .from("expenses")
+            .delete()
+            .eq("order_id", orderId);
+
+        } catch (e) {
+          logger.error("Failed to restore stock on trash", e);
+        }
+      }
+
       toast({
         title: "Başarılı",
         description: "Sipariş çöp kutusuna taşındı",
