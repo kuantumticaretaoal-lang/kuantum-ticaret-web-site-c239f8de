@@ -394,9 +394,10 @@ export const AdminOrders = () => {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Sipariş No</TableHead>
+            <TableHead>Sipariş Kodu</TableHead>
             <TableHead>Müşteri</TableHead>
             <TableHead>Ürünler</TableHead>
+            <TableHead>Tutar</TableHead>
             <TableHead>Durum</TableHead>
             <TableHead>Tarih</TableHead>
           </TableRow>
@@ -404,14 +405,21 @@ export const AdminOrders = () => {
         <TableBody>
           {trashedOrders.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+              <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
                 Çöp kutusunda sipariş yok
               </TableCell>
             </TableRow>
           ) : (
-            trashedOrders.map((order) => (
+            trashedOrders.map((order) => {
+              const orderTotal = order.order_items?.reduce(
+                (sum: number, item: any) => sum + (parseFloat(item.price) * item.quantity), 0
+              ) || 0;
+              return (
               <TableRow key={order.id}>
-                <TableCell>{order.id.slice(0, 8)}</TableCell>
+                <TableCell className="font-mono text-xs">{order.order_code}</TableCell>
+                <TableCell>
+                  {order.profiles?.first_name} {order.profiles?.last_name}
+                </TableCell>
                 <TableCell>
                   {order.profiles?.first_name} {order.profiles?.last_name}
                 </TableCell>
@@ -422,6 +430,9 @@ export const AdminOrders = () => {
                     </div>
                   )) || "-"}
                 </TableCell>
+                <TableCell className="font-bold text-primary">
+                  ₺{orderTotal.toFixed(2)}
+                </TableCell>
                 <TableCell>
                   <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
                     Çöp Kutusu
@@ -429,7 +440,8 @@ export const AdminOrders = () => {
                 </TableCell>
                 <TableCell>{new Date(order.created_at).toLocaleString("tr-TR")}</TableCell>
               </TableRow>
-            ))
+              );
+            })
           )}
         </TableBody>
       </Table>
@@ -446,10 +458,11 @@ export const AdminOrders = () => {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Sipariş No</TableHead>
+            <TableHead>Sipariş Kodu</TableHead>
             <TableHead>Müşteri</TableHead>
             <TableHead>Telefon</TableHead>
             <TableHead>Ürünler</TableHead>
+            <TableHead>Tutar</TableHead>
             <TableHead>Durum</TableHead>
             <TableHead>Teslimat</TableHead>
             <TableHead>Adres</TableHead>
@@ -462,14 +475,21 @@ export const AdminOrders = () => {
       <TableBody>
         {ordersList.length === 0 ? (
           <TableRow>
-            <TableCell colSpan={11} className="text-center text-muted-foreground py-8">
+            <TableCell colSpan={12} className="text-center text-muted-foreground py-8">
               Bu sekmede sipariş yok
             </TableCell>
           </TableRow>
         ) : (
-          ordersList.map((order) => (
+          ordersList.map((order) => {
+            const orderTotal = order.order_items?.reduce(
+              (sum: number, item: any) => sum + (parseFloat(item.price) * item.quantity), 0
+            ) || 0;
+            return (
             <TableRow key={order.id}>
-              <TableCell>{order.id.slice(0, 8)}</TableCell>
+              <TableCell className="font-mono text-xs">{order.order_code}</TableCell>
+              <TableCell>
+                {order.profiles?.first_name} {order.profiles?.last_name}
+              </TableCell>
               <TableCell>
                 {order.profiles?.first_name} {order.profiles?.last_name}
               </TableCell>
@@ -499,6 +519,9 @@ export const AdminOrders = () => {
                   </div>
                 )) || "-"}
               </TableCell>
+            <TableCell className="font-bold text-primary">
+              ₺{orderTotal.toFixed(2)}
+            </TableCell>
             <TableCell>
               <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                 order.status === "confirmed" ? "bg-green-100 text-green-800" :
@@ -586,7 +609,8 @@ export const AdminOrders = () => {
               </Dialog>
             </TableCell>
           </TableRow>
-        ))
+          );
+        })
         )}
       </TableBody>
     </Table>
