@@ -24,7 +24,7 @@ interface TimeRemaining {
 }
 
 interface CampaignBannerProps {
-  currentPage: 'home' | 'products' | 'category' | 'other';
+  currentPage: 'home' | 'homepage' | 'products' | 'category' | 'other';
 }
 
 const getDeviceId = (): string => {
@@ -140,7 +140,7 @@ export const CampaignBanner = ({ currentPage }: CampaignBannerProps) => {
 
       // Sayfa hedefleme kontrolü
       if (!b.show_on_all_pages) {
-        if (currentPage === 'home' && !b.show_on_homepage) continue;
+        if ((currentPage === 'home' || currentPage === 'homepage') && !b.show_on_homepage) continue;
         if ((currentPage === 'products' || currentPage === 'category') && !b.show_on_products) continue;
         if (currentPage === 'other' && !b.show_on_homepage && !b.show_on_products) continue;
       }

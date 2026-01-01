@@ -4,6 +4,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { addToCart } from "@/lib/cart";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { CampaignBanner } from "@/components/CampaignBanner";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
@@ -206,6 +207,7 @@ const Products = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <CampaignBanner currentPage="products" />
       <Navbar />
       <div className="container mx-auto px-4 py-16">
         <h1 className="text-4xl md:text-5xl font-bold text-center mb-8">Ürünlerimiz</h1>

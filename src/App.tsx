@@ -19,6 +19,7 @@ import NotFound from "./pages/NotFound";
 import VisitorTracker from "./components/VisitorTracker";
 import NotificationsPage from "./pages/NotificationsPage";
 import FavoritesPage from "./pages/FavoritesPage";
+import { CookieConsent } from "./components/CookieConsent";
 
 const queryClient = new QueryClient();
 
@@ -28,6 +29,7 @@ const AppContent = () => {
   return (
     <>
       <VisitorTracker />
+      <CookieConsent />
       <Routes>
         <Route path="/" element={<Index />} />
         <Route path="/products" element={<Products />} />
