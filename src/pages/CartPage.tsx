@@ -23,6 +23,12 @@ interface AppliedCoupon {
   discount_value: number;
 }
 
+interface PremiumBenefits {
+  isPremium: boolean;
+  discountPercent: number;
+  freeShipping: boolean;
+}
+
 const CartPage = () => {
   const [cartItems, setCartItems] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
@@ -31,12 +37,18 @@ const CartPage = () => {
   const [couponCode, setCouponCode] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
   const [couponLoading, setCouponLoading] = useState(false);
+  const [premiumBenefits, setPremiumBenefits] = useState<PremiumBenefits>({
+    isPremium: false,
+    discountPercent: 0,
+    freeShipping: false,
+  });
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
     loadCart();
     loadOrders();
+    loadPremiumStatus();
 
     const channel = supabase
       .channel("cart-changes")
@@ -69,6 +81,34 @@ const CartPage = () => {
     const items = await getCartItems();
     setCartItems(items);
     setLoading(false);
+  };
+
+  const loadPremiumStatus = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    // Premium üyelik kontrolü
+    const { data: membership } = await (supabase as any)
+      .from("premium_memberships")
+      .select(`
+        *,
+        premium_plans (
+          discount_percent,
+          free_shipping
+        )
+      `)
+      .eq("user_id", user.id)
+      .eq("status", "active")
+      .gt("expires_at", new Date().toISOString())
+      .maybeSingle();
+
+    if (membership && membership.premium_plans) {
+      setPremiumBenefits({
+        isPremium: true,
+        discountPercent: membership.premium_plans.discount_percent || 0,
+        freeShipping: membership.premium_plans.free_shipping || false,
+      });
+    }
   };
 
   const loadOrders = async () => {
@@ -154,13 +194,25 @@ const CartPage = () => {
     0
   );
 
-  const discount = appliedCoupon
+  // Kupon indirimi
+  const couponDiscount = appliedCoupon
     ? appliedCoupon.discount_type === "percentage"
       ? (subtotal * appliedCoupon.discount_value) / 100
       : Math.min(appliedCoupon.discount_value, subtotal)
     : 0;
 
-  const total = Math.max(0, subtotal - discount);
+  // Premium üyelik indirimi
+  const premiumDiscount = premiumBenefits.isPremium 
+    ? ((subtotal - couponDiscount) * premiumBenefits.discountPercent) / 100 
+    : 0;
+
+  // Toplam indirim
+  const totalDiscount = couponDiscount + premiumDiscount;
+
+  // Kargo ücreti (premium üyelere ücretsiz)
+  const shippingCost = deliveryType === "home_delivery" && !premiumBenefits.freeShipping ? 0 : 0; // Kargo ücreti şimdilik 0
+
+  const total = Math.max(0, subtotal - totalDiscount + shippingCost);
 
   const applyCoupon = async () => {
     if (!couponCode.trim()) {
@@ -550,14 +602,31 @@ const CartPage = () => {
                 </div>
                 {appliedCoupon && (
                   <div className="flex justify-between text-sm text-green-600">
-                    <span>İndirim:</span>
-                    <span>-₺{discount.toFixed(2)}</span>
+                    <span>Kupon İndirimi ({appliedCoupon.code}):</span>
+                    <span>-₺{couponDiscount.toFixed(2)}</span>
+                  </div>
+                )}
+                {premiumBenefits.isPremium && premiumDiscount > 0 && (
+                  <div className="flex justify-between text-sm text-purple-600">
+                    <span>Premium İndirim (%{premiumBenefits.discountPercent}):</span>
+                    <span>-₺{premiumDiscount.toFixed(2)}</span>
+                  </div>
+                )}
+                {premiumBenefits.isPremium && premiumBenefits.freeShipping && deliveryType === "home_delivery" && (
+                  <div className="flex justify-between text-sm text-purple-600">
+                    <span>Ücretsiz Kargo:</span>
+                    <span>✓ Premium Avantaj</span>
                   </div>
                 )}
                 <div className="flex justify-between text-lg font-bold pt-2 border-t">
                   <span>Toplam:</span>
                   <span className="text-primary">₺{total.toFixed(2)}</span>
                 </div>
+                {premiumBenefits.isPremium && (
+                  <div className="p-2 bg-purple-50 dark:bg-purple-900/20 rounded-md text-xs text-purple-700 dark:text-purple-300 text-center">
+                    ✨ Premium üye indirimleri uygulandı
+                  </div>
+                )}
               </div>
               <Button className="w-full" size="lg" onClick={handleCheckout}>Sipariş Ver</Button>
               <Button variant="outline" className="w-full" onClick={() => navigate("/products")}>
