@@ -21,6 +21,7 @@ import { useRecentlyViewed } from "@/hooks/use-recently-viewed";
 import { sanitizeInput } from "@/lib/security";
 import { RecentlyViewedProducts } from "@/components/RecentlyViewedProducts";
 import { SimilarProducts } from "@/components/SimilarProducts";
+import { AlsoBoughtProducts } from "@/components/AlsoBoughtProducts";
 import { ShareButtons } from "@/components/ShareButtons";
 
 const ProductDetail = () => {
@@ -738,6 +739,9 @@ const ProductDetail = () => {
             )}
           </TabsContent>
         </Tabs>
+
+        {/* Also Bought Products */}
+        <AlsoBoughtProducts productId={id || ''} />
 
         {/* Similar Products */}
         <SimilarProducts 
