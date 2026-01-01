@@ -24,6 +24,11 @@ import { AdminAbout } from "@/components/admin/AdminAbout";
 import { AdminCoupons } from "@/components/admin/AdminCoupons";
 import { AdminCategories } from "@/components/admin/AdminCategories";
 import { AdminOrderStats } from "@/components/admin/AdminOrderStats";
+import { AdminCampaignBanners } from "@/components/admin/AdminCampaignBanners";
+import { AdminPremium } from "@/components/admin/AdminPremium";
+import { AdminPolicies } from "@/components/admin/AdminPolicies";
+import { AdminLanguages } from "@/components/admin/AdminLanguages";
+import { AdminUrgencySettings } from "@/components/admin/AdminUrgencySettings";
 
 const AdminPage = () => {
   const navigate = useNavigate();
@@ -127,6 +132,11 @@ const AdminPage = () => {
                 <SelectItem value="managers">Yöneticiler</SelectItem>
                 <SelectItem value="coupons">Kuponlar</SelectItem>
                 <SelectItem value="about">Hakkımızda</SelectItem>
+                <SelectItem value="banners">Kampanya Bannerları</SelectItem>
+                <SelectItem value="premium">Premium</SelectItem>
+                <SelectItem value="policies">Politikalar</SelectItem>
+                <SelectItem value="languages">Diller</SelectItem>
+                <SelectItem value="urgency">Aciliyet Ayarları</SelectItem>
               </SelectContent>
             </Select>
 
@@ -147,28 +157,38 @@ const AdminPage = () => {
             {activeTab === "managers" && <AdminManagers />}
             {activeTab === "coupons" && <AdminCoupons />}
             {activeTab === "about" && <AdminAbout />}
+            {activeTab === "banners" && <AdminCampaignBanners />}
+            {activeTab === "premium" && <AdminPremium />}
+            {activeTab === "policies" && <AdminPolicies />}
+            {activeTab === "languages" && <AdminLanguages />}
+            {activeTab === "urgency" && <AdminUrgencySettings />}
           </div>
         ) : (
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <div className="overflow-x-auto pb-2">
-            <TabsList className="inline-flex w-auto min-w-full">
-                <TabsTrigger value="orders" className="min-w-[120px]">Siparişler</TabsTrigger>
-                <TabsTrigger value="order-stats" className="min-w-[150px]">Sipariş İstatistikleri</TabsTrigger>
-                <TabsTrigger value="users" className="min-w-[120px]">Kullanıcılar</TabsTrigger>
-                <TabsTrigger value="user-stats" className="min-w-[140px]">Kullanıcı İstatistikleri</TabsTrigger>
-                <TabsTrigger value="products" className="min-w-[120px]">Ürünler</TabsTrigger>
-                <TabsTrigger value="categories" className="min-w-[120px]">Kategoriler</TabsTrigger>
-                <TabsTrigger value="questions" className="min-w-[120px]">Sorular</TabsTrigger>
-                <TabsTrigger value="contact" className="min-w-[120px]">İletişim</TabsTrigger>
-                <TabsTrigger value="social" className="min-w-[120px]">Sosyal Medya</TabsTrigger>
-                <TabsTrigger value="sponsors" className="min-w-[120px]">Sponsorlar</TabsTrigger>
-                <TabsTrigger value="analytics" className="min-w-[120px]">Ziyaretçiler</TabsTrigger>
-                <TabsTrigger value="finances" className="min-w-[120px]">Gelir-Gider</TabsTrigger>
-                <TabsTrigger value="messages" className="min-w-[120px]">Mesajlar</TabsTrigger>
-                <TabsTrigger value="notifications" className="min-w-[120px]">Bildirimler</TabsTrigger>
-                <TabsTrigger value="managers" className="min-w-[120px]">Yöneticiler</TabsTrigger>
-                <TabsTrigger value="coupons" className="min-w-[120px]">Kuponlar</TabsTrigger>
-                <TabsTrigger value="about" className="min-w-[120px]">Hakkımızda</TabsTrigger>
+            <TabsList className="inline-flex w-auto min-w-full flex-wrap">
+                <TabsTrigger value="orders" className="min-w-[100px]">Siparişler</TabsTrigger>
+                <TabsTrigger value="order-stats" className="min-w-[130px]">Sipariş İstatistikleri</TabsTrigger>
+                <TabsTrigger value="users" className="min-w-[100px]">Kullanıcılar</TabsTrigger>
+                <TabsTrigger value="user-stats" className="min-w-[130px]">Kullanıcı İstatistikleri</TabsTrigger>
+                <TabsTrigger value="products" className="min-w-[100px]">Ürünler</TabsTrigger>
+                <TabsTrigger value="categories" className="min-w-[100px]">Kategoriler</TabsTrigger>
+                <TabsTrigger value="questions" className="min-w-[100px]">Sorular</TabsTrigger>
+                <TabsTrigger value="contact" className="min-w-[100px]">İletişim</TabsTrigger>
+                <TabsTrigger value="social" className="min-w-[100px]">Sosyal Medya</TabsTrigger>
+                <TabsTrigger value="sponsors" className="min-w-[100px]">Sponsorlar</TabsTrigger>
+                <TabsTrigger value="analytics" className="min-w-[100px]">Ziyaretçiler</TabsTrigger>
+                <TabsTrigger value="finances" className="min-w-[100px]">Gelir-Gider</TabsTrigger>
+                <TabsTrigger value="messages" className="min-w-[100px]">Mesajlar</TabsTrigger>
+                <TabsTrigger value="notifications" className="min-w-[100px]">Bildirimler</TabsTrigger>
+                <TabsTrigger value="managers" className="min-w-[100px]">Yöneticiler</TabsTrigger>
+                <TabsTrigger value="coupons" className="min-w-[100px]">Kuponlar</TabsTrigger>
+                <TabsTrigger value="about" className="min-w-[100px]">Hakkımızda</TabsTrigger>
+                <TabsTrigger value="banners" className="min-w-[130px]">Kampanya Bannerları</TabsTrigger>
+                <TabsTrigger value="premium" className="min-w-[100px]">Premium</TabsTrigger>
+                <TabsTrigger value="policies" className="min-w-[100px]">Politikalar</TabsTrigger>
+                <TabsTrigger value="languages" className="min-w-[100px]">Diller</TabsTrigger>
+                <TabsTrigger value="urgency" className="min-w-[130px]">Aciliyet Ayarları</TabsTrigger>
               </TabsList>
             </div>
 
@@ -238,6 +258,26 @@ const AdminPage = () => {
 
             <TabsContent value="about">
               <AdminAbout />
+            </TabsContent>
+
+            <TabsContent value="banners">
+              <AdminCampaignBanners />
+            </TabsContent>
+
+            <TabsContent value="premium">
+              <AdminPremium />
+            </TabsContent>
+
+            <TabsContent value="policies">
+              <AdminPolicies />
+            </TabsContent>
+
+            <TabsContent value="languages">
+              <AdminLanguages />
+            </TabsContent>
+
+            <TabsContent value="urgency">
+              <AdminUrgencySettings />
             </TabsContent>
           </Tabs>
         )}
