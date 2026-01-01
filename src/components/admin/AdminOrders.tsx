@@ -421,9 +421,6 @@ export const AdminOrders = () => {
                   {order.profiles?.first_name} {order.profiles?.last_name}
                 </TableCell>
                 <TableCell>
-                  {order.profiles?.first_name} {order.profiles?.last_name}
-                </TableCell>
-                <TableCell>
                   {order.order_items?.map((item: any, idx: number) => (
                     <div key={idx} className="text-sm">
                       {item.products?.title} x{item.quantity}
@@ -487,9 +484,6 @@ export const AdminOrders = () => {
             return (
             <TableRow key={order.id}>
               <TableCell className="font-mono text-xs">{order.order_code}</TableCell>
-              <TableCell>
-                {order.profiles?.first_name} {order.profiles?.last_name}
-              </TableCell>
               <TableCell>
                 {order.profiles?.first_name} {order.profiles?.last_name}
               </TableCell>
