@@ -2,13 +2,14 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Search, User, Settings, Shield, ShoppingCart, Bell, Menu, Heart } from "lucide-react";
+import { Search, User, Settings, Shield, ShoppingCart, Bell, Menu, Heart, Crown } from "lucide-react";
 import logo from "@/assets/logo.jpg";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { signOut } from "@/lib/auth";
 import { getCartItems, getSessionId } from "@/lib/cart";
 import { useToast } from "@/hooks/use-toast";
+import { LanguageSelector } from "@/components/LanguageSelector";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -214,6 +215,14 @@ const Navbar = () => {
                 {/* Mobile User Actions */}
                 {user ? (
                   <>
+                    <Link 
+                      to="/premium" 
+                      className="text-foreground hover:text-primary transition-colors py-2 border-b flex items-center gap-2"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <Crown className="h-4 w-4" />
+                      Premium Üyelik
+                    </Link>
                     <Link 
                       to="/favorites" 
                       className="text-foreground hover:text-primary transition-colors py-2 border-b flex items-center gap-2"

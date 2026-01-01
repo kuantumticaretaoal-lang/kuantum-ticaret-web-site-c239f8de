@@ -23,6 +23,8 @@ import { RecentlyViewedProducts } from "@/components/RecentlyViewedProducts";
 import { SimilarProducts } from "@/components/SimilarProducts";
 import { AlsoBoughtProducts } from "@/components/AlsoBoughtProducts";
 import { ShareButtons } from "@/components/ShareButtons";
+import { UrgencyIndicators } from "@/components/UrgencyIndicators";
+import { CampaignBanner } from "@/components/CampaignBanner";
 
 const ProductDetail = () => {
   const { id } = useParams();
@@ -379,6 +381,7 @@ const ProductDetail = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <CampaignBanner currentPage="products" />
       <Navbar />
       <div className="container mx-auto px-4 py-8 lg:py-12">
         <Button variant="ghost" onClick={() => navigate("/products")} className="mb-6">
@@ -460,6 +463,13 @@ const ProductDetail = () => {
                 <p className="text-muted-foreground leading-relaxed">{product.description}</p>
               )}
             </div>
+
+            {/* Aciliyet Göstergeleri */}
+            <UrgencyIndicators 
+              productId={product.id} 
+              stockQuantity={product.stock_quantity} 
+              stockStatus={product.stock_status} 
+            />
 
             <Separator />
 
