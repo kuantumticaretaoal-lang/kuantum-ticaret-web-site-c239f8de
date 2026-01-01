@@ -19,6 +19,8 @@ import NotFound from "./pages/NotFound";
 import VisitorTracker from "./components/VisitorTracker";
 import NotificationsPage from "./pages/NotificationsPage";
 import FavoritesPage from "./pages/FavoritesPage";
+import PremiumPage from "./pages/PremiumPage";
+import OrderTrackingPage from "./pages/OrderTrackingPage";
 import { CookieConsent } from "./components/CookieConsent";
 
 const queryClient = new QueryClient();
@@ -44,6 +46,8 @@ const AppContent = () => {
         <Route path="/notifications" element={<NotificationsPage />} />
         <Route path="/favorites" element={<FavoritesPage />} />
         <Route path="/admin" element={<AdminPage />} />
+        <Route path="/premium" element={<PremiumPage />} />
+        <Route path="/order/:orderCode" element={<OrderTrackingPage />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </>

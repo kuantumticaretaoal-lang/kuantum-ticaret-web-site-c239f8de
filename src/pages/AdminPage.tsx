@@ -29,6 +29,7 @@ import { AdminPremium } from "@/components/admin/AdminPremium";
 import { AdminPolicies } from "@/components/admin/AdminPolicies";
 import { AdminLanguages } from "@/components/admin/AdminLanguages";
 import { AdminUrgencySettings } from "@/components/admin/AdminUrgencySettings";
+import AdminShipping from "@/components/admin/AdminShipping";
 
 const AdminPage = () => {
   const navigate = useNavigate();
@@ -137,6 +138,7 @@ const AdminPage = () => {
                 <SelectItem value="policies">Politikalar</SelectItem>
                 <SelectItem value="languages">Diller</SelectItem>
                 <SelectItem value="urgency">Aciliyet Ayarları</SelectItem>
+                <SelectItem value="shipping">Kargo Ayarları</SelectItem>
               </SelectContent>
             </Select>
 
