@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      abandoned_cart_reminders: {
+        Row: {
+          cart_snapshot: Json | null
+          created_at: string | null
+          email_sent: boolean | null
+          id: string
+          sent_at: string | null
+          user_id: string
+        }
+        Insert: {
+          cart_snapshot?: Json | null
+          created_at?: string | null
+          email_sent?: boolean | null
+          id?: string
+          sent_at?: string | null
+          user_id: string
+        }
+        Update: {
+          cart_snapshot?: Json | null
+          created_at?: string | null
+          email_sent?: boolean | null
+          id?: string
+          sent_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       about_us: {
         Row: {
           content: string | null
@@ -77,6 +104,110 @@ export type Database = {
           used?: boolean | null
           used_at?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      banner_dismissals: {
+        Row: {
+          banner_id: string | null
+          device_id: string | null
+          dismissed_at: string | null
+          id: string
+          user_id: string | null
+        }
+        Insert: {
+          banner_id?: string | null
+          device_id?: string | null
+          dismissed_at?: string | null
+          id?: string
+          user_id?: string | null
+        }
+        Update: {
+          banner_id?: string | null
+          device_id?: string | null
+          dismissed_at?: string | null
+          id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "banner_dismissals_banner_id_fkey"
+            columns: ["banner_id"]
+            isOneToOne: false
+            referencedRelation: "campaign_banners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      campaign_banners: {
+        Row: {
+          background_color: string | null
+          background_image_url: string | null
+          countdown_end: string | null
+          created_at: string | null
+          description: string | null
+          hide_days_after_close: number | null
+          id: string
+          is_active: boolean | null
+          priority: number | null
+          scrolling_text: string | null
+          show_countdown: boolean | null
+          show_on_all_pages: boolean | null
+          show_on_homepage: boolean | null
+          show_on_products: boolean | null
+          target_all_users: boolean | null
+          target_cart_users: boolean | null
+          target_new_users: boolean | null
+          target_premium_users: boolean | null
+          text_color: string | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          background_color?: string | null
+          background_image_url?: string | null
+          countdown_end?: string | null
+          created_at?: string | null
+          description?: string | null
+          hide_days_after_close?: number | null
+          id?: string
+          is_active?: boolean | null
+          priority?: number | null
+          scrolling_text?: string | null
+          show_countdown?: boolean | null
+          show_on_all_pages?: boolean | null
+          show_on_homepage?: boolean | null
+          show_on_products?: boolean | null
+          target_all_users?: boolean | null
+          target_cart_users?: boolean | null
+          target_new_users?: boolean | null
+          target_premium_users?: boolean | null
+          text_color?: string | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          background_color?: string | null
+          background_image_url?: string | null
+          countdown_end?: string | null
+          created_at?: string | null
+          description?: string | null
+          hide_days_after_close?: number | null
+          id?: string
+          is_active?: boolean | null
+          priority?: number | null
+          scrolling_text?: string | null
+          show_countdown?: boolean | null
+          show_on_all_pages?: boolean | null
+          show_on_homepage?: boolean | null
+          show_on_products?: boolean | null
+          target_all_users?: boolean | null
+          target_cart_users?: boolean | null
+          target_new_users?: boolean | null
+          target_premium_users?: boolean | null
+          text_color?: string | null
+          title?: string
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -193,6 +324,71 @@ export type Database = {
         }
         Relationships: []
       }
+      cookie_categories: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          is_required: boolean | null
+          name: string
+          sort_order: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_required?: boolean | null
+          name: string
+          sort_order?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_required?: boolean | null
+          name?: string
+          sort_order?: number | null
+        }
+        Relationships: []
+      }
+      cookie_consents: {
+        Row: {
+          accepted: boolean | null
+          category_id: string | null
+          consented_at: string | null
+          device_id: string
+          id: string
+          user_id: string | null
+        }
+        Insert: {
+          accepted?: boolean | null
+          category_id?: string | null
+          consented_at?: string | null
+          device_id: string
+          id?: string
+          user_id?: string | null
+        }
+        Update: {
+          accepted?: boolean | null
+          category_id?: string | null
+          consented_at?: string | null
+          device_id?: string
+          id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cookie_consents_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "cookie_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       coupon_usages: {
         Row: {
           coupon_id: string
@@ -268,6 +464,30 @@ export type Database = {
           is_active?: boolean | null
           max_uses?: number | null
           min_order_amount?: number | null
+        }
+        Relationships: []
+      }
+      exchange_rates: {
+        Row: {
+          from_currency: string
+          id: string
+          rate: number
+          to_currency: string
+          updated_at: string | null
+        }
+        Insert: {
+          from_currency?: string
+          id?: string
+          rate: number
+          to_currency: string
+          updated_at?: string | null
+        }
+        Update: {
+          from_currency?: string
+          id?: string
+          rate?: number
+          to_currency?: string
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -455,6 +675,203 @@ export type Database = {
         }
         Relationships: []
       }
+      premium_benefits: {
+        Row: {
+          benefit_text: string
+          created_at: string | null
+          id: string
+          plan_id: string | null
+          sort_order: number | null
+        }
+        Insert: {
+          benefit_text: string
+          created_at?: string | null
+          id?: string
+          plan_id?: string | null
+          sort_order?: number | null
+        }
+        Update: {
+          benefit_text?: string
+          created_at?: string | null
+          id?: string
+          plan_id?: string | null
+          sort_order?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "premium_benefits_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "premium_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      premium_memberships: {
+        Row: {
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          is_trial: boolean | null
+          plan_id: string | null
+          starts_at: string | null
+          status: string
+          trial_days: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          is_trial?: boolean | null
+          plan_id?: string | null
+          starts_at?: string | null
+          status?: string
+          trial_days?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          is_trial?: boolean | null
+          plan_id?: string | null
+          starts_at?: string | null
+          status?: string
+          trial_days?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "premium_memberships_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "premium_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      premium_plans: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          discount_percent: number | null
+          duration_days: number
+          early_access: boolean | null
+          free_shipping: boolean | null
+          id: string
+          is_active: boolean | null
+          name: string
+          price: number
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          discount_percent?: number | null
+          duration_days?: number
+          early_access?: boolean | null
+          free_shipping?: boolean | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          price?: number
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          discount_percent?: number | null
+          duration_days?: number
+          early_access?: boolean | null
+          free_shipping?: boolean | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          price?: number
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      premium_requests: {
+        Row: {
+          created_at: string | null
+          id: string
+          plan_id: string | null
+          rejection_reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          plan_id?: string | null
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          plan_id?: string | null
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "premium_requests_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "premium_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_analytics: {
+        Row: {
+          cart_add_count: number | null
+          created_at: string | null
+          id: string
+          last_viewed_at: string | null
+          product_id: string | null
+          view_count: number | null
+        }
+        Insert: {
+          cart_add_count?: number | null
+          created_at?: string | null
+          id?: string
+          last_viewed_at?: string | null
+          product_id?: string | null
+          view_count?: number | null
+        }
+        Update: {
+          cart_add_count?: number | null
+          created_at?: string | null
+          id?: string
+          last_viewed_at?: string | null
+          product_id?: string | null
+          view_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_analytics_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: true
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_categories: {
         Row: {
           category_id: string
@@ -513,6 +930,45 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "product_images_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_purchase_pairs: {
+        Row: {
+          id: string
+          paired_product_id: string | null
+          product_id: string | null
+          purchase_count: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          paired_product_id?: string | null
+          product_id?: string | null
+          purchase_count?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          paired_product_id?: string | null
+          product_id?: string | null
+          purchase_count?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_purchase_pairs_paired_product_id_fkey"
+            columns: ["paired_product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_purchase_pairs_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "products"
@@ -691,6 +1147,60 @@ export type Database = {
         }
         Relationships: []
       }
+      search_history: {
+        Row: {
+          created_at: string | null
+          id: string
+          results_count: number | null
+          search_query: string
+          session_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          results_count?: number | null
+          search_query: string
+          session_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          results_count?: number | null
+          search_query?: string
+          session_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      site_policies: {
+        Row: {
+          content: string | null
+          id: string
+          is_active: boolean | null
+          policy_type: string
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          content?: string | null
+          id?: string
+          is_active?: boolean | null
+          policy_type: string
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          content?: string | null
+          id?: string
+          is_active?: boolean | null
+          policy_type?: string
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       site_settings: {
         Row: {
           address: string | null
@@ -775,6 +1285,72 @@ export type Database = {
         }
         Relationships: []
       }
+      supported_languages: {
+        Row: {
+          code: string
+          created_at: string | null
+          currency_code: string
+          currency_symbol: string
+          id: string
+          is_active: boolean | null
+          is_default: boolean | null
+          name: string
+          native_name: string
+          sort_order: number | null
+        }
+        Insert: {
+          code: string
+          created_at?: string | null
+          currency_code: string
+          currency_symbol: string
+          id?: string
+          is_active?: boolean | null
+          is_default?: boolean | null
+          name: string
+          native_name: string
+          sort_order?: number | null
+        }
+        Update: {
+          code?: string
+          created_at?: string | null
+          currency_code?: string
+          currency_symbol?: string
+          id?: string
+          is_active?: boolean | null
+          is_default?: boolean | null
+          name?: string
+          native_name?: string
+          sort_order?: number | null
+        }
+        Relationships: []
+      }
+      urgency_settings: {
+        Row: {
+          display_text: string | null
+          id: string
+          is_enabled: boolean | null
+          setting_key: string
+          threshold: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          display_text?: string | null
+          id?: string
+          is_enabled?: boolean | null
+          setting_key: string
+          threshold?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          display_text?: string | null
+          id?: string
+          is_enabled?: boolean | null
+          setting_key?: string
+          threshold?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string | null
@@ -855,6 +1431,11 @@ export type Database = {
         Args: { p_coupon_id: string }
         Returns: undefined
       }
+      increment_product_view: {
+        Args: { p_product_id: string }
+        Returns: undefined
+      }
+      is_premium_user: { Args: { p_user_id: string }; Returns: boolean }
       validate_coupon: {
         Args: { p_code: string; p_order_total: number; p_user_id: string }
         Returns: {
