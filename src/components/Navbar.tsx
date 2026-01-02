@@ -320,6 +320,11 @@ const Navbar = () => {
             <Link to="/follow" className="text-white hover:text-white/80 transition-colors text-sm lg:text-base hidden lg:block">
               Bizi Takip Edin!
             </Link>
+            <Link to="/premium" className="text-white hover:text-white/80 transition-colors text-sm lg:text-base hidden lg:flex items-center gap-1">
+              <Crown className="h-4 w-4" />
+              Premium
+            </Link>
+            <LanguageSelector />
             <Button
               variant="ghost"
               size="icon"

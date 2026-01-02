@@ -149,6 +149,7 @@ export type Database = {
           hide_days_after_close: number | null
           id: string
           is_active: boolean | null
+          is_dismissible: boolean | null
           priority: number | null
           scrolling_text: string | null
           show_countdown: boolean | null
@@ -172,6 +173,7 @@ export type Database = {
           hide_days_after_close?: number | null
           id?: string
           is_active?: boolean | null
+          is_dismissible?: boolean | null
           priority?: number | null
           scrolling_text?: string | null
           show_countdown?: boolean | null
@@ -195,6 +197,7 @@ export type Database = {
           hide_days_after_close?: number | null
           id?: string
           is_active?: boolean | null
+          is_dismissible?: boolean | null
           priority?: number | null
           scrolling_text?: string | null
           show_countdown?: boolean | null

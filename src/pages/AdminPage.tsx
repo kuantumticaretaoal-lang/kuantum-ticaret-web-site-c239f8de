@@ -164,6 +164,7 @@ const AdminPage = () => {
             {activeTab === "policies" && <AdminPolicies />}
             {activeTab === "languages" && <AdminLanguages />}
             {activeTab === "urgency" && <AdminUrgencySettings />}
+            {activeTab === "shipping" && <AdminShipping />}
           </div>
         ) : (
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -190,7 +191,8 @@ const AdminPage = () => {
                 <TabsTrigger value="premium" className="min-w-[100px]">Premium</TabsTrigger>
                 <TabsTrigger value="policies" className="min-w-[100px]">Politikalar</TabsTrigger>
                 <TabsTrigger value="languages" className="min-w-[100px]">Diller</TabsTrigger>
-                <TabsTrigger value="urgency" className="min-w-[130px]">Aciliyet Ayarları</TabsTrigger>
+              <TabsTrigger value="urgency" className="min-w-[130px]">Aciliyet Ayarları</TabsTrigger>
+              <TabsTrigger value="shipping" className="min-w-[130px]">Kargo Ayarları</TabsTrigger>
               </TabsList>
             </div>
 
@@ -280,6 +282,10 @@ const AdminPage = () => {
 
             <TabsContent value="urgency">
               <AdminUrgencySettings />
+            </TabsContent>
+
+            <TabsContent value="shipping">
+              <AdminShipping />
             </TabsContent>
           </Tabs>
         )}
