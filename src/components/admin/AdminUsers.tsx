@@ -3,23 +3,27 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { formatPhoneNumber, formatProvince, formatDistrict } from "@/lib/formatters";
 import { logger } from "@/lib/logger";
 import { exportToExcel, formatDateForExport } from "@/lib/excel-export";
-import { Download } from "lucide-react";
+import { Download, Crown, Bell, Sparkles } from "lucide-react";
 
 export const AdminUsers = () => {
   const [users, setUsers] = useState<any[]>([]);
+  const [premiumUsers, setPremiumUsers] = useState<Set<string>>(new Set());
   const [isMainAdmin, setIsMainAdmin] = useState(false);
   const [totalUsers, setTotalUsers] = useState(0);
   const [lastRegistration, setLastRegistration] = useState<string | null>(null);
+  const [processingUsers, setProcessingUsers] = useState<Set<string>>(new Set());
   const { toast } = useToast();
 
   useEffect(() => {
     checkMainAdmin();
     loadUsers();
+    loadPremiumUsers();
 
     const profilesChannel = supabase
       .channel("users-changes")
@@ -35,9 +39,17 @@ export const AdminUsers = () => {
       })
       .subscribe();
 
+    const premiumChannel = supabase
+      .channel("premium-changes")
+      .on("postgres_changes", { event: "*", schema: "public", table: "premium_memberships" }, () => {
+        loadPremiumUsers();
+      })
+      .subscribe();
+
     return () => {
       supabase.removeChannel(profilesChannel);
       supabase.removeChannel(rolesChannel);
+      supabase.removeChannel(premiumChannel);
     };
   }, []);
 
@@ -53,6 +65,18 @@ export const AdminUsers = () => {
       .maybeSingle();
 
     setIsMainAdmin(data?.is_main_admin === true);
+  };
+
+  const loadPremiumUsers = async () => {
+    const { data } = await (supabase as any)
+      .from("premium_memberships")
+      .select("user_id")
+      .eq("status", "active")
+      .gt("expires_at", new Date().toISOString());
+
+    if (data) {
+      setPremiumUsers(new Set(data.map((m: any) => m.user_id)));
+    }
   };
 
   const loadUsers = async () => {
@@ -128,6 +152,88 @@ export const AdminUsers = () => {
     }
   };
 
+  const grantPremiumTrial = async (userId: string) => {
+    setProcessingUsers(prev => new Set(prev).add(userId));
+    
+    try {
+      // 7 günlük deneme üyeliği oluştur
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 7);
+
+      const { error } = await (supabase as any)
+        .from("premium_memberships")
+        .insert({
+          user_id: userId,
+          status: "active",
+          is_trial: true,
+          trial_days: 7,
+          starts_at: new Date().toISOString(),
+          expires_at: expiresAt.toISOString(),
+        });
+
+      if (error) throw error;
+
+      // Kullanıcıya bildirim gönder
+      await (supabase as any)
+        .from("notifications")
+        .insert({
+          user_id: userId,
+          message: "🎉 Tebrikler! 7 günlük ücretsiz Premium deneme süreniz başladı. Premium avantajlarının keyfini çıkarın!",
+        });
+
+      toast({
+        title: "Başarılı",
+        description: "7 günlük Premium deneme süresi verildi",
+      });
+      
+      loadPremiumUsers();
+    } catch (error) {
+      logger.error("Premium deneme hatası", error);
+      toast({
+        variant: "destructive",
+        title: "Hata",
+        description: "Premium deneme verilemedi",
+      });
+    } finally {
+      setProcessingUsers(prev => {
+        const next = new Set(prev);
+        next.delete(userId);
+        return next;
+      });
+    }
+  };
+
+  const sendPremiumReminder = async (userId: string) => {
+    setProcessingUsers(prev => new Set(prev).add(userId));
+    
+    try {
+      await (supabase as any)
+        .from("notifications")
+        .insert({
+          user_id: userId,
+          message: "👑 Premium'a geçin! Özel indirimler, ücretsiz kargo ve daha fazlası sizi bekliyor. Hemen Premium üye olun!",
+        });
+
+      toast({
+        title: "Başarılı",
+        description: "Premium hatırlatma bildirimi gönderildi",
+      });
+    } catch (error) {
+      logger.error("Bildirim gönderme hatası", error);
+      toast({
+        variant: "destructive",
+        title: "Hata",
+        description: "Bildirim gönderilemedi",
+      });
+    } finally {
+      setProcessingUsers(prev => {
+        const next = new Set(prev);
+        next.delete(userId);
+        return next;
+      });
+    }
+  };
+
   const exportUsers = () => {
     const exportData = users.map(user => ({
       "Ad": user.first_name,
@@ -138,6 +244,7 @@ export const AdminUsers = () => {
       "İlçe": user.district,
       "Adres": user.address,
       "Kayıt Tarihi": formatDateForExport(user.created_at),
+      "Premium": premiumUsers.has(user.id) ? "Evet" : "Hayır",
     }));
     exportToExcel(exportData, 'kullanici-listesi', 'Kullanıcılar');
     toast({
@@ -182,64 +289,104 @@ export const AdminUsers = () => {
             </CardContent>
           </Card>
         </div>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>#</TableHead>
-              <TableHead>Ad</TableHead>
-              <TableHead>Soyad</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Telefon</TableHead>
-              <TableHead>İl</TableHead>
-              <TableHead>İlçe</TableHead>
-              <TableHead>İşlemler</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {users.length === 0 ? (
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
               <TableRow>
-                <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
-                  Henüz kayıtlı kullanıcı yok
-                </TableCell>
+                <TableHead>#</TableHead>
+                <TableHead>Ad</TableHead>
+                <TableHead>Soyad</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>Telefon</TableHead>
+                <TableHead>Premium</TableHead>
+                <TableHead>İşlemler</TableHead>
               </TableRow>
-            ) : (
-              users.map((user, index) => (
-                <TableRow key={user.id}>
-                  <TableCell>{index + 1}</TableCell>
-                  <TableCell>{isMainAdmin ? (user.first_name || "-") : "Bu bilgileri görme yetkiniz yok!"}</TableCell>
-                  <TableCell>{isMainAdmin ? (user.last_name || "-") : "Bu bilgileri görme yetkiniz yok!"}</TableCell>
-                  <TableCell>{isMainAdmin ? (user.email || "-") : "Bu bilgileri görme yetkiniz yok!"}</TableCell>
-                  <TableCell>{isMainAdmin ? (user.phone ? formatPhoneNumber(user.phone) : "-") : "Bu bilgileri görme yetkiniz yok!"}</TableCell>
-                  <TableCell>{isMainAdmin ? (user.province ? formatProvince(user.province) : "-") : "Bu bilgileri görme yetkiniz yok!"}</TableCell>
-                  <TableCell>{isMainAdmin ? (user.district ? formatDistrict(user.district) : "-") : "Bu bilgileri görme yetkiniz yok!"}</TableCell>
-                  <TableCell>
-                    {isMainAdmin && (
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button size="sm" variant="destructive">Sil</Button>
-                        </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Emin misiniz?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Bu işlem geri alınamaz. Kullanıcı kalıcı olarak silinecektir.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>İptal</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => deleteUser(user.id)}>
-                            Sil
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                    )}
+            </TableHeader>
+            <TableBody>
+              {users.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                    Henüz kayıtlı kullanıcı yok
                   </TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+              ) : (
+                users.map((user, index) => {
+                  const isPremium = premiumUsers.has(user.id);
+                  const isProcessing = processingUsers.has(user.id);
+                  
+                  return (
+                    <TableRow key={user.id}>
+                      <TableCell>{index + 1}</TableCell>
+                      <TableCell>{isMainAdmin ? (user.first_name || "-") : "***"}</TableCell>
+                      <TableCell>{isMainAdmin ? (user.last_name || "-") : "***"}</TableCell>
+                      <TableCell>{isMainAdmin ? (user.email || "-") : "***"}</TableCell>
+                      <TableCell>{isMainAdmin ? (user.phone ? formatPhoneNumber(user.phone) : "-") : "***"}</TableCell>
+                      <TableCell>
+                        {isPremium ? (
+                          <Badge className="bg-gradient-to-r from-yellow-500 to-amber-500 text-white">
+                            <Crown className="h-3 w-3 mr-1" />
+                            Premium
+                          </Badge>
+                        ) : (
+                          <Badge variant="secondary">Standart</Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1 flex-wrap">
+                          {!isPremium && isMainAdmin && (
+                            <>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => grantPremiumTrial(user.id)}
+                                disabled={isProcessing}
+                                className="text-xs"
+                              >
+                                <Sparkles className="h-3 w-3 mr-1" />
+                                {isProcessing ? "..." : "Denet"}
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => sendPremiumReminder(user.id)}
+                                disabled={isProcessing}
+                                className="text-xs"
+                              >
+                                <Bell className="h-3 w-3 mr-1" />
+                                {isProcessing ? "..." : "Hatırlat"}
+                              </Button>
+                            </>
+                          )}
+                          {isMainAdmin && (
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button size="sm" variant="destructive" className="text-xs">Sil</Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Emin misiniz?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Bu işlem geri alınamaz. Kullanıcı kalıcı olarak silinecektir.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>İptal</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => deleteUser(user.id)}>
+                                    Sil
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </CardContent>
     </Card>
   );

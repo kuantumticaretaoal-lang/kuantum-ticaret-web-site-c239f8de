@@ -3,13 +3,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, Eye } from "lucide-react";
+import { Plus, Pencil, Trash2, Eye, Copy } from "lucide-react";
 
 interface Banner {
   id: string;
@@ -31,7 +32,24 @@ interface Banner {
   target_cart_users: boolean;
   hide_days_after_close: number;
   priority: number;
+  is_dismissible: boolean;
 }
+
+// Hazır arka plan şablonları
+const backgroundTemplates = [
+  { name: "Kırmızı Gradient", value: "linear-gradient(135deg, #dc2626 0%, #991b1b 100%)" },
+  { name: "Mavi Gradient", value: "linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)" },
+  { name: "Yeşil Gradient", value: "linear-gradient(135deg, #16a34a 0%, #15803d 100%)" },
+  { name: "Mor Gradient", value: "linear-gradient(135deg, #9333ea 0%, #7e22ce 100%)" },
+  { name: "Turuncu Gradient", value: "linear-gradient(135deg, #ea580c 0%, #c2410c 100%)" },
+  { name: "Altın Gradient", value: "linear-gradient(135deg, #fbbf24 0%, #d97706 100%)" },
+  { name: "Siyah Premium", value: "linear-gradient(135deg, #1f2937 0%, #111827 100%)" },
+  { name: "Neon Pembe", value: "linear-gradient(135deg, #ec4899 0%, #db2777 100%)" },
+  { name: "Gökyüzü Mavisi", value: "linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%)" },
+  { name: "Yılbaşı", value: "linear-gradient(135deg, #dc2626 0%, #16a34a 50%, #dc2626 100%)" },
+  { name: "Gün Batımı", value: "linear-gradient(135deg, #f59e0b 0%, #ef4444 50%, #ec4899 100%)" },
+  { name: "Okyanus", value: "linear-gradient(135deg, #06b6d4 0%, #3b82f6 50%, #8b5cf6 100%)" },
+];
 
 const defaultBanner: Omit<Banner, 'id'> = {
   title: '',
@@ -52,6 +70,7 @@ const defaultBanner: Omit<Banner, 'id'> = {
   target_cart_users: false,
   hide_days_after_close: 1,
   priority: 0,
+  is_dismissible: true,
 };
 
 export const AdminCampaignBanners = () => {
@@ -60,6 +79,7 @@ export const AdminCampaignBanners = () => {
   const [editingBanner, setEditingBanner] = useState<Banner | null>(null);
   const [formData, setFormData] = useState<Omit<Banner, 'id'>>(defaultBanner);
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [selectedTemplate, setSelectedTemplate] = useState<string>("");
 
   const loadBanners = async () => {
     const { data, error } = await supabase
@@ -102,6 +122,15 @@ export const AdminCampaignBanners = () => {
     return urlData.publicUrl;
   };
 
+  const handleTemplateSelect = (value: string) => {
+    setSelectedTemplate(value);
+    const template = backgroundTemplates.find(t => t.value === value);
+    if (template) {
+      setFormData({ ...formData, background_color: value, background_image_url: null });
+      setImageFile(null);
+    }
+  };
+
   const handleSave = async () => {
     if (!formData.title.trim()) {
       toast.error('Başlık zorunludur');
@@ -140,6 +169,7 @@ export const AdminCampaignBanners = () => {
     setEditingBanner(null);
     setFormData(defaultBanner);
     setImageFile(null);
+    setSelectedTemplate("");
     loadBanners();
   };
 
@@ -164,6 +194,17 @@ export const AdminCampaignBanners = () => {
       target_cart_users: banner.target_cart_users,
       hide_days_after_close: banner.hide_days_after_close,
       priority: banner.priority,
+      is_dismissible: banner.is_dismissible ?? true,
+    });
+    setIsDialogOpen(true);
+  };
+
+  const handleDuplicate = (banner: Banner) => {
+    setEditingBanner(null);
+    setFormData({
+      ...banner,
+      title: `${banner.title} (Kopya)`,
+      is_active: false,
     });
     setIsDialogOpen(true);
   };
@@ -199,6 +240,16 @@ export const AdminCampaignBanners = () => {
     loadBanners();
   };
 
+  const getBackgroundPreview = (banner: Banner) => {
+    if (banner.background_image_url) {
+      return { backgroundImage: `url(${banner.background_image_url})`, backgroundSize: 'cover' };
+    }
+    if (banner.background_color.includes('gradient')) {
+      return { background: banner.background_color };
+    }
+    return { backgroundColor: banner.background_color };
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -209,6 +260,7 @@ export const AdminCampaignBanners = () => {
             setEditingBanner(null);
             setFormData(defaultBanner);
             setImageFile(null);
+            setSelectedTemplate("");
           }
         }}>
           <DialogTrigger asChild>
@@ -223,6 +275,24 @@ export const AdminCampaignBanners = () => {
                 {editingBanner ? 'Banner Düzenle' : 'Yeni Banner Ekle'}
               </DialogTitle>
             </DialogHeader>
+
+            {/* Önizleme */}
+            <div 
+              className="w-full py-3 px-4 rounded-lg mb-4"
+              style={{
+                ...(formData.background_color.includes('gradient') 
+                  ? { background: formData.background_color }
+                  : { backgroundColor: formData.background_color }),
+                color: formData.text_color,
+              }}
+            >
+              <div className="text-center">
+                <span className="font-bold">{formData.title || "Banner Önizleme"}</span>
+                {formData.description && (
+                  <span className="ml-2 text-sm opacity-90">{formData.description}</span>
+                )}
+              </div>
+            </div>
 
             <div className="grid gap-6 py-4">
               {/* Temel Bilgiler */}
@@ -276,19 +346,49 @@ export const AdminCampaignBanners = () => {
                   <CardTitle className="text-lg">Görünüm</CardTitle>
                 </CardHeader>
                 <CardContent className="grid gap-4">
+                  {/* Hazır Şablonlar */}
+                  <div>
+                    <Label>Hazır Arka Plan Şablonu</Label>
+                    <Select value={selectedTemplate} onValueChange={handleTemplateSelect}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Şablon seçin..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {backgroundTemplates.map((template) => (
+                          <SelectItem key={template.value} value={template.value}>
+                            <div className="flex items-center gap-2">
+                              <div 
+                                className="w-6 h-6 rounded"
+                                style={{ background: template.value }}
+                              />
+                              {template.name}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label>Arka Plan Rengi</Label>
+                      <Label>Özel Arka Plan Rengi</Label>
                       <div className="flex gap-2">
                         <Input
                           type="color"
-                          value={formData.background_color}
-                          onChange={(e) => setFormData({ ...formData, background_color: e.target.value })}
+                          value={formData.background_color.startsWith('#') ? formData.background_color : '#dc2626'}
+                          onChange={(e) => {
+                            setFormData({ ...formData, background_color: e.target.value });
+                            setSelectedTemplate("");
+                          }}
                           className="w-16 h-10 p-1"
                         />
                         <Input
                           value={formData.background_color}
-                          onChange={(e) => setFormData({ ...formData, background_color: e.target.value })}
+                          onChange={(e) => {
+                            setFormData({ ...formData, background_color: e.target.value });
+                            setSelectedTemplate("");
+                          }}
+                          placeholder="#dc2626 veya gradient"
                         />
                       </div>
                     </div>
@@ -310,11 +410,14 @@ export const AdminCampaignBanners = () => {
                   </div>
 
                   <div>
-                    <Label>Arka Plan Resmi</Label>
+                    <Label>Arka Plan Resmi (Opsiyonel)</Label>
                     <Input
                       type="file"
                       accept="image/*"
-                      onChange={(e) => setImageFile(e.target.files?.[0] || null)}
+                      onChange={(e) => {
+                        setImageFile(e.target.files?.[0] || null);
+                        setSelectedTemplate("");
+                      }}
                     />
                     {formData.background_image_url && (
                       <img 
@@ -327,12 +430,35 @@ export const AdminCampaignBanners = () => {
                 </CardContent>
               </Card>
 
-              {/* Geri Sayım */}
+              {/* Kapanabilirlik ve Geri Sayım */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">Geri Sayım</CardTitle>
+                  <CardTitle className="text-lg">Davranış Ayarları</CardTitle>
                 </CardHeader>
                 <CardContent className="grid gap-4">
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      checked={formData.is_dismissible}
+                      onCheckedChange={(checked) => setFormData({ ...formData, is_dismissible: checked })}
+                    />
+                    <Label>Kullanıcı kapatabilir</Label>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Kapatılamaz banner'lar sürekli görünür ve X butonu göstermez
+                  </p>
+
+                  {formData.is_dismissible && (
+                    <div>
+                      <Label>Kapatıldıktan sonra kaç gün gizlensin? (0 = Kalıcı gizle)</Label>
+                      <Input
+                        type="number"
+                        min="0"
+                        value={formData.hide_days_after_close}
+                        onChange={(e) => setFormData({ ...formData, hide_days_after_close: parseInt(e.target.value) || 0 })}
+                      />
+                    </div>
+                  )}
+
                   <div className="flex items-center gap-2">
                     <Switch
                       checked={formData.show_countdown}
@@ -442,24 +568,6 @@ export const AdminCampaignBanners = () => {
                 </CardContent>
               </Card>
 
-              {/* Kapatma Davranışı */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Kapatma Davranışı</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div>
-                    <Label>Kapatıldıktan sonra kaç gün gizlensin? (0 = Kalıcı gizle)</Label>
-                    <Input
-                      type="number"
-                      min="0"
-                      value={formData.hide_days_after_close}
-                      onChange={(e) => setFormData({ ...formData, hide_days_after_close: parseInt(e.target.value) || 0 })}
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-
               {/* Aktiflik */}
               <div className="flex items-center gap-2">
                 <Switch
@@ -483,76 +591,90 @@ export const AdminCampaignBanners = () => {
       </div>
 
       {/* Banner Listesi */}
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Önizleme</TableHead>
-            <TableHead>Başlık</TableHead>
-            <TableHead>Hedefleme</TableHead>
-            <TableHead>Bitiş</TableHead>
-            <TableHead>Öncelik</TableHead>
-            <TableHead>Durum</TableHead>
-            <TableHead>İşlemler</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {banners.map((banner) => (
-            <TableRow key={banner.id}>
-              <TableCell>
-                <div 
-                  className="w-32 h-8 rounded flex items-center justify-center text-xs px-2 overflow-hidden"
-                  style={{ 
-                    backgroundColor: banner.background_color, 
-                    color: banner.text_color,
-                    backgroundImage: banner.background_image_url ? `url(${banner.background_image_url})` : undefined,
-                    backgroundSize: 'cover'
-                  }}
-                >
-                  {banner.title}
+      <div className="grid gap-4">
+        {banners.length === 0 ? (
+          <Card>
+            <CardContent className="py-12 text-center text-muted-foreground">
+              Henüz banner eklenmemiş
+            </CardContent>
+          </Card>
+        ) : (
+          banners.map((banner) => (
+            <Card key={banner.id}>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-4">
+                  {/* Önizleme */}
+                  <div 
+                    className="w-32 h-12 rounded flex items-center justify-center text-xs font-medium shrink-0"
+                    style={{
+                      ...getBackgroundPreview(banner),
+                      color: banner.text_color,
+                    }}
+                  >
+                    {banner.title.slice(0, 15)}...
+                  </div>
+
+                  {/* Bilgiler */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="font-medium truncate">{banner.title}</span>
+                      <Badge variant={banner.is_active ? "default" : "secondary"}>
+                        {banner.is_active ? "Aktif" : "Pasif"}
+                      </Badge>
+                      {!banner.is_dismissible && (
+                        <Badge variant="outline">Kapatılamaz</Badge>
+                      )}
+                    </div>
+                    <div className="text-xs text-muted-foreground flex flex-wrap gap-2">
+                      <span>Öncelik: {banner.priority}</span>
+                      {banner.show_countdown && banner.countdown_end && (
+                        <span>Bitiş: {new Date(banner.countdown_end).toLocaleString('tr-TR')}</span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* İşlemler */}
+                  <div className="flex items-center gap-1 shrink-0">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => toggleActive(banner.id, banner.is_active)}
+                      title={banner.is_active ? "Pasifleştir" : "Aktifleştir"}
+                    >
+                      <Eye className={`h-4 w-4 ${banner.is_active ? "" : "opacity-50"}`} />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleDuplicate(banner)}
+                      title="Kopyala"
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleEdit(banner)}
+                      title="Düzenle"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleDelete(banner.id)}
+                      className="text-destructive hover:text-destructive"
+                      title="Sil"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
-              </TableCell>
-              <TableCell className="font-medium">{banner.title}</TableCell>
-              <TableCell className="text-sm text-muted-foreground">
-                {banner.show_on_all_pages ? 'Tüm site' : 
-                  [
-                    banner.show_on_homepage && 'Ana sayfa',
-                    banner.show_on_products && 'Ürünler'
-                  ].filter(Boolean).join(', ') || 'Belirtilmemiş'}
-              </TableCell>
-              <TableCell>
-                {banner.countdown_end 
-                  ? new Date(banner.countdown_end).toLocaleDateString('tr-TR')
-                  : '-'
-                }
-              </TableCell>
-              <TableCell>{banner.priority}</TableCell>
-              <TableCell>
-                <Switch
-                  checked={banner.is_active}
-                  onCheckedChange={() => toggleActive(banner.id, banner.is_active)}
-                />
-              </TableCell>
-              <TableCell>
-                <div className="flex gap-2">
-                  <Button variant="ghost" size="icon" onClick={() => handleEdit(banner)}>
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="icon" onClick={() => handleDelete(banner.id)}>
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                  </Button>
-                </div>
-              </TableCell>
-            </TableRow>
-          ))}
-          {banners.length === 0 && (
-            <TableRow>
-              <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
-                Henüz banner eklenmemiş
-              </TableCell>
-            </TableRow>
-          )}
-        </TableBody>
-      </Table>
+              </CardContent>
+            </Card>
+          ))
+        )}
+      </div>
     </div>
   );
 };

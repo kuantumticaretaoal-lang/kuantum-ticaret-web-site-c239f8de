@@ -14,6 +14,7 @@ interface Banner {
   show_countdown: boolean;
   scrolling_text: string | null;
   hide_days_after_close: number;
+  is_dismissible: boolean;
 }
 
 interface TimeRemaining {
@@ -125,8 +126,10 @@ export const CampaignBanner = ({ currentPage }: CampaignBannerProps) => {
 
     // Uygun banner'ı bul
     for (const b of banners) {
-      // Kapatılmış mı kontrol et
-      if (dismissedBannerIds.has(b.id)) {
+      const isDismissible = b.is_dismissible !== false;
+      
+      // Kapatılmış mı kontrol et (sadece kapatılabilir banner'lar için)
+      if (isDismissible && dismissedBannerIds.has(b.id)) {
         const dismissal = dismissals?.find(d => d.banner_id === b.id);
         if (dismissal && b.hide_days_after_close > 0) {
           const dismissedAt = new Date(dismissal.dismissed_at);
@@ -198,7 +201,7 @@ export const CampaignBanner = ({ currentPage }: CampaignBannerProps) => {
   }, [banner, loadBanner]);
 
   const handleDismiss = async () => {
-    if (!banner) return;
+    if (!banner || !banner.is_dismissible) return;
     
     const deviceId = getDeviceId();
     
@@ -213,20 +216,31 @@ export const CampaignBanner = ({ currentPage }: CampaignBannerProps) => {
 
   if (!banner || !isVisible) return null;
 
-  const backgroundStyle: React.CSSProperties = {
-    backgroundColor: banner.background_color,
-    color: banner.text_color,
-    ...(banner.background_image_url && {
-      backgroundImage: `url(${banner.background_image_url})`,
-      backgroundSize: 'cover',
-      backgroundPosition: 'center',
-    }),
+  const getBackgroundStyle = (): React.CSSProperties => {
+    if (banner.background_image_url) {
+      return {
+        backgroundImage: `url(${banner.background_image_url})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        color: banner.text_color,
+      };
+    }
+    if (banner.background_color.includes('gradient')) {
+      return {
+        background: banner.background_color,
+        color: banner.text_color,
+      };
+    }
+    return {
+      backgroundColor: banner.background_color,
+      color: banner.text_color,
+    };
   };
 
   return (
     <div 
       className="relative w-full py-3 px-4 overflow-hidden"
-      style={backgroundStyle}
+      style={getBackgroundStyle()}
     >
       <div className="container mx-auto flex items-center justify-between gap-4">
         {/* Kayan yazı veya başlık */}
@@ -272,16 +286,18 @@ export const CampaignBanner = ({ currentPage }: CampaignBannerProps) => {
           </div>
         )}
 
-        {/* Kapat butonu */}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-6 w-6 hover:bg-white/20"
-          onClick={handleDismiss}
-          style={{ color: banner.text_color }}
-        >
-          <X className="h-4 w-4" />
-        </Button>
+        {/* Kapat butonu - sadece kapatılabilir banner'lar için */}
+        {banner.is_dismissible !== false && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6 hover:bg-white/20"
+            onClick={handleDismiss}
+            style={{ color: banner.text_color }}
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        )}
       </div>
 
       <style>{`

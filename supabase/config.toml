@@ -1,1 +1,10 @@
 project_id = "ldfhcfkflzgebnehbanr"
+
+[functions.abandoned-cart-email]
+verify_jwt = false
+
+[functions.verify-admin-passcode]
+verify_jwt = false
+
+[functions.fetch-exchange-rates]
+verify_jwt = false
