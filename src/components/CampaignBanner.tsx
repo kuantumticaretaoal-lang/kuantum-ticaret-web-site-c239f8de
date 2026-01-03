@@ -15,6 +15,7 @@ interface Banner {
   scrolling_text: string | null;
   hide_days_after_close: number;
   is_dismissible: boolean;
+  scroll_speed: number;
 }
 
 interface TimeRemaining {
@@ -52,21 +53,19 @@ export const CampaignBanner = ({ currentPage }: CampaignBannerProps) => {
       setUser(user);
 
       if (user) {
-        // Premium kontrolü
         const { data: membership } = await supabase
           .from('premium_memberships')
           .select('*')
           .eq('user_id', user.id)
           .eq('status', 'active')
-          .single();
+          .maybeSingle();
         setIsPremium(!!membership);
 
-        // Yeni kullanıcı kontrolü (son 7 gün içinde kayıt)
         const { data: profile } = await supabase
           .from('profiles')
           .select('created_at')
           .eq('id', user.id)
-          .single();
+          .maybeSingle();
         if (profile) {
           const createdAt = new Date(profile.created_at);
           const sevenDaysAgo = new Date();
@@ -74,7 +73,6 @@ export const CampaignBanner = ({ currentPage }: CampaignBannerProps) => {
           setIsNewUser(createdAt > sevenDaysAgo);
         }
 
-        // Sepet kontrolü
         const { data: cart } = await supabase
           .from('cart')
           .select('id')
@@ -82,7 +80,6 @@ export const CampaignBanner = ({ currentPage }: CampaignBannerProps) => {
           .limit(1);
         setHasCartItems(!!cart && cart.length > 0);
       } else {
-        // Anonim sepet kontrolü
         const sessionId = localStorage.getItem('session_id');
         if (sessionId) {
           const { data: cart } = await supabase
@@ -101,7 +98,6 @@ export const CampaignBanner = ({ currentPage }: CampaignBannerProps) => {
   const loadBanner = useCallback(async () => {
     const deviceId = getDeviceId();
     
-    // Kapatılmış banner'ları kontrol et
     const { data: dismissals } = await supabase
       .from('banner_dismissals')
       .select('banner_id, dismissed_at')
@@ -112,7 +108,6 @@ export const CampaignBanner = ({ currentPage }: CampaignBannerProps) => {
       dismissedBannerIds.add(d.banner_id);
     });
 
-    // Aktif banner'ları getir
     const { data: banners } = await supabase
       .from('campaign_banners')
       .select('*')
@@ -124,11 +119,9 @@ export const CampaignBanner = ({ currentPage }: CampaignBannerProps) => {
       return;
     }
 
-    // Uygun banner'ı bul
     for (const b of banners) {
       const isDismissible = b.is_dismissible !== false;
       
-      // Kapatılmış mı kontrol et (sadece kapatılabilir banner'lar için)
       if (isDismissible && dismissedBannerIds.has(b.id)) {
         const dismissal = dismissals?.find(d => d.banner_id === b.id);
         if (dismissal && b.hide_days_after_close > 0) {
@@ -137,31 +130,31 @@ export const CampaignBanner = ({ currentPage }: CampaignBannerProps) => {
           hideUntil.setDate(hideUntil.getDate() + b.hide_days_after_close);
           if (new Date() < hideUntil) continue;
         } else if (b.hide_days_after_close === 0) {
-          continue; // Kalıcı olarak gizle
+          continue;
         }
       }
 
-      // Sayfa hedefleme kontrolü
       if (!b.show_on_all_pages) {
         if ((currentPage === 'home' || currentPage === 'homepage') && !b.show_on_homepage) continue;
         if ((currentPage === 'products' || currentPage === 'category') && !b.show_on_products) continue;
         if (currentPage === 'other' && !b.show_on_homepage && !b.show_on_products) continue;
       }
 
-      // Segment hedefleme kontrolü
       if (!b.target_all_users) {
         if (b.target_new_users && !isNewUser) continue;
         if (b.target_premium_users && !isPremium) continue;
         if (b.target_cart_users && !hasCartItems) continue;
       }
 
-      // Geri sayım kontrolü
       if (b.countdown_end) {
         const endDate = new Date(b.countdown_end);
-        if (endDate <= new Date()) continue; // Süresi dolmuş
+        if (endDate <= new Date()) continue;
       }
 
-      setBanner(b);
+      setBanner({
+        ...b,
+        scroll_speed: b.scroll_speed || 15
+      });
       return;
     }
 
@@ -172,7 +165,6 @@ export const CampaignBanner = ({ currentPage }: CampaignBannerProps) => {
     loadBanner();
   }, [loadBanner]);
 
-  // Geri sayım timer
   useEffect(() => {
     if (!banner?.countdown_end || !banner.show_countdown) return;
 
@@ -183,7 +175,7 @@ export const CampaignBanner = ({ currentPage }: CampaignBannerProps) => {
 
       if (distance <= 0) {
         setTimeRemaining(null);
-        loadBanner(); // Banner'ı yeniden yükle (süresi dolmuş olabilir)
+        loadBanner();
         return;
       }
 
@@ -237,65 +229,83 @@ export const CampaignBanner = ({ currentPage }: CampaignBannerProps) => {
     };
   };
 
+  const scrollSpeed = banner.scroll_speed || 15;
+
   return (
     <div 
-      className="relative w-full py-3 px-4 overflow-hidden"
+      className="relative w-full py-2 sm:py-3 px-2 sm:px-4 overflow-hidden"
       style={getBackgroundStyle()}
     >
-      <div className="container mx-auto flex items-center justify-between gap-4">
+      <div className="container mx-auto flex items-center justify-between gap-2 sm:gap-4">
         {/* Kayan yazı veya başlık */}
-        <div className="flex-1 overflow-hidden">
+        <div className="flex-1 overflow-hidden min-w-0">
           {banner.scrolling_text ? (
-            <div className="animate-marquee whitespace-nowrap">
-              <span className="mx-4">{banner.scrolling_text}</span>
-              <span className="mx-4">{banner.scrolling_text}</span>
-              <span className="mx-4">{banner.scrolling_text}</span>
+            <div 
+              className="whitespace-nowrap"
+              style={{
+                animation: `marquee ${scrollSpeed}s linear infinite`,
+              }}
+            >
+              <span className="mx-2 sm:mx-4 text-sm sm:text-base">{banner.scrolling_text}</span>
+              <span className="mx-2 sm:mx-4 text-sm sm:text-base">{banner.scrolling_text}</span>
+              <span className="mx-2 sm:mx-4 text-sm sm:text-base">{banner.scrolling_text}</span>
             </div>
           ) : (
             <div className="text-center">
-              <span className="font-bold text-lg">{banner.title}</span>
+              <span className="font-bold text-sm sm:text-lg">{banner.title}</span>
               {banner.description && (
-                <span className="ml-2 text-sm opacity-90">{banner.description}</span>
+                <span className="ml-2 text-xs sm:text-sm opacity-90 hidden sm:inline">{banner.description}</span>
               )}
             </div>
           )}
         </div>
 
-        {/* Geri sayım */}
+        {/* Geri sayım - mobilde gizle */}
         {banner.show_countdown && timeRemaining && (
-          <div className="flex items-center gap-2 text-sm font-mono bg-black/20 rounded-lg px-3 py-1">
+          <div className="hidden sm:flex items-center gap-1 sm:gap-2 text-xs sm:text-sm font-mono bg-black/20 rounded-lg px-2 sm:px-3 py-1 flex-shrink-0">
             <div className="text-center">
-              <span className="text-lg font-bold">{timeRemaining.days}</span>
-              <span className="text-xs block opacity-75">Gün</span>
+              <span className="text-sm sm:text-lg font-bold">{timeRemaining.days}</span>
+              <span className="text-[10px] sm:text-xs block opacity-75">Gün</span>
             </div>
-            <span className="text-lg">:</span>
+            <span className="text-sm sm:text-lg">:</span>
             <div className="text-center">
-              <span className="text-lg font-bold">{String(timeRemaining.hours).padStart(2, '0')}</span>
-              <span className="text-xs block opacity-75">Saat</span>
+              <span className="text-sm sm:text-lg font-bold">{String(timeRemaining.hours).padStart(2, '0')}</span>
+              <span className="text-[10px] sm:text-xs block opacity-75">Saat</span>
             </div>
-            <span className="text-lg">:</span>
+            <span className="text-sm sm:text-lg">:</span>
             <div className="text-center">
-              <span className="text-lg font-bold">{String(timeRemaining.minutes).padStart(2, '0')}</span>
-              <span className="text-xs block opacity-75">Dk</span>
+              <span className="text-sm sm:text-lg font-bold">{String(timeRemaining.minutes).padStart(2, '0')}</span>
+              <span className="text-[10px] sm:text-xs block opacity-75">Dk</span>
             </div>
-            <span className="text-lg">:</span>
+            <span className="text-sm sm:text-lg">:</span>
             <div className="text-center">
-              <span className="text-lg font-bold">{String(timeRemaining.seconds).padStart(2, '0')}</span>
-              <span className="text-xs block opacity-75">Sn</span>
+              <span className="text-sm sm:text-lg font-bold">{String(timeRemaining.seconds).padStart(2, '0')}</span>
+              <span className="text-[10px] sm:text-xs block opacity-75">Sn</span>
             </div>
           </div>
         )}
 
-        {/* Kapat butonu - sadece kapatılabilir banner'lar için */}
+        {/* Mobil geri sayım - sadece saat:dakika */}
+        {banner.show_countdown && timeRemaining && (
+          <div className="flex sm:hidden items-center gap-1 text-xs font-mono bg-black/20 rounded px-2 py-1 flex-shrink-0">
+            <span className="font-bold">{timeRemaining.days}g</span>
+            <span>:</span>
+            <span className="font-bold">{String(timeRemaining.hours).padStart(2, '0')}</span>
+            <span>:</span>
+            <span className="font-bold">{String(timeRemaining.minutes).padStart(2, '0')}</span>
+          </div>
+        )}
+
+        {/* Kapat butonu */}
         {banner.is_dismissible !== false && (
           <Button
             variant="ghost"
             size="icon"
-            className="h-6 w-6 hover:bg-white/20"
+            className="h-5 w-5 sm:h-6 sm:w-6 hover:bg-white/20 flex-shrink-0"
             onClick={handleDismiss}
             style={{ color: banner.text_color }}
           >
-            <X className="h-4 w-4" />
+            <X className="h-3 w-3 sm:h-4 sm:w-4" />
           </Button>
         )}
       </div>
@@ -304,9 +314,6 @@ export const CampaignBanner = ({ currentPage }: CampaignBannerProps) => {
         @keyframes marquee {
           0% { transform: translateX(0); }
           100% { transform: translateX(-33.33%); }
-        }
-        .animate-marquee {
-          animation: marquee 15s linear infinite;
         }
       `}</style>
     </div>

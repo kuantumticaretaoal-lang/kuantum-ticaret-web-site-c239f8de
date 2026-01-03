@@ -9,7 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { signOut } from "@/lib/auth";
 import { getCartItems, getSessionId } from "@/lib/cart";
 import { useToast } from "@/hooks/use-toast";
-import { LanguageSelector } from "@/components/LanguageSelector";
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -320,11 +320,9 @@ const Navbar = () => {
             <Link to="/follow" className="text-white hover:text-white/80 transition-colors text-sm lg:text-base hidden lg:block">
               Bizi Takip Edin!
             </Link>
-            <Link to="/premium" className="text-white hover:text-white/80 transition-colors text-sm lg:text-base hidden lg:flex items-center gap-1">
+            <Link to="/premium" className="text-amber-300 hover:text-amber-200 transition-colors hidden lg:flex" title="Premium">
               <Crown className="h-4 w-4" />
-              Premium
             </Link>
-            <LanguageSelector />
             <Button
               variant="ghost"
               size="icon"

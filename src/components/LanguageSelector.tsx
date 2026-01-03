@@ -7,7 +7,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { Globe, RefreshCw } from "lucide-react";
+import { Globe, RefreshCw, ChevronDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface Language {
@@ -18,7 +18,11 @@ interface Language {
   currency_symbol: string;
 }
 
-export const LanguageSelector = () => {
+interface LanguageSelectorProps {
+  variant?: "navbar" | "footer";
+}
+
+export const LanguageSelector = ({ variant = "navbar" }: LanguageSelectorProps) => {
   const [languages, setLanguages] = useState<Language[]>([]);
   const [currentLanguage, setCurrentLanguage] = useState<Language | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -84,6 +88,41 @@ export const LanguageSelector = () => {
   };
 
   if (languages.length <= 1) return null;
+
+  if (variant === "footer") {
+    return (
+      <div className="space-y-2">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" className="w-full justify-between bg-white/10 border-white/20 text-white hover:bg-white/20 hover:text-white">
+              <div className="flex items-center gap-2">
+                <Globe className="h-4 w-4" />
+                <span>{currentLanguage?.native_name}</span>
+                <span className="text-white/70">({currentLanguage?.currency_symbol})</span>
+              </div>
+              <ChevronDown className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48">
+            {languages.map((lang) => (
+              <DropdownMenuItem
+                key={lang.code}
+                onClick={() => handleSelect(lang)}
+                className={currentLanguage?.code === lang.code ? "bg-muted" : ""}
+              >
+                <span className="flex-1">{lang.native_name}</span>
+                <span className="text-muted-foreground ml-2">{lang.currency_symbol}</span>
+              </DropdownMenuItem>
+            ))}
+            <DropdownMenuItem onClick={refreshExchangeRates} disabled={isRefreshing}>
+              <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? "animate-spin" : ""}`} />
+              {isRefreshing ? "Güncelleniyor..." : "Kurları Güncelle"}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    );
+  }
 
   return (
     <DropdownMenu>
