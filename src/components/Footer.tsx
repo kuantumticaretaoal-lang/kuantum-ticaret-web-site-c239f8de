@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 import { Mail, Phone, MapPin } from "lucide-react";
 import { logger } from "@/lib/logger";
+import { LanguageSelector } from "@/components/LanguageSelector";
 
 const Footer = () => {
   const [settings, setSettings] = useState<any>(null);
@@ -30,10 +31,11 @@ const Footer = () => {
       logger.error("Settings yüklenemedi", error);
     }
   };
+
   return (
     <footer className="bg-[#1e3a5f] text-white py-12">
       <div className="container mx-auto px-4">
-        <div className="grid md:grid-cols-3 gap-8 mb-8">
+        <div className="grid md:grid-cols-4 gap-8 mb-8">
           {/* Company Info */}
           <div>
             <h3 className="text-xl font-bold mb-3">Kuantum Ticaret</h3>
@@ -96,6 +98,14 @@ const Footer = () => {
                 </li>
               )}
             </ul>
+          </div>
+
+          {/* Language/Currency Selector */}
+          <div>
+            <h3 className="text-xl font-bold mb-3">Dil & Para Birimi</h3>
+            <div className="mt-2">
+              <LanguageSelector variant="footer" />
+            </div>
           </div>
         </div>
 

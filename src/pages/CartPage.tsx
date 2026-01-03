@@ -29,6 +29,18 @@ interface PremiumBenefits {
   freeShipping: boolean;
 }
 
+interface ShippingSetting {
+  delivery_type: string;
+  base_fee: number;
+  is_active: boolean;
+}
+
+interface CurrencyInfo {
+  symbol: string;
+  rate: number;
+  code: string;
+}
+
 const CartPage = () => {
   const [cartItems, setCartItems] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
@@ -37,6 +49,8 @@ const CartPage = () => {
   const [couponCode, setCouponCode] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
   const [couponLoading, setCouponLoading] = useState(false);
+  const [shippingSettings, setShippingSettings] = useState<ShippingSetting[]>([]);
+  const [currency, setCurrency] = useState<CurrencyInfo>({ symbol: "₺", rate: 1, code: "TRY" });
   const [premiumBenefits, setPremiumBenefits] = useState<PremiumBenefits>({
     isPremium: false,
     discountPercent: 0,
@@ -49,6 +63,8 @@ const CartPage = () => {
     loadCart();
     loadOrders();
     loadPremiumStatus();
+    loadShippingSettings();
+    loadCurrencySettings();
 
     const channel = supabase
       .channel("cart-changes")
@@ -56,7 +72,6 @@ const CartPage = () => {
         const { data: { user } } = await supabase.auth.getUser();
         const sessionId = getSessionId();
         
-        // Only update if change is for current user/session
         if (
           (user && (payload.new as any)?.user_id === user.id) ||
           (!user && (payload.new as any)?.session_id === sessionId) ||
@@ -71,10 +86,61 @@ const CartPage = () => {
       })
       .subscribe();
 
+    // Listen for language changes
+    const handleLanguageChange = (e: CustomEvent) => {
+      loadCurrencySettings();
+    };
+    window.addEventListener('languageChange', handleLanguageChange as EventListener);
+
     return () => {
       supabase.removeChannel(channel);
+      window.removeEventListener('languageChange', handleLanguageChange as EventListener);
     };
   }, []);
+
+  const loadCurrencySettings = async () => {
+    const savedCode = localStorage.getItem("preferred_language");
+    if (!savedCode || savedCode === "tr") {
+      setCurrency({ symbol: "₺", rate: 1, code: "TRY" });
+      return;
+    }
+
+    const { data: lang } = await supabase
+      .from("supported_languages")
+      .select("currency_code, currency_symbol")
+      .eq("code", savedCode)
+      .maybeSingle();
+
+    if (lang && lang.currency_code !== "TRY") {
+      const { data: rate } = await supabase
+        .from("exchange_rates")
+        .select("rate")
+        .eq("from_currency", "TRY")
+        .eq("to_currency", lang.currency_code)
+        .maybeSingle();
+
+      setCurrency({
+        symbol: lang.currency_symbol,
+        rate: rate?.rate || 1,
+        code: lang.currency_code,
+      });
+    } else {
+      setCurrency({ symbol: "₺", rate: 1, code: "TRY" });
+    }
+  };
+
+  const formatPrice = (priceInTRY: number): string => {
+    const converted = priceInTRY * currency.rate;
+    return `${currency.symbol}${converted.toFixed(2)}`;
+  };
+
+  const loadShippingSettings = async () => {
+    const { data } = await supabase
+      .from("shipping_settings")
+      .select("*")
+      .eq("is_active", true);
+    if (data) setShippingSettings(data);
+  };
 
   const loadCart = async () => {
     setLoading(true);
@@ -87,7 +153,6 @@ const CartPage = () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    // Premium üyelik kontrolü
     const { data: membership } = await (supabase as any)
       .from("premium_memberships")
       .select(`
@@ -130,11 +195,9 @@ const CartPage = () => {
   };
 
   const handleUpdateQuantity = async (cartId: string, newQuantity: number) => {
-    // Find the cart item to get product info
     const cartItem = cartItems.find(item => item.id === cartId);
     if (!cartItem) return;
 
-    // Check stock limit before updating
     const { data: product } = await (supabase as any)
       .from("products")
       .select("stock_quantity, stock_status")
@@ -142,7 +205,6 @@ const CartPage = () => {
       .single();
 
     if (product) {
-      // Check if product is out of stock
       if (product.stock_status === 'out_of_stock') {
         toast({
           variant: "destructive",
@@ -152,7 +214,6 @@ const CartPage = () => {
         return;
       }
 
-      // Check stock quantity limit
       if (product.stock_quantity !== null && newQuantity > product.stock_quantity) {
         toast({
           variant: "destructive",
@@ -194,24 +255,29 @@ const CartPage = () => {
     0
   );
 
-  // Kupon indirimi
   const couponDiscount = appliedCoupon
     ? appliedCoupon.discount_type === "percentage"
       ? (subtotal * appliedCoupon.discount_value) / 100
       : Math.min(appliedCoupon.discount_value, subtotal)
     : 0;
 
-  // Premium üyelik indirimi
   const premiumDiscount = premiumBenefits.isPremium 
     ? ((subtotal - couponDiscount) * premiumBenefits.discountPercent) / 100 
     : 0;
 
-  // Toplam indirim
   const totalDiscount = couponDiscount + premiumDiscount;
 
-  // Kargo ücreti (premium üyelere ücretsiz)
-  const shippingCost = deliveryType === "home_delivery" && !premiumBenefits.freeShipping ? 0 : 0; // Kargo ücreti şimdilik 0
+  // Kargo ücreti hesaplama
+  const getShippingCost = (): number => {
+    if (premiumBenefits.freeShipping) return 0;
+    
+    const setting = shippingSettings.find(s => s.delivery_type === deliveryType);
+    if (!setting) return 0;
+    
+    return setting.base_fee;
+  };
 
+  const shippingCost = getShippingCost();
   const total = Math.max(0, subtotal - totalDiscount + shippingCost);
 
   const applyCoupon = async () => {
@@ -299,7 +365,6 @@ const CartPage = () => {
       return;
     }
 
-    // Get user profile to check if address is filled when needed
     const { data: profile } = await (supabase as any)
       .from("profiles")
       .select("address, district, province")
@@ -317,7 +382,6 @@ const CartPage = () => {
     }
 
     try {
-      // Create order
       const { data: order, error: orderError } = await (supabase as any)
         .from("orders")
         .insert({
@@ -325,13 +389,13 @@ const CartPage = () => {
           delivery_type: deliveryType,
           delivery_address: deliveryType === "home_delivery" ? `${profile.address}, ${profile.district}, ${profile.province}` : null,
           status: "pending",
+          shipping_fee: shippingCost,
         })
         .select()
         .single();
 
       if (orderError) throw orderError;
 
-      // Create order items
       const orderItems = cartItems.map((item) => ({
         order_id: order.id,
         product_id: item.product_id,
@@ -348,7 +412,6 @@ const CartPage = () => {
 
       if (itemsError) throw itemsError;
 
-      // Kupon kullanımını kaydet
       if (appliedCoupon) {
         await supabase.from("coupon_usages").insert({
           coupon_id: appliedCoupon.id,
@@ -356,13 +419,11 @@ const CartPage = () => {
           order_id: order.id,
         });
 
-        // Kupon kullanım sayısını artır
         await supabase.rpc("increment_coupon_usage", {
           p_coupon_id: appliedCoupon.id,
         });
       }
 
-      // Clear cart
       const { error: clearError } = await (supabase as any)
         .from("cart")
         .delete()
@@ -414,10 +475,11 @@ const CartPage = () => {
   };
 
   const calculateOrderTotal = (order: any) => {
-    return order.order_items?.reduce(
+    const itemsTotal = order.order_items?.reduce(
       (sum: number, item: any) => sum + (item.quantity * parseFloat(item.price)),
       0
     ) || 0;
+    return itemsTotal + (order.shipping_fee || 0);
   };
 
   const calculateAllOrdersTotal = () => {
@@ -486,7 +548,7 @@ const CartPage = () => {
                               </p>
                             )}
                             <p className="text-lg font-bold text-primary mb-4">
-                              ₺{parseFloat(item.products.price).toFixed(2)}
+                              {formatPrice(parseFloat(item.products.price))}
                             </p>
                             <div className="flex items-center gap-2">
                               <Button
@@ -568,7 +630,7 @@ const CartPage = () => {
                       <Badge variant="secondary" className="text-xs">
                         {appliedCoupon.discount_type === "percentage"
                           ? `%${appliedCoupon.discount_value}`
-                          : `₺${appliedCoupon.discount_value}`}
+                          : formatPrice(appliedCoupon.discount_value)}
                       </Badge>
                     </div>
                     <Button size="sm" variant="ghost" onClick={removeCoupon}>
@@ -598,18 +660,24 @@ const CartPage = () => {
               <div className="space-y-2 pt-2 border-t">
                 <div className="flex justify-between text-sm">
                   <span>Ara Toplam:</span>
-                  <span>₺{subtotal.toFixed(2)}</span>
+                  <span>{formatPrice(subtotal)}</span>
                 </div>
                 {appliedCoupon && (
                   <div className="flex justify-between text-sm text-green-600">
                     <span>Kupon İndirimi ({appliedCoupon.code}):</span>
-                    <span>-₺{couponDiscount.toFixed(2)}</span>
+                    <span>-{formatPrice(couponDiscount)}</span>
                   </div>
                 )}
                 {premiumBenefits.isPremium && premiumDiscount > 0 && (
                   <div className="flex justify-between text-sm text-purple-600">
                     <span>Premium İndirim (%{premiumBenefits.discountPercent}):</span>
-                    <span>-₺{premiumDiscount.toFixed(2)}</span>
+                    <span>-{formatPrice(premiumDiscount)}</span>
+                  </div>
+                )}
+                {shippingCost > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span>Kargo Ücreti:</span>
+                    <span>{formatPrice(shippingCost)}</span>
                   </div>
                 )}
                 {premiumBenefits.isPremium && premiumBenefits.freeShipping && deliveryType === "home_delivery" && (
@@ -620,7 +688,7 @@ const CartPage = () => {
                 )}
                 <div className="flex justify-between text-lg font-bold pt-2 border-t">
                   <span>Toplam:</span>
-                  <span className="text-primary">₺{total.toFixed(2)}</span>
+                  <span className="text-primary">{formatPrice(total)}</span>
                 </div>
                 {premiumBenefits.isPremium && (
                   <div className="p-2 bg-purple-50 dark:bg-purple-900/20 rounded-md text-xs text-purple-700 dark:text-purple-300 text-center">
@@ -657,7 +725,7 @@ const CartPage = () => {
                   </CardHeader>
                   <CardContent>
                     <p className="text-3xl font-bold text-primary">
-                      ₺{calculateAllOrdersTotal().toFixed(2)}
+                      {formatPrice(calculateAllOrdersTotal())}
                     </p>
                     <p className="text-sm text-muted-foreground mt-2">
                       {orders.filter((o) => o.status === "delivered").length} teslim edilmiş sipariş
@@ -680,6 +748,7 @@ const CartPage = () => {
                           <TableHead>Tarih</TableHead>
                           <TableHead>Durum</TableHead>
                           <TableHead>Ürünler</TableHead>
+                          <TableHead>Kargo</TableHead>
                           <TableHead>Toplam</TableHead>
                         </TableRow>
                       </TableHeader>
@@ -710,8 +779,11 @@ const CartPage = () => {
                                 ))}
                               </div>
                             </TableCell>
+                            <TableCell>
+                              {order.shipping_fee > 0 ? formatPrice(order.shipping_fee) : "-"}
+                            </TableCell>
                             <TableCell className="font-bold text-primary">
-                              ₺{calculateOrderTotal(order).toFixed(2)}
+                              {formatPrice(calculateOrderTotal(order))}
                             </TableCell>
                           </TableRow>
                         ))}

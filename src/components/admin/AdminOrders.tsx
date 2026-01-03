@@ -568,6 +568,55 @@ export const AdminOrders = () => {
                         </SelectContent>
                       </Select>
                     </div>
+
+                    {/* Ek Kargo Ücreti - Sadece adrese teslim için */}
+                    {order.delivery_type === "home_delivery" && (
+                      <div>
+                        <Label>Ek Kargo Ücreti (₺)</Label>
+                        <div className="flex gap-2 mt-1">
+                          <Input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            defaultValue={order.shipping_fee || 0}
+                            id={`shipping-${order.id}`}
+                            placeholder="0.00"
+                          />
+                          <Button 
+                            variant="outline"
+                            onClick={async () => {
+                              const feeInput = document.getElementById(`shipping-${order.id}`) as HTMLInputElement;
+                              const fee = parseFloat(feeInput.value) || 0;
+                              const { error } = await (supabase as any)
+                                .from("orders")
+                                .update({ shipping_fee: fee })
+                                .eq("id", order.id);
+                              if (error) {
+                                toast({
+                                  variant: "destructive",
+                                  title: "Hata",
+                                  description: "Kargo ücreti güncellenemedi",
+                                });
+                              } else {
+                                toast({
+                                  title: "Başarılı",
+                                  description: `Kargo ücreti ₺${fee.toFixed(2)} olarak güncellendi`,
+                                });
+                                loadOrders();
+                              }
+                            }}
+                          >
+                            Güncelle
+                          </Button>
+                        </div>
+                        {order.shipping_fee > 0 && (
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Mevcut kargo ücreti: ₺{parseFloat(order.shipping_fee).toFixed(2)}
+                          </p>
+                        )}
+                      </div>
+                    )}
+
                     <div>
                       <Label>Ret Nedeni</Label>
                       <Textarea 

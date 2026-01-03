@@ -33,6 +33,7 @@ interface Banner {
   hide_days_after_close: number;
   priority: number;
   is_dismissible: boolean;
+  scroll_speed: number;
 }
 
 // Hazır arka plan şablonları
@@ -71,6 +72,7 @@ const defaultBanner: Omit<Banner, 'id'> = {
   hide_days_after_close: 1,
   priority: 0,
   is_dismissible: true,
+  scroll_speed: 15,
 };
 
 export const AdminCampaignBanners = () => {
@@ -195,6 +197,7 @@ export const AdminCampaignBanners = () => {
       hide_days_after_close: banner.hide_days_after_close,
       priority: banner.priority,
       is_dismissible: banner.is_dismissible ?? true,
+      scroll_speed: banner.scroll_speed || 15,
     });
     setIsDialogOpen(true);
   };
@@ -336,6 +339,21 @@ export const AdminCampaignBanners = () => {
                       onChange={(e) => setFormData({ ...formData, scrolling_text: e.target.value })}
                       placeholder="🎄 Yılbaşı indirimleri başladı! 🎁 Kaçırmayın! 🎄"
                     />
+                  </div>
+
+                  <div>
+                    <Label>Kayma Hızı (saniye - düşük = daha hızlı)</Label>
+                    <Input
+                      type="number"
+                      min="5"
+                      max="60"
+                      value={formData.scroll_speed}
+                      onChange={(e) => setFormData({ ...formData, scroll_speed: parseInt(e.target.value) || 15 })}
+                      placeholder="15"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Varsayılan: 15 saniye. 5-60 arası bir değer girin.
+                    </p>
                   </div>
                 </CardContent>
               </Card>

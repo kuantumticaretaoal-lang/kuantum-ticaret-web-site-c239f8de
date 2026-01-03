@@ -151,6 +151,7 @@ export type Database = {
           is_active: boolean | null
           is_dismissible: boolean | null
           priority: number | null
+          scroll_speed: number | null
           scrolling_text: string | null
           show_countdown: boolean | null
           show_on_all_pages: boolean | null
@@ -175,6 +176,7 @@ export type Database = {
           is_active?: boolean | null
           is_dismissible?: boolean | null
           priority?: number | null
+          scroll_speed?: number | null
           scrolling_text?: string | null
           show_countdown?: boolean | null
           show_on_all_pages?: boolean | null
@@ -199,6 +201,7 @@ export type Database = {
           is_active?: boolean | null
           is_dismissible?: boolean | null
           priority?: number | null
+          scroll_speed?: number | null
           scrolling_text?: string | null
           show_countdown?: boolean | null
           show_on_all_pages?: boolean | null
@@ -643,6 +646,7 @@ export type Database = {
           preparation_time: number | null
           preparation_unit: string | null
           rejection_reason: string | null
+          shipping_fee: number | null
           status: Database["public"]["Enums"]["order_status"]
           trashed: boolean | null
           updated_at: string | null
@@ -657,6 +661,7 @@ export type Database = {
           preparation_time?: number | null
           preparation_unit?: string | null
           rejection_reason?: string | null
+          shipping_fee?: number | null
           status?: Database["public"]["Enums"]["order_status"]
           trashed?: boolean | null
           updated_at?: string | null
@@ -671,6 +676,7 @@ export type Database = {
           preparation_time?: number | null
           preparation_unit?: string | null
           rejection_reason?: string | null
+          shipping_fee?: number | null
           status?: Database["public"]["Enums"]["order_status"]
           trashed?: boolean | null
           updated_at?: string | null
