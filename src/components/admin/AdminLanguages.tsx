@@ -61,27 +61,12 @@ export const AdminLanguages = () => {
   const fetchExchangeRates = async () => {
     setLoading(true);
     try {
-      // Canlı döviz kurlarını çek (örnek API - gerçek API ile değiştirilebilir)
-      const response = await fetch('https://api.exchangerate-api.com/v4/latest/TRY');
-      const data = await response.json();
-
-      if (data.rates) {
-        const updates = languages
-          .filter(l => l.currency_code !== 'TRY')
-          .map(async (lang) => {
-            const rate = data.rates[lang.currency_code];
-            if (rate) {
-              // TRY -> diğer para birimi
-              await supabase.from('exchange_rates').upsert({
-                from_currency: 'TRY',
-                to_currency: lang.currency_code,
-                rate: rate,
-                updated_at: new Date().toISOString(),
-              }, { onConflict: 'from_currency,to_currency' });
-            }
-          });
-
-        await Promise.all(updates);
+      // Edge function üzerinden canlı döviz kurlarını çek
+      const { error } = await supabase.functions.invoke('fetch-exchange-rates');
+      
+      if (error) {
+        toast.error('Döviz kurları güncellenirken hata oluştu');
+      } else {
         toast.success('Döviz kurları güncellendi');
         loadData();
       }

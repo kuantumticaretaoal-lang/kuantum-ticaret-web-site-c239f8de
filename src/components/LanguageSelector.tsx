@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   DropdownMenu,
@@ -7,8 +7,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { Globe, RefreshCw, ChevronDown } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { Globe, ChevronDown } from "lucide-react";
 
 interface Language {
   code: string;
@@ -25,8 +24,6 @@ interface LanguageSelectorProps {
 export const LanguageSelector = ({ variant = "navbar" }: LanguageSelectorProps) => {
   const [languages, setLanguages] = useState<Language[]>([]);
   const [currentLanguage, setCurrentLanguage] = useState<Language | null>(null);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const { toast } = useToast();
 
   useEffect(() => {
     loadLanguages();
@@ -50,40 +47,16 @@ export const LanguageSelector = ({ variant = "navbar" }: LanguageSelectorProps) 
     }
   };
 
-  const refreshExchangeRates = useCallback(async () => {
-    setIsRefreshing(true);
-    try {
-      const { data, error } = await supabase.functions.invoke("fetch-exchange-rates");
-      
-      if (error) {
-        console.error("Exchange rate fetch error:", error);
-        toast({
-          variant: "destructive",
-          title: "Hata",
-          description: "Döviz kurları güncellenemedi",
-        });
-      } else {
-        toast({
-          title: "Güncellendi",
-          description: "Döviz kurları başarıyla güncellendi",
-        });
-      }
-    } catch (err) {
-      console.error("Error refreshing rates:", err);
-    }
-    setIsRefreshing(false);
-  }, [toast]);
-
   const handleSelect = async (lang: Language) => {
     setCurrentLanguage(lang);
     localStorage.setItem("preferred_language", lang.code);
     
-    // Refresh exchange rates when language/currency changes
+    // Döviz kurlarını arka planda güncelle (kullanıcı beklemeden)
     if (lang.currency_code !== "TRY") {
-      await refreshExchangeRates();
+      supabase.functions.invoke("fetch-exchange-rates").catch(console.error);
     }
     
-    // Dispatch custom event to notify price components
+    // Dispatch custom event to notify components about language change
     window.dispatchEvent(new CustomEvent("languageChange", { detail: lang }));
   };
 
@@ -114,10 +87,6 @@ export const LanguageSelector = ({ variant = "navbar" }: LanguageSelectorProps) 
                 <span className="text-muted-foreground ml-2">{lang.currency_symbol}</span>
               </DropdownMenuItem>
             ))}
-            <DropdownMenuItem onClick={refreshExchangeRates} disabled={isRefreshing}>
-              <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? "animate-spin" : ""}`} />
-              {isRefreshing ? "Güncelleniyor..." : "Kurları Güncelle"}
-            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
@@ -145,10 +114,6 @@ export const LanguageSelector = ({ variant = "navbar" }: LanguageSelectorProps) 
             <span className="text-muted-foreground ml-2">{lang.currency_symbol}</span>
           </DropdownMenuItem>
         ))}
-        <DropdownMenuItem onClick={refreshExchangeRates} disabled={isRefreshing}>
-          <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? "animate-spin" : ""}`} />
-          {isRefreshing ? "Güncelleniyor..." : "Kurları Güncelle"}
-        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );

@@ -4,9 +4,11 @@ import { Link } from "react-router-dom";
 import { Mail, Phone, MapPin } from "lucide-react";
 import { logger } from "@/lib/logger";
 import { LanguageSelector } from "@/components/LanguageSelector";
+import { useTranslations } from "@/hooks/use-translations";
 
 const Footer = () => {
   const [settings, setSettings] = useState<any>(null);
+  const { t } = useTranslations();
 
   useEffect(() => {
     loadSettings();
@@ -44,21 +46,21 @@ const Footer = () => {
 
           {/* Quick Links */}
           <div>
-            <h3 className="text-xl font-bold mb-3">Hızlı Linkler</h3>
+            <h3 className="text-xl font-bold mb-3">{t("footer.quickLinks", "Hızlı Linkler")}</h3>
             <ul className="space-y-2">
               <li>
                 <Link to="/" className="text-white/80 hover:text-white transition-colors">
-                  Ana Sayfa
+                  {t("nav.home", "Ana Sayfa")}
                 </Link>
               </li>
               <li>
                 <Link to="/products" className="text-white/80 hover:text-white transition-colors">
-                  Ürünler
+                  {t("nav.products", "Ürünler")}
                 </Link>
               </li>
               <li>
                 <Link to="/contact" className="text-white/80 hover:text-white transition-colors">
-                  İletişim
+                  {t("nav.contact", "İletişim")}
                 </Link>
               </li>
             </ul>
@@ -66,7 +68,7 @@ const Footer = () => {
 
           {/* Contact Info */}
           <div>
-            <h3 className="text-xl font-bold mb-3">İletişim</h3>
+            <h3 className="text-xl font-bold mb-3">{t("footer.contact", "İletişim")}</h3>
             <ul className="space-y-2">
               <li className="flex items-center gap-2 text-white/80">
                 <Mail className="h-4 w-4" />
@@ -102,7 +104,7 @@ const Footer = () => {
 
           {/* Language/Currency Selector */}
           <div>
-            <h3 className="text-xl font-bold mb-3">Dil & Para Birimi</h3>
+            <h3 className="text-xl font-bold mb-3">{t("footer.language", "Dil & Para Birimi")}</h3>
             <div className="mt-2">
               <LanguageSelector variant="footer" />
             </div>
@@ -110,7 +112,7 @@ const Footer = () => {
         </div>
 
         <div className="border-t border-white/20 pt-6 text-center text-white/70">
-          <p>© {new Date().getFullYear()} Kuantum Ticaret. Tüm hakları saklıdır.</p>
+          <p>© {new Date().getFullYear()} Kuantum Ticaret. {t("footer.rights", "Tüm hakları saklıdır")}.</p>
         </div>
       </div>
     </footer>
