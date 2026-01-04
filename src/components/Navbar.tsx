@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { signOut } from "@/lib/auth";
 import { getCartItems, getSessionId } from "@/lib/cart";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslations } from "@/hooks/use-translations";
 
 import {
   DropdownMenu,
@@ -33,6 +34,7 @@ const Navbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { t } = useTranslations();
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
@@ -161,7 +163,7 @@ const Navbar = () => {
                 <div className="relative">
                   <Input 
                     id="mobile-search-input"
-                    placeholder="Ürün ara..." 
+                    placeholder={t("common.search", "Ürün ara...")}
                     className="bg-background text-foreground border pr-10"
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
@@ -188,14 +190,14 @@ const Navbar = () => {
                   className="text-foreground hover:text-primary transition-colors py-2 border-b"
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  Ürünler
+                  {t("nav.products", "Ürünler")}
                 </Link>
                 <Link 
                   to="/contact" 
                   className="text-foreground hover:text-primary transition-colors py-2 border-b"
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  İletişim
+                  {t("nav.contact", "İletişim")}
                 </Link>
                 <Link 
                   to="/sponsors" 
@@ -221,7 +223,7 @@ const Navbar = () => {
                       onClick={() => setMobileMenuOpen(false)}
                     >
                       <Crown className="h-4 w-4" />
-                      Premium Üyelik
+                      {t("nav.premium", "Premium")}
                     </Link>
                     <Link 
                       to="/favorites" 
@@ -229,7 +231,7 @@ const Navbar = () => {
                       onClick={() => setMobileMenuOpen(false)}
                     >
                       <Heart className="h-4 w-4" />
-                      Favorilerim
+                      {t("nav.favorites", "Favorilerim")}
                     </Link>
                     <Link 
                       to="/account" 
@@ -237,7 +239,7 @@ const Navbar = () => {
                       onClick={() => setMobileMenuOpen(false)}
                     >
                       <Settings className="h-4 w-4" />
-                      Hesap Ayarları
+                      {t("nav.account", "Hesabım")}
                     </Link>
                     {isAdmin && (
                       <Link 
@@ -257,19 +259,19 @@ const Navbar = () => {
                         setMobileMenuOpen(false);
                       }}
                     >
-                      Çıkış Yap
+                      {t("nav.logout", "Çıkış Yap")}
                     </Button>
                   </>
                 ) : (
                   <div className="flex flex-col gap-2 mt-2">
                     <Link to="/login" onClick={() => setMobileMenuOpen(false)}>
                       <Button variant="outline" className="w-full">
-                        Giriş Yap
+                        {t("nav.login", "Giriş Yap")}
                       </Button>
                     </Link>
                     <Link to="/register" onClick={() => setMobileMenuOpen(false)}>
                       <Button className="w-full">
-                        Kayıt Ol
+                        {t("nav.register", "Kayıt Ol")}
                       </Button>
                     </Link>
                   </div>
@@ -287,7 +289,7 @@ const Navbar = () => {
             <div className="relative">
               <Input 
                 id="navbar-search-input"
-                placeholder="Ürün ara..." 
+                placeholder={t("common.search", "Ürün ara...")}
                 className="bg-white/90 text-foreground border-0 pr-10"
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
@@ -309,10 +311,10 @@ const Navbar = () => {
           
           <div className="flex items-center gap-2 lg:gap-4">
             <Link to="/products" className="text-white hover:text-white/80 transition-colors text-sm lg:text-base hidden lg:block">
-              Ürünler
+              {t("nav.products", "Ürünler")}
             </Link>
             <Link to="/contact" className="text-white hover:text-white/80 transition-colors text-sm lg:text-base hidden lg:block">
-              İletişim
+              {t("nav.contact", "İletişim")}
             </Link>
             <Link to="/sponsors" className="text-white hover:text-white/80 transition-colors text-sm lg:text-base hidden lg:block">
               Sponsorlarımız
@@ -320,7 +322,7 @@ const Navbar = () => {
             <Link to="/follow" className="text-white hover:text-white/80 transition-colors text-sm lg:text-base hidden lg:block">
               Bizi Takip Edin!
             </Link>
-            <Link to="/premium" className="text-amber-300 hover:text-amber-200 transition-colors hidden lg:flex" title="Premium">
+            <Link to="/premium" className="text-amber-300 hover:text-amber-200 transition-colors hidden lg:flex" title={t("nav.premium", "Premium")}>
               <Crown className="h-4 w-4" />
             </Link>
             <Button
@@ -362,13 +364,13 @@ const Navbar = () => {
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="text-white hover:text-white hover:bg-white/20 text-sm lg:text-base hidden lg:flex">
                     <User className="h-4 w-4 mr-2" />
-                    Hesabım
+                    {t("nav.account", "Hesabım")}
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48">
                   <DropdownMenuItem onClick={() => navigate("/account")}>
                     <Settings className="h-4 w-4 mr-2" />
-                    Hesap Ayarları
+                    {t("nav.account", "Hesap Ayarları")}
                   </DropdownMenuItem>
                   {isAdmin && (
                     <>
@@ -381,7 +383,7 @@ const Navbar = () => {
                   )}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleSignOut}>
-                    Çıkış Yap
+                    {t("nav.logout", "Çıkış Yap")}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -389,12 +391,12 @@ const Navbar = () => {
               <>
                 <Link to="/login" className="hidden lg:block">
                   <Button variant="ghost" className="text-white hover:text-white hover:bg-white/20 text-sm lg:text-base">
-                    Giriş Yap
+                    {t("nav.login", "Giriş Yap")}
                   </Button>
                 </Link>
                 <Link to="/register" className="hidden lg:block">
                   <Button className="bg-secondary hover:bg-secondary/90 text-white text-sm lg:text-base">
-                    Kayıt Ol
+                    {t("nav.register", "Kayıt Ol")}
                   </Button>
                 </Link>
               </>

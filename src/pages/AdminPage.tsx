@@ -30,6 +30,7 @@ import { AdminPolicies } from "@/components/admin/AdminPolicies";
 import { AdminLanguages } from "@/components/admin/AdminLanguages";
 import { AdminUrgencySettings } from "@/components/admin/AdminUrgencySettings";
 import AdminShipping from "@/components/admin/AdminShipping";
+import { AdminTranslations } from "@/components/admin/AdminTranslations";
 
 const AdminPage = () => {
   const navigate = useNavigate();
@@ -137,6 +138,7 @@ const AdminPage = () => {
                 <SelectItem value="premium">Premium</SelectItem>
                 <SelectItem value="policies">Politikalar</SelectItem>
                 <SelectItem value="languages">Diller</SelectItem>
+                <SelectItem value="translations">Çeviriler</SelectItem>
                 <SelectItem value="urgency">Aciliyet Ayarları</SelectItem>
                 <SelectItem value="shipping">Kargo Ayarları</SelectItem>
               </SelectContent>
@@ -163,6 +165,7 @@ const AdminPage = () => {
             {activeTab === "premium" && <AdminPremium />}
             {activeTab === "policies" && <AdminPolicies />}
             {activeTab === "languages" && <AdminLanguages />}
+            {activeTab === "translations" && <AdminTranslations />}
             {activeTab === "urgency" && <AdminUrgencySettings />}
             {activeTab === "shipping" && <AdminShipping />}
           </div>
@@ -191,8 +194,9 @@ const AdminPage = () => {
                 <TabsTrigger value="premium" className="min-w-[100px]">Premium</TabsTrigger>
                 <TabsTrigger value="policies" className="min-w-[100px]">Politikalar</TabsTrigger>
                 <TabsTrigger value="languages" className="min-w-[100px]">Diller</TabsTrigger>
-              <TabsTrigger value="urgency" className="min-w-[130px]">Aciliyet Ayarları</TabsTrigger>
-              <TabsTrigger value="shipping" className="min-w-[130px]">Kargo Ayarları</TabsTrigger>
+                <TabsTrigger value="translations" className="min-w-[100px]">Çeviriler</TabsTrigger>
+                <TabsTrigger value="urgency" className="min-w-[130px]">Aciliyet Ayarları</TabsTrigger>
+                <TabsTrigger value="shipping" className="min-w-[130px]">Kargo Ayarları</TabsTrigger>
               </TabsList>
             </div>
 
@@ -278,6 +282,10 @@ const AdminPage = () => {
 
             <TabsContent value="languages">
               <AdminLanguages />
+            </TabsContent>
+
+            <TabsContent value="translations">
+              <AdminTranslations />
             </TabsContent>
 
             <TabsContent value="urgency">

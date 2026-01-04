@@ -1357,6 +1357,33 @@ export type Database = {
         }
         Relationships: []
       }
+      translations: {
+        Row: {
+          created_at: string | null
+          id: string
+          language_code: string
+          translation_key: string
+          translation_value: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          language_code: string
+          translation_key: string
+          translation_value: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          language_code?: string
+          translation_key?: string
+          translation_value?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       urgency_settings: {
         Row: {
           display_text: string | null
