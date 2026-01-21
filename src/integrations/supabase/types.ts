@@ -1058,6 +1058,44 @@ export type Database = {
           },
         ]
       }
+      product_translations: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          language_code: string
+          product_id: string
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          language_code: string
+          product_id: string
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          language_code?: string
+          product_id?: string
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_translations_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           allows_custom_photo: boolean | null
@@ -1180,6 +1218,42 @@ export type Database = {
           search_query?: string
           session_id?: string | null
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      shipping_companies: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          logo_url: string | null
+          name: string
+          sort_order: number | null
+          tracking_url: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          logo_url?: string | null
+          name: string
+          sort_order?: number | null
+          tracking_url?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          logo_url?: string | null
+          name?: string
+          sort_order?: number | null
+          tracking_url?: string | null
+          updated_at?: string | null
         }
         Relationships: []
       }

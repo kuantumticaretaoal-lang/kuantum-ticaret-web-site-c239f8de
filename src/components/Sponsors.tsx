@@ -1,10 +1,16 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useTranslations } from "@/hooks/use-translations";
 
-const Sponsors = () => {
+interface SponsorsProps {
+  showTitle?: boolean;
+}
+
+const Sponsors = ({ showTitle = false }: SponsorsProps) => {
+  const { t } = useTranslations();
   const [sponsors, setSponsors] = useState<any[]>([]);
 
   useEffect(() => {
@@ -27,20 +33,18 @@ const Sponsors = () => {
   };
 
   if (sponsors.length === 0) {
-    return (
-      <section className="py-20 bg-muted/30">
-        <div className="container mx-auto px-4">
-          <Card className="max-w-2xl mx-auto">
-            <CardContent className="py-12 text-center">Şu anda sponsor bulunmuyor.</CardContent>
-          </Card>
-        </div>
-      </section>
-    );
+    return null;
   }
 
   return (
     <section className="py-20 bg-muted/30">
       <div className="container mx-auto px-4">
+        {showTitle && (
+          <h2 className="text-3xl md:text-4xl font-bold text-center mb-12 flex items-center justify-center gap-3">
+            <Users className="h-8 w-8 text-primary" />
+            {t("sponsors_title", "Sponsorlarımız")}
+          </h2>
+        )}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {sponsors.map((s) => (
             <Card key={s.id} className="border-2 hover:border-primary/30 transition-all hover:shadow-xl">
@@ -59,7 +63,7 @@ const Sponsors = () => {
                 {s.link && (
                   <Button variant="outline" className="gap-2" asChild>
                     <a href={s.link} target="_blank" rel="noopener noreferrer">
-                      Website'yi Ziyaret Et
+                      {t("visit_website", "Website'yi Ziyaret Et")}
                       <ExternalLink className="h-4 w-4" />
                     </a>
                   </Button>

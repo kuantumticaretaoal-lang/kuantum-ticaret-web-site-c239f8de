@@ -31,6 +31,8 @@ import { AdminLanguages } from "@/components/admin/AdminLanguages";
 import { AdminUrgencySettings } from "@/components/admin/AdminUrgencySettings";
 import AdminShipping from "@/components/admin/AdminShipping";
 import { AdminTranslations } from "@/components/admin/AdminTranslations";
+import AdminShippingCompanies from "@/components/admin/AdminShippingCompanies";
+import AdminProductTranslations from "@/components/admin/AdminProductTranslations";
 
 const AdminPage = () => {
   const navigate = useNavigate();
@@ -141,6 +143,8 @@ const AdminPage = () => {
                 <SelectItem value="translations">Çeviriler</SelectItem>
                 <SelectItem value="urgency">Aciliyet Ayarları</SelectItem>
                 <SelectItem value="shipping">Kargo Ayarları</SelectItem>
+                <SelectItem value="shipping-companies">Kargo Şirketleri</SelectItem>
+                <SelectItem value="product-translations">Ürün Çevirileri</SelectItem>
               </SelectContent>
             </Select>
 
@@ -168,6 +172,8 @@ const AdminPage = () => {
             {activeTab === "translations" && <AdminTranslations />}
             {activeTab === "urgency" && <AdminUrgencySettings />}
             {activeTab === "shipping" && <AdminShipping />}
+            {activeTab === "shipping-companies" && <AdminShippingCompanies />}
+            {activeTab === "product-translations" && <AdminProductTranslations />}
           </div>
         ) : (
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -197,6 +203,8 @@ const AdminPage = () => {
                 <TabsTrigger value="translations" className="min-w-[100px]">Çeviriler</TabsTrigger>
                 <TabsTrigger value="urgency" className="min-w-[130px]">Aciliyet Ayarları</TabsTrigger>
                 <TabsTrigger value="shipping" className="min-w-[130px]">Kargo Ayarları</TabsTrigger>
+                <TabsTrigger value="shipping-companies" className="min-w-[130px]">Kargo Şirketleri</TabsTrigger>
+                <TabsTrigger value="product-translations" className="min-w-[130px]">Ürün Çevirileri</TabsTrigger>
               </TabsList>
             </div>
 
@@ -294,6 +302,14 @@ const AdminPage = () => {
 
             <TabsContent value="shipping">
               <AdminShipping />
+            </TabsContent>
+            
+            <TabsContent value="shipping-companies">
+              <AdminShippingCompanies />
+            </TabsContent>
+            
+            <TabsContent value="product-translations">
+              <AdminProductTranslations />
             </TabsContent>
           </Tabs>
         )}
