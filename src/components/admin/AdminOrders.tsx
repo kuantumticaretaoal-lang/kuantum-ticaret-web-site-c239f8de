@@ -13,7 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { logger } from "@/lib/logger";
 import { formatPhoneNumber, formatProvince, formatDistrict } from "@/lib/formatters";
 import { exportToExcel, formatDateForExport, formatCurrencyForExport } from "@/lib/excel-export";
-import { Download } from "lucide-react";
+import { Download, MessageSquare, Send } from "lucide-react";
 
 export const AdminOrders = () => {
   const [orders, setOrders] = useState<any[]>([]);
@@ -647,6 +647,59 @@ export const AdminOrders = () => {
                         </Button>
                       </div>
                     )}
+                    
+                    {/* Müşteriye mesaj gönder */}
+                    <div className="pt-4 border-t">
+                      <Label className="flex items-center gap-2 mb-2">
+                        <MessageSquare className="h-4 w-4" />
+                        Müşteriye Bildirim Gönder
+                      </Label>
+                      <Textarea 
+                        placeholder="Müşteriye göndermek istediğiniz mesajı yazın..."
+                        id={`message-${order.id}`}
+                        className="mb-2"
+                      />
+                      <Button 
+                        className="w-full" 
+                        variant="secondary"
+                        onClick={async () => {
+                          const messageInput = document.getElementById(`message-${order.id}`) as HTMLTextAreaElement;
+                          const message = messageInput.value.trim();
+                          if (!message) {
+                            toast({
+                              variant: "destructive",
+                              title: "Hata",
+                              description: "Lütfen bir mesaj girin",
+                            });
+                            return;
+                          }
+                          
+                          const { error } = await supabase
+                            .from("notifications")
+                            .insert({
+                              user_id: order.user_id,
+                              message: `Sipariş #${order.order_code}: ${message}`,
+                            });
+                          
+                          if (error) {
+                            toast({
+                              variant: "destructive",
+                              title: "Hata",
+                              description: "Bildirim gönderilemedi",
+                            });
+                          } else {
+                            toast({
+                              title: "Başarılı",
+                              description: "Müşteriye bildirim gönderildi",
+                            });
+                            messageInput.value = "";
+                          }
+                        }}
+                      >
+                        <Send className="h-4 w-4 mr-2" />
+                        Bildirim Gönder
+                      </Button>
+                    </div>
                   </div>
                 </DialogContent>
               </Dialog>

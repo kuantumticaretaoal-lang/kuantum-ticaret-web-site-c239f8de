@@ -10,12 +10,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { ShoppingCart, Search, X, Filter } from "lucide-react";
+import { ShoppingCart, Search, X, Filter, ArrowUpDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { logger } from "@/lib/logger";
 import { ProductSkeleton } from "@/components/ProductSkeleton";
 import { useFavorites } from "@/hooks/use-favorites";
 import FavoriteButton from "@/components/FavoriteButton";
+import { useTranslations } from "@/hooks/use-translations";
 import * as LucideIcons from "lucide-react";
 
 interface Category {
@@ -29,6 +30,7 @@ interface Category {
 const Products = () => {
   const [products, setProducts] = useState<any[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [productTranslations, setProductTranslations] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState<string>("newest");
   const [filterPromotion, setFilterPromotion] = useState<string>("all");
@@ -41,6 +43,7 @@ const Products = () => {
   const location = useLocation();
   const { toast } = useToast();
   const { toggleFavorite, isFavorite } = useFavorites();
+  const { t, formatPrice, currentLanguage } = useTranslations();
 
   const getPromoVariant = (badge: string): any => {
     const b = (badge || "").toLowerCase();
@@ -54,6 +57,7 @@ const Products = () => {
   useEffect(() => {
     loadProducts();
     loadCategories();
+    loadProductTranslations();
 
     const channel = supabase
       .channel("products-page-changes")
@@ -62,6 +66,9 @@ const Products = () => {
       })
       .on("postgres_changes", { event: "*", schema: "public", table: "categories" }, () => {
         loadCategories();
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "product_translations" }, () => {
+        loadProductTranslations();
       })
       .subscribe();
 
@@ -114,6 +121,35 @@ const Products = () => {
       .select("*")
       .order("sort_order", { ascending: true });
     if (data) setCategories(data);
+  };
+
+  const loadProductTranslations = async () => {
+    if (currentLanguage === "tr") return;
+    
+    const { data } = await (supabase as any)
+      .from("product_translations")
+      .select("product_id, title, description")
+      .eq("language_code", currentLanguage);
+    
+    if (data) {
+      const transMap: Record<string, any> = {};
+      data.forEach((t: any) => {
+        transMap[t.product_id] = { title: t.title, description: t.description };
+      });
+      setProductTranslations(transMap);
+    }
+  };
+
+  // Reload translations when language changes
+  useEffect(() => {
+    loadProductTranslations();
+  }, [currentLanguage]);
+
+  const getProductTitle = (product: any) => {
+    if (currentLanguage !== "tr" && productTranslations[product.id]?.title) {
+      return productTranslations[product.id].title;
+    }
+    return product.title;
   };
 
   const handleAddToCart = async (productId: string, e: React.MouseEvent) => {
@@ -239,24 +275,41 @@ const Products = () => {
 
         {/* Arama ve Filtreler */}
         <div className="space-y-4 mb-8">
-          {/* Arama */}
-          <div className="flex gap-2 max-w-xl mx-auto">
+          {/* Arama ve Sıralama */}
+          <div className="flex flex-col sm:flex-row gap-2 max-w-3xl mx-auto">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Ürün ara..."
+                placeholder={t("search_products", "Ürün ara...")}
                 className="pl-10"
               />
             </div>
+            
+            {/* Sıralama - Filtrelerin dışında */}
+            <Select value={sortBy} onValueChange={setSortBy}>
+              <SelectTrigger className="w-full sm:w-48">
+                <ArrowUpDown className="h-4 w-4 mr-2" />
+                <SelectValue placeholder={t("sort", "Sırala")} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="newest">{t("newest", "En Yeni")}</SelectItem>
+                <SelectItem value="price-asc">{t("price_asc", "Fiyat (Artan)")}</SelectItem>
+                <SelectItem value="price-desc">{t("price_desc", "Fiyat (Azalan)")}</SelectItem>
+                <SelectItem value="name-asc">{t("name_asc", "A'dan Z'ye")}</SelectItem>
+                <SelectItem value="name-desc">{t("name_desc", "Z'den A'ya")}</SelectItem>
+                <SelectItem value="rating">{t("most_rated", "En Çok Değerlendirilen")}</SelectItem>
+              </SelectContent>
+            </Select>
+            
             <Button
               variant="outline"
               onClick={() => setShowFilters(!showFilters)}
               className="flex items-center gap-2"
             >
               <Filter className="h-4 w-4" />
-              Filtreler
+              {t("filters", "Filtreler")}
               {hasActiveFilters && (
                 <Badge variant="secondary" className="ml-1">!</Badge>
               )}
@@ -267,25 +320,7 @@ const Products = () => {
           {showFilters && (
             <Card className="max-w-4xl mx-auto">
               <CardContent className="pt-6">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                  {/* Sıralama */}
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Sırala</label>
-                    <Select value={sortBy} onValueChange={setSortBy}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Sırala" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="newest">En Yeni</SelectItem>
-                        <SelectItem value="price-asc">Fiyat (Artan)</SelectItem>
-                        <SelectItem value="price-desc">Fiyat (Azalan)</SelectItem>
-                        <SelectItem value="name-asc">A'dan Z'ye</SelectItem>
-                        <SelectItem value="name-desc">Z'den A'ya</SelectItem>
-                        <SelectItem value="rating">En Çok Değerlendirilen</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {/* Promosyon Filtresi */}
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Promosyon</label>
