@@ -250,8 +250,15 @@ const CartPage = () => {
     }
   };
 
+  // Use discounted price if available
+  const getItemPrice = (item: any) => {
+    return item.products.discounted_price 
+      ? parseFloat(item.products.discounted_price) 
+      : parseFloat(item.products.price);
+  };
+
   const subtotal = cartItems.reduce(
-    (sum, item) => sum + parseFloat(item.products.price) * item.quantity,
+    (sum, item) => sum + getItemPrice(item) * item.quantity,
     0
   );
 
@@ -400,7 +407,7 @@ const CartPage = () => {
         order_id: order.id,
         product_id: item.product_id,
         quantity: item.quantity,
-        price: item.products.price,
+        price: item.products.discounted_price || item.products.price, // Use discounted price
         custom_name: item.custom_name || null,
         selected_size: item.selected_size || null,
         custom_photo_url: item.custom_photo_url || null,

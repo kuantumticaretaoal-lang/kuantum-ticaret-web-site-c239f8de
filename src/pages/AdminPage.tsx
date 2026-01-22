@@ -33,6 +33,9 @@ import AdminShipping from "@/components/admin/AdminShipping";
 import { AdminTranslations } from "@/components/admin/AdminTranslations";
 import AdminShippingCompanies from "@/components/admin/AdminShippingCompanies";
 import AdminProductTranslations from "@/components/admin/AdminProductTranslations";
+import { AdminLiveSupport } from "@/components/admin/AdminLiveSupport";
+import { AdminFavorites } from "@/components/admin/AdminFavorites";
+import { AdminCart } from "@/components/admin/AdminCart";
 
 const AdminPage = () => {
   const navigate = useNavigate();
@@ -145,6 +148,9 @@ const AdminPage = () => {
                 <SelectItem value="shipping">Kargo Ayarları</SelectItem>
                 <SelectItem value="shipping-companies">Kargo Şirketleri</SelectItem>
                 <SelectItem value="product-translations">Ürün Çevirileri</SelectItem>
+                <SelectItem value="live-support">Canlı Destek</SelectItem>
+                <SelectItem value="admin-favorites">Favoriler</SelectItem>
+                <SelectItem value="admin-cart">Sepet Takibi</SelectItem>
               </SelectContent>
             </Select>
 
@@ -174,6 +180,9 @@ const AdminPage = () => {
             {activeTab === "shipping" && <AdminShipping />}
             {activeTab === "shipping-companies" && <AdminShippingCompanies />}
             {activeTab === "product-translations" && <AdminProductTranslations />}
+            {activeTab === "live-support" && <AdminLiveSupport />}
+            {activeTab === "admin-favorites" && <AdminFavorites />}
+            {activeTab === "admin-cart" && <AdminCart />}
           </div>
         ) : (
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -205,6 +214,9 @@ const AdminPage = () => {
                 <TabsTrigger value="shipping" className="min-w-[130px]">Kargo Ayarları</TabsTrigger>
                 <TabsTrigger value="shipping-companies" className="min-w-[130px]">Kargo Şirketleri</TabsTrigger>
                 <TabsTrigger value="product-translations" className="min-w-[130px]">Ürün Çevirileri</TabsTrigger>
+                <TabsTrigger value="live-support" className="min-w-[130px]">Canlı Destek</TabsTrigger>
+                <TabsTrigger value="admin-favorites" className="min-w-[100px]">Favoriler</TabsTrigger>
+                <TabsTrigger value="admin-cart" className="min-w-[130px]">Sepet Takibi</TabsTrigger>
               </TabsList>
             </div>
 
@@ -310,6 +322,18 @@ const AdminPage = () => {
             
             <TabsContent value="product-translations">
               <AdminProductTranslations />
+            </TabsContent>
+            
+            <TabsContent value="live-support">
+              <AdminLiveSupport />
+            </TabsContent>
+            
+            <TabsContent value="admin-favorites">
+              <AdminFavorites />
+            </TabsContent>
+            
+            <TabsContent value="admin-cart">
+              <AdminCart />
             </TabsContent>
           </Tabs>
         )}

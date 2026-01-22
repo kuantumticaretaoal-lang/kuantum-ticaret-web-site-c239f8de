@@ -5,6 +5,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { useOnlinePresence } from "@/hooks/use-online-presence";
 import { TranslationProvider } from "@/contexts/TranslationContext";
+import { LiveSupportWidget } from "@/components/LiveSupportWidget";
+import { PushNotificationManager } from "@/components/PushNotificationManager";
 import Index from "./pages/Index";
 import Products from "./pages/Products";
 import ProductDetail from "./pages/ProductDetail";
@@ -33,6 +35,8 @@ const AppContent = () => {
     <>
       <VisitorTracker />
       <CookieConsent />
+      <LiveSupportWidget />
+      <PushNotificationManager />
       <Routes>
         <Route path="/" element={<Index />} />
         <Route path="/products" element={<Products />} />
