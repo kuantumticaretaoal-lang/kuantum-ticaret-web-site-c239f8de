@@ -561,6 +561,62 @@ export type Database = {
           },
         ]
       }
+      live_support_messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          role: string
+          thread_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          role: string
+          thread_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          role?: string
+          thread_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "live_support_messages_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "live_support_threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      live_support_threads: {
+        Row: {
+          created_at: string
+          device_id: string
+          id: string
+          last_message_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          device_id: string
+          id?: string
+          last_message_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          device_id?: string
+          id?: string
+          last_message_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string | null
@@ -638,9 +694,12 @@ export type Database = {
       }
       orders: {
         Row: {
+          applied_coupon_code: string | null
           created_at: string | null
+          currency_code: string
           delivery_address: string | null
           delivery_type: Database["public"]["Enums"]["delivery_type"]
+          discount_amount: number
           id: string
           order_code: string
           preparation_time: number | null
@@ -648,14 +707,19 @@ export type Database = {
           rejection_reason: string | null
           shipping_fee: number | null
           status: Database["public"]["Enums"]["order_status"]
+          subtotal_amount: number
+          total_amount: number
           trashed: boolean | null
           updated_at: string | null
           user_id: string
         }
         Insert: {
+          applied_coupon_code?: string | null
           created_at?: string | null
+          currency_code?: string
           delivery_address?: string | null
           delivery_type: Database["public"]["Enums"]["delivery_type"]
+          discount_amount?: number
           id?: string
           order_code?: string
           preparation_time?: number | null
@@ -663,14 +727,19 @@ export type Database = {
           rejection_reason?: string | null
           shipping_fee?: number | null
           status?: Database["public"]["Enums"]["order_status"]
+          subtotal_amount?: number
+          total_amount?: number
           trashed?: boolean | null
           updated_at?: string | null
           user_id: string
         }
         Update: {
+          applied_coupon_code?: string | null
           created_at?: string | null
+          currency_code?: string
           delivery_address?: string | null
           delivery_type?: Database["public"]["Enums"]["delivery_type"]
+          discount_amount?: number
           id?: string
           order_code?: string
           preparation_time?: number | null
@@ -678,6 +747,8 @@ export type Database = {
           rejection_reason?: string | null
           shipping_fee?: number | null
           status?: Database["public"]["Enums"]["order_status"]
+          subtotal_amount?: number
+          total_amount?: number
           trashed?: boolean | null
           updated_at?: string | null
           user_id?: string
@@ -910,6 +981,41 @@ export type Database = {
           },
           {
             foreignKeyName: "product_categories_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_files: {
+        Row: {
+          content_type: string | null
+          created_at: string
+          file_name: string | null
+          file_url: string
+          id: string
+          product_id: string
+        }
+        Insert: {
+          content_type?: string | null
+          created_at?: string
+          file_name?: string | null
+          file_url: string
+          id?: string
+          product_id: string
+        }
+        Update: {
+          content_type?: string | null
+          created_at?: string
+          file_name?: string | null
+          file_url?: string
+          id?: string
+          product_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_files_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "products"
