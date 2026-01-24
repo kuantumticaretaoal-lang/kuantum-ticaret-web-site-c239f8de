@@ -13,7 +13,94 @@ import { useToast } from "@/hooks/use-toast";
 import { logger } from "@/lib/logger";
 import { formatPhoneNumber, formatProvince, formatDistrict } from "@/lib/formatters";
 import { exportToExcel, formatDateForExport, formatCurrencyForExport } from "@/lib/excel-export";
-import { Download, MessageSquare, Send } from "lucide-react";
+import { Download, MessageSquare, Send, DollarSign, Eye, FileDown } from "lucide-react";
+
+// Custom Photo Viewer with signed URL support
+const CustomPhotoViewer = ({ photoUrl }: { photoUrl: string }) => {
+  const [signedUrl, setSignedUrl] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const getSignedUrl = async () => {
+    setLoading(true);
+    try {
+      // Extract path from the URL
+      const urlParts = photoUrl.split("/custom-photos/");
+      if (urlParts.length < 2) {
+        // Try custom-files bucket
+        const filesParts = photoUrl.split("/custom-files/");
+        if (filesParts.length >= 2) {
+          const path = filesParts[1];
+          const { data, error } = await supabase.storage
+            .from("custom-files")
+            .createSignedUrl(path, 3600);
+          if (!error && data) {
+            setSignedUrl(data.signedUrl);
+          }
+        }
+        return;
+      }
+      
+      const path = urlParts[1];
+      const { data, error } = await supabase.storage
+        .from("custom-photos")
+        .createSignedUrl(path, 3600); // 1 hour expiry
+      
+      if (error) {
+        console.error("Signed URL error:", error);
+        return;
+      }
+      
+      setSignedUrl(data.signedUrl);
+    } catch (err) {
+      console.error("Error getting signed URL:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const downloadFile = async () => {
+    if (!signedUrl) {
+      await getSignedUrl();
+    }
+    if (signedUrl) {
+      const link = document.createElement("a");
+      link.href = signedUrl;
+      link.download = "custom-photo";
+      link.target = "_blank";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  };
+
+  return (
+    <div className="flex items-center gap-2">
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={async () => {
+          if (!signedUrl) await getSignedUrl();
+          if (signedUrl) window.open(signedUrl, "_blank");
+        }}
+        disabled={loading}
+        className="text-xs h-6 px-2"
+      >
+        <Eye className="h-3 w-3 mr-1" />
+        {loading ? "Yükleniyor..." : "Görüntüle"}
+      </Button>
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={downloadFile}
+        disabled={loading}
+        className="text-xs h-6 px-2"
+      >
+        <FileDown className="h-3 w-3 mr-1" />
+        İndir
+      </Button>
+    </div>
+  );
+};
 
 export const AdminOrders = () => {
   const [orders, setOrders] = useState<any[]>([]);
@@ -499,16 +586,7 @@ export const AdminOrders = () => {
                       <div className="text-muted-foreground">Beden: {item.selected_size}</div>
                     )}
                     {item.custom_photo_url && (
-                      <div>
-                        <a 
-                          href={item.custom_photo_url} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="text-xs text-primary hover:underline"
-                        >
-                          Özel Fotoğrafı Görüntüle
-                        </a>
-                      </div>
+                      <CustomPhotoViewer photoUrl={item.custom_photo_url} />
                     )}
                   </div>
                 )) || "-"}
@@ -648,6 +726,93 @@ export const AdminOrders = () => {
                       </div>
                     )}
                     
+                    {/* Ek Ücret Talep Et */}
+                    <div className="pt-4 border-t">
+                      <Label className="flex items-center gap-2 mb-2">
+                        <DollarSign className="h-4 w-4" />
+                        Ek Ücret Talep Et
+                      </Label>
+                      {order.extra_fee > 0 && (
+                        <div className="text-sm mb-2 p-2 bg-muted rounded">
+                          <p className="font-medium">Mevcut Ek Ücret: ₺{parseFloat(order.extra_fee).toFixed(2)}</p>
+                          {order.extra_fee_reason && <p className="text-muted-foreground">{order.extra_fee_reason}</p>}
+                          <p className="text-xs text-muted-foreground">
+                            Durum: {order.extra_fee_paid ? "Ödendi ✓" : "Ödenmedi"}
+                          </p>
+                        </div>
+                      )}
+                      <div className="space-y-2">
+                        <Input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          placeholder="Ek ücret miktarı (TL)"
+                          id={`extra-fee-${order.id}`}
+                        />
+                        <Textarea
+                          placeholder="Ek ücret açıklaması (müşteriye gönderilecek)"
+                          id={`extra-fee-reason-${order.id}`}
+                        />
+                        <Button 
+                          className="w-full" 
+                          variant="outline"
+                          onClick={async () => {
+                            const feeInput = document.getElementById(`extra-fee-${order.id}`) as HTMLInputElement;
+                            const reasonInput = document.getElementById(`extra-fee-reason-${order.id}`) as HTMLTextAreaElement;
+                            const fee = parseFloat(feeInput.value) || 0;
+                            const reason = reasonInput.value.trim();
+                            
+                            if (fee <= 0) {
+                              toast({
+                                variant: "destructive",
+                                title: "Hata",
+                                description: "Geçerli bir ücret girin",
+                              });
+                              return;
+                            }
+                            
+                            const { error: updateError } = await (supabase as any)
+                              .from("orders")
+                              .update({ 
+                                extra_fee: fee, 
+                                extra_fee_reason: reason,
+                                extra_fee_requested_at: new Date().toISOString(),
+                                extra_fee_paid: false
+                              })
+                              .eq("id", order.id);
+                            
+                            if (updateError) {
+                              toast({
+                                variant: "destructive",
+                                title: "Hata",
+                                description: "Ek ücret kaydedilemedi",
+                              });
+                              return;
+                            }
+                            
+                            // Send notification to user
+                            await supabase
+                              .from("notifications")
+                              .insert({
+                                user_id: order.user_id,
+                                message: `Sipariş #${order.order_code} için ₺${fee.toFixed(2)} tutarında ek ücret talep edildi. ${reason ? "Açıklama: " + reason : ""}`,
+                              });
+                            
+                            toast({
+                              title: "Başarılı",
+                              description: "Ek ücret talebi gönderildi",
+                            });
+                            feeInput.value = "";
+                            reasonInput.value = "";
+                            loadOrders();
+                          }}
+                        >
+                          <DollarSign className="h-4 w-4 mr-2" />
+                          Ek Ücret Talep Et
+                        </Button>
+                      </div>
+                    </div>
+
                     {/* Müşteriye mesaj gönder */}
                     <div className="pt-4 border-t">
                       <Label className="flex items-center gap-2 mb-2">

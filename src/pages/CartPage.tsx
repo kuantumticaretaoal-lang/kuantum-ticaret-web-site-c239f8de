@@ -389,6 +389,13 @@ const CartPage = () => {
     }
 
     try {
+      // Calculate final amounts with all discounts
+      const finalSubtotal = subtotal;
+      const finalCouponDiscount = couponDiscount;
+      const finalPremiumDiscount = premiumDiscount;
+      const finalTotalDiscount = totalDiscount;
+      const finalTotal = total;
+
       const { data: order, error: orderError } = await (supabase as any)
         .from("orders")
         .insert({
@@ -397,6 +404,11 @@ const CartPage = () => {
           delivery_address: deliveryType === "home_delivery" ? `${profile.address}, ${profile.district}, ${profile.province}` : null,
           status: "pending",
           shipping_fee: shippingCost,
+          subtotal_amount: finalSubtotal,
+          discount_amount: finalTotalDiscount,
+          total_amount: finalTotal,
+          applied_coupon_code: appliedCoupon?.code || null,
+          currency_code: currency.code,
         })
         .select()
         .single();
@@ -407,7 +419,7 @@ const CartPage = () => {
         order_id: order.id,
         product_id: item.product_id,
         quantity: item.quantity,
-        price: item.products.discounted_price || item.products.price, // Use discounted price
+        price: getItemPrice(item), // Use the already calculated discounted price
         custom_name: item.custom_name || null,
         selected_size: item.selected_size || null,
         custom_photo_url: item.custom_photo_url || null,
