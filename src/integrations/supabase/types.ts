@@ -700,6 +700,10 @@ export type Database = {
           delivery_address: string | null
           delivery_type: Database["public"]["Enums"]["delivery_type"]
           discount_amount: number
+          extra_fee: number | null
+          extra_fee_paid: boolean | null
+          extra_fee_reason: string | null
+          extra_fee_requested_at: string | null
           id: string
           order_code: string
           preparation_time: number | null
@@ -720,6 +724,10 @@ export type Database = {
           delivery_address?: string | null
           delivery_type: Database["public"]["Enums"]["delivery_type"]
           discount_amount?: number
+          extra_fee?: number | null
+          extra_fee_paid?: boolean | null
+          extra_fee_reason?: string | null
+          extra_fee_requested_at?: string | null
           id?: string
           order_code?: string
           preparation_time?: number | null
@@ -740,6 +748,10 @@ export type Database = {
           delivery_address?: string | null
           delivery_type?: Database["public"]["Enums"]["delivery_type"]
           discount_amount?: number
+          extra_fee?: number | null
+          extra_fee_paid?: boolean | null
+          extra_fee_reason?: string | null
+          extra_fee_requested_at?: string | null
           id?: string
           order_code?: string
           preparation_time?: number | null
@@ -1204,6 +1216,7 @@ export type Database = {
       }
       products: {
         Row: {
+          allowed_file_types: string[] | null
           allows_custom_photo: boolean | null
           available_sizes: string[] | null
           category_id: string | null
@@ -1220,6 +1233,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          allowed_file_types?: string[] | null
           allows_custom_photo?: boolean | null
           available_sizes?: string[] | null
           category_id?: string | null
@@ -1236,6 +1250,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          allowed_file_types?: string[] | null
           allows_custom_photo?: boolean | null
           available_sizes?: string[] | null
           category_id?: string | null

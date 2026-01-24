@@ -33,6 +33,7 @@ export const AdminProducts = () => {
     is_name_customizable: false,
     available_sizes: [] as string[],
     allows_custom_photo: false,
+    allowed_file_types: [] as string[],
     category_ids: [] as string[]
   });
   const [editProduct, setEditProduct] = useState<any>(null);
@@ -42,6 +43,8 @@ export const AdminProducts = () => {
   const [totalProducts, setTotalProducts] = useState(0);
   const [totalValue, setTotalValue] = useState(0);
   const [lowStockProducts, setLowStockProducts] = useState(0);
+  const [showSizeOptions, setShowSizeOptions] = useState(false);
+  const [showFileTypeOptions, setShowFileTypeOptions] = useState(false);
   
   const availablePromotions = [
     "En Geç Yarın Kargoda",
@@ -51,6 +54,16 @@ export const AdminProducts = () => {
   ];
 
   const availableSizeOptions = ["XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL", "5XL", "6XL"];
+  
+  const availableFileTypes = [
+    "jpg", "jpeg", "png", "webp", "gif", "bmp", "svg",
+    "pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "txt", "rtf",
+    "stl", "gcode", "obj", "fbx", "3ds", "blend",
+    "mp4", "mkv", "avi", "mov", "wmv", "flv", "webm", "3gp",
+    "mp3", "wav", "flac", "aac", "ogg", "wma", "m4a", "amr",
+    "zip", "rar", "7z", "tar", "gz",
+    "html", "css", "js", "json", "xml"
+  ];
 
   useEffect(() => {
     loadProducts();
@@ -233,6 +246,7 @@ export const AdminProducts = () => {
         is_name_customizable: false,
         available_sizes: [],
         allows_custom_photo: false,
+        allowed_file_types: [],
         category_ids: []
       });
       setUploadingImages([]);

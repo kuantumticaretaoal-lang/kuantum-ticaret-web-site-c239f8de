@@ -22,11 +22,11 @@ serve(async (req) => {
     }
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     // Get previous messages for context
-    let contextMessages: { role: string; content: string }[] = [];
+    let contextMessages: { role: string; parts: { text: string }[] }[] = [];
     if (threadId) {
       const { data: prevMessages } = await supabase
         .from("live_support_messages")
@@ -37,8 +37,8 @@ serve(async (req) => {
 
       if (prevMessages) {
         contextMessages = prevMessages.map((m) => ({
-          role: m.role,
-          content: m.content,
+          role: m.role === "assistant" ? "model" : "user",
+          parts: [{ text: m.content }],
         }));
       }
     }
@@ -59,7 +59,7 @@ serve(async (req) => {
     const { data: siteSettings } = await supabase
       .from("site_settings")
       .select("*")
-      .single();
+      .maybeSingle();
 
     const systemPrompt = `Sen Kuantum Ticaret'in yapay zeka destekli müşteri hizmetleri asistanısın. Türkçe konuşuyorsun.
 
@@ -83,42 +83,56 @@ Yapamayacakların:
 - Ödeme alma
 - Sistem değişikliği yapma`;
 
-    // Use Lovable AI Gateway
-    const lovableApiKey = Deno.env.get("LOVABLE_API_KEY");
+    // Use Gemini API directly
+    const geminiApiKey = Deno.env.get("GEMINI_API_KEY");
     
-    if (!lovableApiKey) {
-      console.error("LOVABLE_API_KEY not found");
+    if (!geminiApiKey) {
+      console.error("GEMINI_API_KEY not found");
       return new Response(
         JSON.stringify({ response: "Şu anda destek hizmeti kullanılamıyor. Lütfen daha sonra tekrar deneyin." }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const aiMessages = [
-      { role: "system", content: systemPrompt },
+    // Build conversation history for Gemini
+    const contents = [
+      {
+        role: "user",
+        parts: [{ text: systemPrompt }],
+      },
+      {
+        role: "model",
+        parts: [{ text: "Anladım! Kuantum Ticaret'in müşteri hizmetleri asistanı olarak size yardımcı olmaya hazırım. 🛍️" }],
+      },
       ...contextMessages,
-      { role: "user", content: message },
+      {
+        role: "user",
+        parts: [{ text: message }],
+      },
     ];
 
-    console.log("Calling AI with messages:", aiMessages.length);
+    console.log("Calling Gemini API with", contents.length, "messages");
 
-    const aiResponse = await fetch("https://ai-gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${lovableApiKey}`,
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: aiMessages,
-        max_tokens: 500,
-        temperature: 0.7,
-      }),
-    });
+    const aiResponse = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiApiKey}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          contents: contents,
+          generationConfig: {
+            temperature: 0.7,
+            maxOutputTokens: 500,
+          },
+        }),
+      }
+    );
 
     if (!aiResponse.ok) {
       const errorText = await aiResponse.text();
-      console.error("AI API error:", errorText);
+      console.error("Gemini API error:", errorText);
       return new Response(
         JSON.stringify({ response: "Üzgünüm, şu anda yanıt veremiyorum. Lütfen daha sonra tekrar deneyin." }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -126,9 +140,9 @@ Yapamayacakların:
     }
 
     const aiData = await aiResponse.json();
-    const assistantResponse = aiData.choices?.[0]?.message?.content || "Yanıt alınamadı.";
+    const assistantResponse = aiData.candidates?.[0]?.content?.parts?.[0]?.text || "Yanıt alınamadı.";
 
-    console.log("AI response received:", assistantResponse.substring(0, 100));
+    console.log("Gemini response received:", assistantResponse.substring(0, 100));
 
     return new Response(
       JSON.stringify({ response: assistantResponse }),
