@@ -6,6 +6,7 @@ interface TranslationContextType {
   translations: Record<string, string>;
   exchangeRates: Record<string, number>;
   currencySymbol: string;
+  currencyCode: string;
   setLanguage: (code: string) => void;
   t: (key: string, fallback?: string) => string;
   formatPrice: (priceInTRY: number) => string;
@@ -19,6 +20,7 @@ const defaultContext: TranslationContextType = {
   translations: {},
   exchangeRates: {},
   currencySymbol: "₺",
+  currencyCode: "TRY",
   setLanguage: () => {},
   t: (key, fallback) => fallback || key,
   formatPrice: (price) => `₺${price.toFixed(2)}`,
@@ -54,6 +56,26 @@ export const useTranslationProvider = () => {
     loadLanguageInfo(savedLang);
     loadTranslations(savedLang);
     loadExchangeRates();
+
+    // Listen for language changes from LanguageSelector
+    const handleLanguageChange = (e: CustomEvent) => {
+      const lang = e.detail;
+      if (lang?.code) {
+        setCurrentLanguage(lang.code);
+        loadTranslations(lang.code);
+        setLanguageInfo({
+          code: lang.code,
+          currency_code: lang.currency_code || "TRY",
+          currency_symbol: lang.currency_symbol || "₺",
+        });
+        loadExchangeRates();
+      }
+    };
+
+    window.addEventListener("languageChange", handleLanguageChange as EventListener);
+    return () => {
+      window.removeEventListener("languageChange", handleLanguageChange as EventListener);
+    };
   }, []);
 
   const loadLanguageInfo = async (langCode: string) => {
@@ -147,6 +169,7 @@ export const useTranslationProvider = () => {
     translations,
     exchangeRates,
     currencySymbol: languageInfo?.currency_symbol || "₺",
+    currencyCode: languageInfo?.currency_code || "TRY",
     setLanguage,
     t,
     formatPrice,

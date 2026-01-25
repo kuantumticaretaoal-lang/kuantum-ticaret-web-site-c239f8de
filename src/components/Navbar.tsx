@@ -126,18 +126,19 @@ const Navbar = () => {
       .eq("read", false);
     setUnreadCount(data?.length || 0);
   };
+
   const handleSignOut = async () => {
     const { error } = await signOut();
     if (error) {
       toast({
         variant: "destructive",
-        title: "Hata",
-        description: "Çıkış yapılırken bir hata oluştu",
+        title: t("common.error", "Hata"),
+        description: t("auth.logout_error", "Çıkış yapılırken bir hata oluştu"),
       });
     } else {
       toast({
-        title: "Çıkış Başarılı",
-        description: "Görüşmek üzere!",
+        title: t("auth.logout_success", "Çıkış Başarılı"),
+        description: t("auth.goodbye", "Görüşmek üzere!"),
       });
       navigate("/");
     }
@@ -156,7 +157,7 @@ const Navbar = () => {
             </SheetTrigger>
             <SheetContent side="left" className="w-[300px] bg-background">
               <SheetHeader>
-                <SheetTitle>Menü</SheetTitle>
+                <SheetTitle>{t("nav.menu", "Menü")}</SheetTitle>
               </SheetHeader>
               <div className="flex flex-col gap-4 mt-6">
                 {/* Mobile Search */}
@@ -165,13 +166,13 @@ const Navbar = () => {
                     id="mobile-search-input"
                     placeholder={t("common.search", "Ürün ara...")}
                     className="bg-background text-foreground border pr-10"
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    const q = (e.target as HTMLInputElement).value.trim();
-                    navigate(q ? `/products?query=${encodeURIComponent(q)}` : '/products');
-                    setMobileMenuOpen(false);
-                  }
-                }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        const q = (e.target as HTMLInputElement).value.trim();
+                        navigate(q ? `/products?query=${encodeURIComponent(q)}` : '/products');
+                        setMobileMenuOpen(false);
+                      }
+                    }}
                   />
                   <Search 
                     className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground cursor-pointer hover:text-foreground transition-colors" 
@@ -204,14 +205,14 @@ const Navbar = () => {
                   className="text-foreground hover:text-primary transition-colors py-2 border-b"
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  Sponsorlarımız
+                  {t("nav.sponsors", "Sponsorlarımız")}
                 </Link>
                 <Link 
                   to="/follow" 
                   className="text-foreground hover:text-primary transition-colors py-2 border-b"
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  Bizi Takip Edin!
+                  {t("nav.follow", "Bizi Takip Edin!")}
                 </Link>
 
                 {/* Mobile User Actions */}
@@ -248,7 +249,7 @@ const Navbar = () => {
                         onClick={() => setMobileMenuOpen(false)}
                       >
                         <Shield className="h-4 w-4" />
-                        Admin Paneli
+                        {t("nav.admin", "Admin Paneli")}
                       </Link>
                     )}
                     <Button
@@ -317,10 +318,10 @@ const Navbar = () => {
               {t("nav.contact", "İletişim")}
             </Link>
             <Link to="/sponsors" className="text-white hover:text-white/80 transition-colors text-sm lg:text-base hidden lg:block">
-              Sponsorlarımız
+              {t("nav.sponsors", "Sponsorlarımız")}
             </Link>
             <Link to="/follow" className="text-white hover:text-white/80 transition-colors text-sm lg:text-base hidden lg:block">
-              Bizi Takip Edin!
+              {t("nav.follow", "Bizi Takip Edin!")}
             </Link>
             <Link to="/premium" className="text-amber-300 hover:text-amber-200 transition-colors hidden lg:flex" title={t("nav.premium", "Premium")}>
               <Crown className="h-4 w-4" />
@@ -370,14 +371,14 @@ const Navbar = () => {
                 <DropdownMenuContent align="end" className="w-48">
                   <DropdownMenuItem onClick={() => navigate("/account")}>
                     <Settings className="h-4 w-4 mr-2" />
-                    {t("nav.account", "Hesap Ayarları")}
+                    {t("nav.settings", "Hesap Ayarları")}
                   </DropdownMenuItem>
                   {isAdmin && (
                     <>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem onClick={() => navigate("/admin")}>
                         <Shield className="h-4 w-4 mr-2" />
-                        Admin Paneli
+                        {t("nav.admin", "Admin Paneli")}
                       </DropdownMenuItem>
                     </>
                   )}
