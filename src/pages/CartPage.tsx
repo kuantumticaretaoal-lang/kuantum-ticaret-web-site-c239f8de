@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslations } from "@/hooks/use-translations";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Label } from "@/components/ui/label";
@@ -35,12 +36,6 @@ interface ShippingSetting {
   is_active: boolean;
 }
 
-interface CurrencyInfo {
-  symbol: string;
-  rate: number;
-  code: string;
-}
-
 const CartPage = () => {
   const [cartItems, setCartItems] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
@@ -50,7 +45,6 @@ const CartPage = () => {
   const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
   const [couponLoading, setCouponLoading] = useState(false);
   const [shippingSettings, setShippingSettings] = useState<ShippingSetting[]>([]);
-  const [currency, setCurrency] = useState<CurrencyInfo>({ symbol: "₺", rate: 1, code: "TRY" });
   const [premiumBenefits, setPremiumBenefits] = useState<PremiumBenefits>({
     isPremium: false,
     discountPercent: 0,
@@ -58,13 +52,13 @@ const CartPage = () => {
   });
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { t, formatPrice, currencyCode, convertPrice } = useTranslations();
 
   useEffect(() => {
     loadCart();
     loadOrders();
     loadPremiumStatus();
     loadShippingSettings();
-    loadCurrencySettings();
 
     const channel = supabase
       .channel("cart-changes")
@@ -86,53 +80,10 @@ const CartPage = () => {
       })
       .subscribe();
 
-    // Listen for language changes
-    const handleLanguageChange = (e: CustomEvent) => {
-      loadCurrencySettings();
-    };
-    window.addEventListener('languageChange', handleLanguageChange as EventListener);
-
     return () => {
       supabase.removeChannel(channel);
-      window.removeEventListener('languageChange', handleLanguageChange as EventListener);
     };
   }, []);
-
-  const loadCurrencySettings = async () => {
-    const savedCode = localStorage.getItem("preferred_language");
-    if (!savedCode || savedCode === "tr") {
-      setCurrency({ symbol: "₺", rate: 1, code: "TRY" });
-      return;
-    }
-
-    const { data: lang } = await supabase
-      .from("supported_languages")
-      .select("currency_code, currency_symbol")
-      .eq("code", savedCode)
-      .maybeSingle();
-
-    if (lang && lang.currency_code !== "TRY") {
-      const { data: rate } = await supabase
-        .from("exchange_rates")
-        .select("rate")
-        .eq("from_currency", "TRY")
-        .eq("to_currency", lang.currency_code)
-        .maybeSingle();
-
-      setCurrency({
-        symbol: lang.currency_symbol,
-        rate: rate?.rate || 1,
-        code: lang.currency_code,
-      });
-    } else {
-      setCurrency({ symbol: "₺", rate: 1, code: "TRY" });
-    }
-  };
-
-  const formatPrice = (priceInTRY: number): string => {
-    const converted = priceInTRY * currency.rate;
-    return `${currency.symbol}${converted.toFixed(2)}`;
-  };
 
   const loadShippingSettings = async () => {
     const { data } = await supabase
@@ -184,7 +135,7 @@ const CartPage = () => {
       .from("orders")
       .select(`
         *,
-        order_items(*, products(title, price))
+        order_items(*, products(title, price, discounted_price))
       `)
       .eq("user_id", user.id)
       .order("created_at", { ascending: false });
@@ -208,8 +159,8 @@ const CartPage = () => {
       if (product.stock_status === 'out_of_stock') {
         toast({
           variant: "destructive",
-          title: "Stok Tükendi",
-          description: "Bu ürün stokta kalmadı",
+          title: t("common.out_of_stock", "Stok Tükendi"),
+          description: t("cart.out_of_stock_message", "Bu ürün stokta kalmadı"),
         });
         return;
       }
@@ -217,8 +168,8 @@ const CartPage = () => {
       if (product.stock_quantity !== null && newQuantity > product.stock_quantity) {
         toast({
           variant: "destructive",
-          title: "Stok Yetersiz",
-          description: `Bu üründen maksimum ${product.stock_quantity} adet ekleyebilirsiniz`,
+          title: t("cart.insufficient_stock", "Stok Yetersiz"),
+          description: `${t("cart.max_quantity", "Bu üründen maksimum")} ${product.stock_quantity} ${t("cart.pieces", "adet ekleyebilirsiniz")}`,
         });
         return;
       }
@@ -228,8 +179,8 @@ const CartPage = () => {
     if (error) {
       toast({
         variant: "destructive",
-        title: "Hata",
-        description: error.message || "Miktar güncellenemedi",
+        title: t("common.error", "Hata"),
+        description: error.message || t("cart.update_error", "Miktar güncellenemedi"),
       });
     }
   };
@@ -239,13 +190,13 @@ const CartPage = () => {
     if (error) {
       toast({
         variant: "destructive",
-        title: "Hata",
-        description: "Ürün silinemedi",
+        title: t("common.error", "Hata"),
+        description: t("cart.remove_error", "Ürün silinemedi"),
       });
     } else {
       toast({
-        title: "Başarılı",
-        description: "Ürün sepetten çıkarıldı",
+        title: t("common.success", "Başarılı"),
+        description: t("cart.remove_success", "Ürün sepetten çıkarıldı"),
       });
     }
   };
@@ -255,6 +206,16 @@ const CartPage = () => {
     return item.products.discounted_price 
       ? parseFloat(item.products.discounted_price) 
       : parseFloat(item.products.price);
+  };
+
+  // Get display price (original price for display purposes)
+  const getDisplayPrice = (item: any) => {
+    return parseFloat(item.products.price);
+  };
+
+  // Check if item has discount
+  const hasDiscount = (item: any) => {
+    return item.products.discounted_price && parseFloat(item.products.discounted_price) < parseFloat(item.products.price);
   };
 
   const subtotal = cartItems.reduce(
@@ -291,8 +252,8 @@ const CartPage = () => {
     if (!couponCode.trim()) {
       toast({
         variant: "destructive",
-        title: "Hata",
-        description: "Kupon kodu giriniz",
+        title: t("common.error", "Hata"),
+        description: t("cart.enter_coupon", "Kupon kodu giriniz"),
       });
       return;
     }
@@ -301,8 +262,8 @@ const CartPage = () => {
     if (!user) {
       toast({
         variant: "destructive",
-        title: "Giriş Gerekli",
-        description: "Kupon kullanmak için giriş yapmalısınız",
+        title: t("auth.login_required", "Giriş Gerekli"),
+        description: t("cart.login_for_coupon", "Kupon kullanmak için giriş yapmalısınız"),
       });
       navigate("/login");
       return;
@@ -321,8 +282,8 @@ const CartPage = () => {
     if (error) {
       toast({
         variant: "destructive",
-        title: "Hata",
-        description: "Kupon doğrulanamadı",
+        title: t("common.error", "Hata"),
+        description: t("cart.coupon_validate_error", "Kupon doğrulanamadı"),
       });
       return;
     }
@@ -331,8 +292,8 @@ const CartPage = () => {
     if (!result?.is_valid) {
       toast({
         variant: "destructive",
-        title: "Geçersiz Kupon",
-        description: result?.error_message || "Kupon uygulanamadı",
+        title: t("cart.invalid_coupon", "Geçersiz Kupon"),
+        description: result?.error_message || t("cart.coupon_not_applied", "Kupon uygulanamadı"),
       });
       return;
     }
@@ -346,16 +307,16 @@ const CartPage = () => {
     setCouponCode("");
 
     toast({
-      title: "Kupon Uygulandı",
-      description: `${couponCode.toUpperCase()} kodlu kupon uygulandı`,
+      title: t("cart.coupon_applied", "Kupon Uygulandı"),
+      description: `${couponCode.toUpperCase()} ${t("cart.coupon_applied_message", "kodlu kupon uygulandı")}`,
     });
   };
 
   const removeCoupon = () => {
     setAppliedCoupon(null);
     toast({
-      title: "Kupon Kaldırıldı",
-      description: "İndirim kodu kaldırıldı",
+      title: t("cart.coupon_removed", "Kupon Kaldırıldı"),
+      description: t("cart.discount_removed", "İndirim kodu kaldırıldı"),
     });
   };
 
@@ -365,8 +326,8 @@ const CartPage = () => {
     if (!user) {
       toast({
         variant: "destructive",
-        title: "Giriş Gerekli",
-        description: "Sipariş vermek için giriş yapmalısınız",
+        title: t("auth.login_required", "Giriş Gerekli"),
+        description: t("cart.login_for_order", "Sipariş vermek için giriş yapmalısınız"),
       });
       navigate("/login");
       return;
@@ -381,18 +342,16 @@ const CartPage = () => {
     if (deliveryType === "home_delivery" && (!profile?.address || !profile?.district || !profile?.province)) {
       toast({
         variant: "destructive",
-        title: "Adres Bilgisi Eksik",
-        description: "Adrese teslim için adres bilgilerinizi tamamlayın",
+        title: t("cart.address_missing", "Adres Bilgisi Eksik"),
+        description: t("cart.complete_address", "Adrese teslim için adres bilgilerinizi tamamlayın"),
       });
       navigate("/account");
       return;
     }
 
     try {
-      // Calculate final amounts with all discounts
+      // Calculate final amounts with all discounts in TRY
       const finalSubtotal = subtotal;
-      const finalCouponDiscount = couponDiscount;
-      const finalPremiumDiscount = premiumDiscount;
       const finalTotalDiscount = totalDiscount;
       const finalTotal = total;
 
@@ -408,7 +367,7 @@ const CartPage = () => {
           discount_amount: finalTotalDiscount,
           total_amount: finalTotal,
           applied_coupon_code: appliedCoupon?.code || null,
-          currency_code: currency.code,
+          currency_code: currencyCode,
         })
         .select()
         .single();
@@ -453,8 +412,8 @@ const CartPage = () => {
       setAppliedCoupon(null);
 
       toast({
-        title: "Sipariş Oluşturuldu",
-        description: "Siparişiniz başarıyla oluşturuldu. Hesabım sayfasından takip edebilirsiniz.",
+        title: t("cart.order_created", "Sipariş Oluşturuldu"),
+        description: t("cart.order_success", "Siparişiniz başarıyla oluşturuldu. Hesabım sayfasından takip edebilirsiniz."),
       });
       
       navigate("/account");
@@ -462,8 +421,8 @@ const CartPage = () => {
       logger.error("Sipariş oluşturma hatası", error);
       toast({
         variant: "destructive",
-        title: "Hata",
-        description: "Sipariş oluşturulurken bir hata oluştu",
+        title: t("common.error", "Hata"),
+        description: t("cart.order_error", "Sipariş oluşturulurken bir hata oluştu"),
       });
     }
   };
@@ -473,7 +432,7 @@ const CartPage = () => {
       <div className="min-h-screen bg-background">
         <Navbar />
         <div className="container mx-auto px-4 py-16 text-center">
-          <p>Yükleniyor...</p>
+          <p>{t("common.loading", "Yükleniyor...")}</p>
         </div>
         <Footer />
       </div>
@@ -481,19 +440,25 @@ const CartPage = () => {
   }
 
   const getStatusText = (status: string) => {
+    const statusKey = `order.${status}`;
     const statuses: Record<string, string> = {
-      pending: "Beklemede",
-      confirmed: "Onaylandı",
-      preparing: "Hazırlanıyor",
-      ready: "Hazır",
-      in_delivery: "Teslim Edilmek Üzere",
-      delivered: "Teslim Edildi",
-      rejected: "Reddedildi",
+      pending: t(statusKey, "Beklemede"),
+      confirmed: t(statusKey, "Onaylandı"),
+      preparing: t(statusKey, "Hazırlanıyor"),
+      ready: t(statusKey, "Hazır"),
+      in_delivery: t(statusKey, "Teslim Edilmek Üzere"),
+      delivered: t(statusKey, "Teslim Edildi"),
+      rejected: t(statusKey, "Reddedildi"),
     };
     return statuses[status] || status;
   };
 
   const calculateOrderTotal = (order: any) => {
+    // Use saved total_amount if available
+    if (order.total_amount) {
+      return parseFloat(order.total_amount);
+    }
+    // Fallback to calculating from items
     const itemsTotal = order.order_items?.reduce(
       (sum: number, item: any) => sum + (item.quantity * parseFloat(item.price)),
       0
@@ -511,21 +476,21 @@ const CartPage = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
       <div className="container mx-auto px-4 py-16">
-        <h1 className="text-4xl font-bold mb-8">Sepetim</h1>
+        <h1 className="text-4xl font-bold mb-8">{t("cart.title", "Sepetim")}</h1>
 
         <Tabs defaultValue="cart" className="w-full">
           <TabsList className="mb-8">
-            <TabsTrigger value="cart">Sepetim</TabsTrigger>
-            <TabsTrigger value="orders">Geçmiş Siparişler</TabsTrigger>
+            <TabsTrigger value="cart">{t("cart.title", "Sepetim")}</TabsTrigger>
+            <TabsTrigger value="orders">{t("cart.orders_history", "Geçmiş Siparişler")}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="cart">
             {cartItems.length === 0 ? (
               <Card>
                 <CardContent className="py-12 text-center">
-                  <p className="text-muted-foreground mb-4">Sepetiniz boş</p>
+                  <p className="text-muted-foreground mb-4">{t("cart.empty", "Sepetiniz boş")}</p>
                   <Button onClick={() => navigate("/products")}>
-                    Ürünlere Göz At
+                    {t("cart.browse_products", "Ürünlere Göz At")}
                   </Button>
                 </CardContent>
               </Card>
@@ -553,22 +518,38 @@ const CartPage = () => {
                             </h3>
                             {item.custom_name && (
                               <p className="text-sm text-muted-foreground mb-1">
-                                İsim: <span className="font-medium">{item.custom_name}</span>
+                                {t("cart.name", "İsim")}: <span className="font-medium">{item.custom_name}</span>
                               </p>
                             )}
                             {item.selected_size && (
                               <p className="text-sm text-muted-foreground mb-1">
-                                Beden: <span className="font-medium">{item.selected_size}</span>
+                                {t("cart.size", "Beden")}: <span className="font-medium">{item.selected_size}</span>
                               </p>
                             )}
                             {item.custom_photo_url && (
                               <p className="text-sm text-muted-foreground mb-1">
-                                <span className="font-medium">Özel fotoğraf yüklendi ✓</span>
+                                <span className="font-medium">{t("cart.custom_photo", "Özel fotoğraf yüklendi")} ✓</span>
                               </p>
                             )}
-                            <p className="text-lg font-bold text-primary mb-4">
-                              {formatPrice(parseFloat(item.products.price))}
-                            </p>
+                            <div className="mb-4">
+                              {hasDiscount(item) ? (
+                                <div className="flex items-center gap-2">
+                                  <span className="text-lg font-bold text-primary">
+                                    {formatPrice(getItemPrice(item))}
+                                  </span>
+                                  <span className="text-sm text-muted-foreground line-through">
+                                    {formatPrice(getDisplayPrice(item))}
+                                  </span>
+                                  <Badge variant="destructive" className="text-xs">
+                                    %{Math.round((1 - getItemPrice(item) / getDisplayPrice(item)) * 100)} {t("cart.discount", "İndirim")}
+                                  </Badge>
+                                </div>
+                              ) : (
+                                <span className="text-lg font-bold text-primary">
+                                  {formatPrice(getItemPrice(item))}
+                                </span>
+                              )}
+                            </div>
                             <div className="flex items-center gap-2">
                               <Button
                                 size="sm"
@@ -610,117 +591,117 @@ const CartPage = () => {
                 </div>
 
                 <div>
-          <Card className="sticky top-4">
-            <CardHeader>
-              <CardTitle>Sipariş Özeti</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label>Teslimat Seçeneği</Label>
-                <Select value={deliveryType} onValueChange={(v: any) => setDeliveryType(v)}>
-                  <SelectTrigger className="mt-1">
-                    <SelectValue placeholder="Seçiniz" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="home_delivery">Adrese Teslim</SelectItem>
-                    <SelectItem value="pickup">Yerinden Alma</SelectItem>
-                  </SelectContent>
-                </Select>
-                {deliveryType === "home_delivery" && (
-                  <p className="text-xs text-muted-foreground mt-2">
-                    Not: Adrese teslim her bölgede mevcut olmayabilir ve ek ücret talep edilebilir.
-                  </p>
-                )}
-              </div>
+                  <Card className="sticky top-4">
+                    <CardHeader>
+                      <CardTitle>{t("cart.order_summary", "Sipariş Özeti")}</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div>
+                        <Label>{t("cart.delivery_type", "Teslimat Seçeneği")}</Label>
+                        <Select value={deliveryType} onValueChange={(v: any) => setDeliveryType(v)}>
+                          <SelectTrigger className="mt-1">
+                            <SelectValue placeholder={t("common.select", "Seçiniz")} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="home_delivery">{t("cart.home_delivery", "Adrese Teslim")}</SelectItem>
+                            <SelectItem value="pickup">{t("cart.pickup", "Yerinden Alma")}</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        {deliveryType === "home_delivery" && (
+                          <p className="text-xs text-muted-foreground mt-2">
+                            {t("cart.delivery_note", "Not: Adrese teslim her bölgede mevcut olmayabilir ve ek ücret talep edilebilir.")}
+                          </p>
+                        )}
+                      </div>
 
-              {/* Kupon Kodu */}
-              <div className="space-y-2">
-                <Label className="flex items-center gap-2">
-                  <Tag className="h-4 w-4" />
-                  İndirim Kodu
-                </Label>
-                {appliedCoupon ? (
-                  <div className="flex items-center justify-between p-2 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md">
-                    <div className="flex items-center gap-2">
-                      <Check className="h-4 w-4 text-green-600" />
-                      <span className="font-mono font-bold text-green-700 dark:text-green-400">
-                        {appliedCoupon.code}
-                      </span>
-                      <Badge variant="secondary" className="text-xs">
-                        {appliedCoupon.discount_type === "percentage"
-                          ? `%${appliedCoupon.discount_value}`
-                          : formatPrice(appliedCoupon.discount_value)}
-                      </Badge>
-                    </div>
-                    <Button size="sm" variant="ghost" onClick={removeCoupon}>
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="flex gap-2">
-                    <Input
-                      value={couponCode}
-                      onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-                      placeholder="KUPONKODU"
-                      className="font-mono"
-                      maxLength={20}
-                    />
-                    <Button 
-                      onClick={applyCoupon} 
-                      disabled={couponLoading}
-                      variant="outline"
-                    >
-                      {couponLoading ? "..." : "Uygula"}
-                    </Button>
-                  </div>
-                )}
-              </div>
+                      {/* Kupon Kodu */}
+                      <div className="space-y-2">
+                        <Label className="flex items-center gap-2">
+                          <Tag className="h-4 w-4" />
+                          {t("cart.coupon", "İndirim Kodu")}
+                        </Label>
+                        {appliedCoupon ? (
+                          <div className="flex items-center justify-between p-2 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md">
+                            <div className="flex items-center gap-2">
+                              <Check className="h-4 w-4 text-green-600" />
+                              <span className="font-mono font-bold text-green-700 dark:text-green-400">
+                                {appliedCoupon.code}
+                              </span>
+                              <Badge variant="secondary" className="text-xs">
+                                {appliedCoupon.discount_type === "percentage"
+                                  ? `%${appliedCoupon.discount_value}`
+                                  : formatPrice(appliedCoupon.discount_value)}
+                              </Badge>
+                            </div>
+                            <Button size="sm" variant="ghost" onClick={removeCoupon}>
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="flex gap-2">
+                            <Input
+                              value={couponCode}
+                              onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                              placeholder="KUPONKODU"
+                              className="font-mono"
+                              maxLength={20}
+                            />
+                            <Button 
+                              onClick={applyCoupon} 
+                              disabled={couponLoading}
+                              variant="outline"
+                            >
+                              {couponLoading ? "..." : t("cart.apply", "Uygula")}
+                            </Button>
+                          </div>
+                        )}
+                      </div>
 
-              <div className="space-y-2 pt-2 border-t">
-                <div className="flex justify-between text-sm">
-                  <span>Ara Toplam:</span>
-                  <span>{formatPrice(subtotal)}</span>
-                </div>
-                {appliedCoupon && (
-                  <div className="flex justify-between text-sm text-green-600">
-                    <span>Kupon İndirimi ({appliedCoupon.code}):</span>
-                    <span>-{formatPrice(couponDiscount)}</span>
-                  </div>
-                )}
-                {premiumBenefits.isPremium && premiumDiscount > 0 && (
-                  <div className="flex justify-between text-sm text-purple-600">
-                    <span>Premium İndirim (%{premiumBenefits.discountPercent}):</span>
-                    <span>-{formatPrice(premiumDiscount)}</span>
-                  </div>
-                )}
-                {shippingCost > 0 && (
-                  <div className="flex justify-between text-sm">
-                    <span>Kargo Ücreti:</span>
-                    <span>{formatPrice(shippingCost)}</span>
-                  </div>
-                )}
-                {premiumBenefits.isPremium && premiumBenefits.freeShipping && deliveryType === "home_delivery" && (
-                  <div className="flex justify-between text-sm text-purple-600">
-                    <span>Ücretsiz Kargo:</span>
-                    <span>✓ Premium Avantaj</span>
-                  </div>
-                )}
-                <div className="flex justify-between text-lg font-bold pt-2 border-t">
-                  <span>Toplam:</span>
-                  <span className="text-primary">{formatPrice(total)}</span>
-                </div>
-                {premiumBenefits.isPremium && (
-                  <div className="p-2 bg-purple-50 dark:bg-purple-900/20 rounded-md text-xs text-purple-700 dark:text-purple-300 text-center">
-                    ✨ Premium üye indirimleri uygulandı
-                  </div>
-                )}
-              </div>
-              <Button className="w-full" size="lg" onClick={handleCheckout}>Sipariş Ver</Button>
-              <Button variant="outline" className="w-full" onClick={() => navigate("/products")}>
-                Alışverişe Devam Et
-              </Button>
-            </CardContent>
-          </Card>
+                      <div className="space-y-2 pt-2 border-t">
+                        <div className="flex justify-between text-sm">
+                          <span>{t("cart.subtotal", "Ara Toplam")}:</span>
+                          <span>{formatPrice(subtotal)}</span>
+                        </div>
+                        {appliedCoupon && (
+                          <div className="flex justify-between text-sm text-green-600">
+                            <span>{t("cart.coupon_discount", "Kupon İndirimi")} ({appliedCoupon.code}):</span>
+                            <span>-{formatPrice(couponDiscount)}</span>
+                          </div>
+                        )}
+                        {premiumBenefits.isPremium && premiumDiscount > 0 && (
+                          <div className="flex justify-between text-sm text-purple-600">
+                            <span>{t("cart.premium_discount", "Premium İndirim")} (%{premiumBenefits.discountPercent}):</span>
+                            <span>-{formatPrice(premiumDiscount)}</span>
+                          </div>
+                        )}
+                        {shippingCost > 0 && (
+                          <div className="flex justify-between text-sm">
+                            <span>{t("cart.shipping", "Kargo Ücreti")}:</span>
+                            <span>{formatPrice(shippingCost)}</span>
+                          </div>
+                        )}
+                        {premiumBenefits.isPremium && premiumBenefits.freeShipping && deliveryType === "home_delivery" && (
+                          <div className="flex justify-between text-sm text-purple-600">
+                            <span>{t("cart.free_shipping", "Ücretsiz Kargo")}:</span>
+                            <span>✓ {t("cart.premium_benefit", "Premium Avantaj")}</span>
+                          </div>
+                        )}
+                        <div className="flex justify-between text-lg font-bold pt-2 border-t">
+                          <span>{t("cart.total", "Toplam")}:</span>
+                          <span className="text-primary">{formatPrice(total)}</span>
+                        </div>
+                        {premiumBenefits.isPremium && (
+                          <div className="p-2 bg-purple-50 dark:bg-purple-900/20 rounded-md text-xs text-purple-700 dark:text-purple-300 text-center">
+                            ✨ {t("cart.premium_applied", "Premium üye indirimleri uygulandı")}
+                          </div>
+                        )}
+                      </div>
+                      <Button className="w-full" size="lg" onClick={handleCheckout}>{t("cart.checkout", "Sipariş Ver")}</Button>
+                      <Button variant="outline" className="w-full" onClick={() => navigate("/products")}>
+                        {t("cart.continue", "Alışverişe Devam Et")}
+                      </Button>
+                    </CardContent>
+                  </Card>
                 </div>
               </div>
             )}
@@ -730,9 +711,9 @@ const CartPage = () => {
             {orders.length === 0 ? (
               <Card>
                 <CardContent className="py-12 text-center">
-                  <p className="text-muted-foreground mb-4">Henüz siparişiniz yok</p>
+                  <p className="text-muted-foreground mb-4">{t("cart.no_orders", "Henüz siparişiniz yok")}</p>
                   <Button onClick={() => navigate("/products")}>
-                    Ürünlere Göz At
+                    {t("cart.browse_products", "Ürünlere Göz At")}
                   </Button>
                 </CardContent>
               </Card>
@@ -740,35 +721,35 @@ const CartPage = () => {
               <>
                 <Card className="mb-4">
                   <CardHeader>
-                    <CardTitle>Toplam Harcama</CardTitle>
+                    <CardTitle>{t("cart.total_spending", "Toplam Harcama")}</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <p className="text-3xl font-bold text-primary">
                       {formatPrice(calculateAllOrdersTotal())}
                     </p>
                     <p className="text-sm text-muted-foreground mt-2">
-                      {orders.filter((o) => o.status === "delivered").length} teslim edilmiş sipariş
+                      {orders.filter((o) => o.status === "delivered").length} {t("cart.delivered_orders", "teslim edilmiş sipariş")}
                     </p>
                     <p className="text-xs text-muted-foreground mt-1">
-                      (Sadece teslim edilmiş siparişler dahildir)
+                      ({t("cart.only_delivered", "Sadece teslim edilmiş siparişler dahildir")})
                     </p>
                   </CardContent>
                 </Card>
 
                 <Card>
                   <CardHeader>
-                    <CardTitle>Sipariş Geçmişi</CardTitle>
+                    <CardTitle>{t("cart.order_history", "Sipariş Geçmişi")}</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead>Sipariş No</TableHead>
-                          <TableHead>Tarih</TableHead>
-                          <TableHead>Durum</TableHead>
-                          <TableHead>Ürünler</TableHead>
-                          <TableHead>Kargo</TableHead>
-                          <TableHead>Toplam</TableHead>
+                          <TableHead>{t("cart.order_no", "Sipariş No")}</TableHead>
+                          <TableHead>{t("cart.date", "Tarih")}</TableHead>
+                          <TableHead>{t("cart.status", "Durum")}</TableHead>
+                          <TableHead>{t("cart.products", "Ürünler")}</TableHead>
+                          <TableHead>{t("cart.shipping", "Kargo")}</TableHead>
+                          <TableHead>{t("cart.total", "Toplam")}</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -782,9 +763,9 @@ const CartPage = () => {
                             </TableCell>
                             <TableCell>
                               <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                order.status === "delivered" ? "bg-green-100 text-green-800" :
-                                order.status === "rejected" ? "bg-red-100 text-red-800" :
-                                "bg-blue-100 text-blue-800"
+                                order.status === "delivered" ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200" :
+                                order.status === "rejected" ? "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200" :
+                                "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
                               }`}>
                                 {getStatusText(order.status)}
                               </span>
