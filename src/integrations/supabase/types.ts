@@ -1225,6 +1225,7 @@ export type Database = {
           discounted_price: number | null
           id: string
           is_name_customizable: boolean | null
+          made_to_order: boolean | null
           price: number
           promotion_badges: string[] | null
           stock_quantity: number | null
@@ -1242,6 +1243,7 @@ export type Database = {
           discounted_price?: number | null
           id?: string
           is_name_customizable?: boolean | null
+          made_to_order?: boolean | null
           price: number
           promotion_badges?: string[] | null
           stock_quantity?: number | null
@@ -1259,6 +1261,7 @@ export type Database = {
           discounted_price?: number | null
           id?: string
           is_name_customizable?: boolean | null
+          made_to_order?: boolean | null
           price?: number
           promotion_badges?: string[] | null
           stock_quantity?: number | null

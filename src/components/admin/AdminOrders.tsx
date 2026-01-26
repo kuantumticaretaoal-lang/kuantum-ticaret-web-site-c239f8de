@@ -14,6 +14,7 @@ import { logger } from "@/lib/logger";
 import { formatPhoneNumber, formatProvince, formatDistrict } from "@/lib/formatters";
 import { exportToExcel, formatDateForExport, formatCurrencyForExport } from "@/lib/excel-export";
 import { Download, MessageSquare, Send, DollarSign, Eye, FileDown } from "lucide-react";
+ import { Badge } from "@/components/ui/badge";
 
 // Custom Photo Viewer with signed URL support
 const CustomPhotoViewer = ({ photoUrl }: { photoUrl: string }) => {
@@ -547,6 +548,7 @@ export const AdminOrders = () => {
             <TableHead>Telefon</TableHead>
             <TableHead>Ürünler</TableHead>
             <TableHead>Tutar</TableHead>
+           <TableHead>Kupon/Premium</TableHead>
             <TableHead>Durum</TableHead>
             <TableHead>Teslimat</TableHead>
             <TableHead>Adres</TableHead>
@@ -594,6 +596,20 @@ export const AdminOrders = () => {
             <TableCell className="font-bold text-primary">
               ₺{orderTotal.toFixed(2)}
             </TableCell>
+           <TableCell>
+             {order.applied_coupon_code && (
+               <div className="text-xs">
+                 <Badge variant="secondary" className="mb-1">
+                   Kupon: {order.applied_coupon_code}
+                 </Badge>
+               </div>
+             )}
+             {order.discount_amount > 0 && (
+               <div className="text-xs text-muted-foreground">
+                 ₺{parseFloat(order.discount_amount).toFixed(2)} indirim
+               </div>
+             )}
+           </TableCell>
             <TableCell>
               <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                 order.status === "confirmed" ? "bg-green-100 text-green-800" :

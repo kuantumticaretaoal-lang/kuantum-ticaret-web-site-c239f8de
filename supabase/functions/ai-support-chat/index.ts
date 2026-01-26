@@ -83,7 +83,6 @@ Yapamayacakların:
 - Ödeme alma
 - Sistem değişikliği yapma`;
 
-    // Use Gemini API directly
     const geminiApiKey = Deno.env.get("GEMINI_API_KEY");
     
     if (!geminiApiKey) {
@@ -114,7 +113,7 @@ Yapamayacakların:
     console.log("Calling Gemini API with", contents.length, "messages");
 
     const aiResponse = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiApiKey}`,
+       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${geminiApiKey}`,
       {
         method: "POST",
         headers: {
@@ -124,7 +123,7 @@ Yapamayacakların:
           contents: contents,
           generationConfig: {
             temperature: 0.7,
-            maxOutputTokens: 500,
+             maxOutputTokens: 1000,
           },
         }),
       }
