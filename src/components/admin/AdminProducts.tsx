@@ -34,6 +34,7 @@ export const AdminProducts = () => {
     available_sizes: [] as string[],
     allows_custom_photo: false,
     allowed_file_types: [] as string[],
+   made_to_order: false,
     category_ids: [] as string[]
   });
   const [editProduct, setEditProduct] = useState<any>(null);
@@ -211,6 +212,8 @@ export const AdminProducts = () => {
         is_name_customizable: newProduct.is_name_customizable,
         available_sizes: newProduct.available_sizes,
         allows_custom_photo: newProduct.allows_custom_photo,
+       allowed_file_types: newProduct.allowed_file_types,
+       made_to_order: newProduct.made_to_order,
       })
       .select()
       .single();
@@ -247,6 +250,7 @@ export const AdminProducts = () => {
         available_sizes: [],
         allows_custom_photo: false,
         allowed_file_types: [],
+       made_to_order: false,
         category_ids: []
       });
       setUploadingImages([]);
@@ -289,6 +293,8 @@ export const AdminProducts = () => {
         is_name_customizable: editProduct.is_name_customizable || false,
         available_sizes: editProduct.available_sizes || [],
         allows_custom_photo: editProduct.allows_custom_photo || false,
+       allowed_file_types: editProduct.allowed_file_types || [],
+       made_to_order: editProduct.made_to_order || false,
       })
       .eq("id", editProduct.id);
 
@@ -604,6 +610,64 @@ export const AdminProducts = () => {
                   <span className="text-sm font-medium">Özel Fotoğraf Yükleme</span>
                 </label>
               </div>
+              
+              <div>
+                <label className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    checked={newProduct.made_to_order || false}
+                    onChange={(e) => setNewProduct({ ...newProduct, made_to_order: e.target.checked })}
+                  />
+                  <span className="text-sm font-medium">İsteğe Göre Üretim</span>
+                </label>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Sipariş alındıktan sonra üretilecek ürünler için işaretleyin
+                </p>
+              </div>
+              
+              <div>
+                <Label>Özel Dosya Türleri (Müşteri yüklemesi için)</Label>
+                <div className="relative">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full justify-between"
+                    onClick={() => setShowFileTypeOptions(!showFileTypeOptions)}
+                  >
+                    {newProduct.allowed_file_types.length > 0 
+                      ? `${newProduct.allowed_file_types.length} dosya türü seçildi`
+                      : "Dosya türü seç"}
+                  </Button>
+                  {showFileTypeOptions && (
+                    <div className="absolute z-10 w-full mt-1 p-3 bg-background border rounded-md shadow-lg max-h-48 overflow-y-auto">
+                      <div className="grid grid-cols-4 gap-2">
+                        {availableFileTypes.map((type) => (
+                          <label key={type} className="flex items-center space-x-1 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={newProduct.allowed_file_types.includes(type)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setNewProduct({ ...newProduct, allowed_file_types: [...newProduct.allowed_file_types, type] });
+                                } else {
+                                  setNewProduct({ ...newProduct, allowed_file_types: newProduct.allowed_file_types.filter(t => t !== type) });
+                                }
+                              }}
+                            />
+                            <span className="text-xs">.{type}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+                {newProduct.allowed_file_types.length > 0 && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Seçili: {newProduct.allowed_file_types.map(t => `.${t}`).join(", ")}
+                  </p>
+                )}
+              </div>
+              
               <div>
                 <Label>Resimler</Label>
                 <Input
