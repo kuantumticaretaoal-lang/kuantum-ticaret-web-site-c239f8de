@@ -33,36 +33,63 @@ export const AdminFavorites = () => {
   }, []);
 
   const loadFavorites = async () => {
-    const { data } = await supabase
-      .from("favorites")
-      .select(`
-        *,
-        profiles:user_id (first_name, last_name, email),
-        products:product_id (title, price, discounted_price)
-      `)
-      .order("created_at", { ascending: false });
+    try {
+      // Fetch favorites first
+      const { data: favData, error: favError } = await supabase
+        .from("favorites")
+        .select("*")
+        .order("created_at", { ascending: false });
 
-    if (data) {
-      const formatted = data.map((f: any) => ({
+      if (favError) {
+        console.error("Favorites error:", favError);
+        setLoading(false);
+        return;
+      }
+
+      if (!favData || favData.length === 0) {
+        setFavorites([]);
+        setStats({ totalFavorites: 0, uniqueUsers: 0, uniqueProducts: 0 });
+        setLoading(false);
+        return;
+      }
+
+      // Get unique IDs
+      const productIds = [...new Set(favData.map(f => f.product_id))];
+      const userIds = [...new Set(favData.map(f => f.user_id))];
+
+      // Fetch products separately
+      const { data: products } = await (supabase as any)
+        .from("products")
+        .select("id, title, price, discounted_price")
+        .in("id", productIds);
+
+      // Fetch profiles separately
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("id, first_name, last_name, email")
+        .in("id", userIds);
+
+      // Map data
+      const formatted = favData.map((f: any) => ({
         id: f.id,
         user_id: f.user_id,
         product_id: f.product_id,
         created_at: f.created_at,
-        user: f.profiles,
-        product: f.products,
+        user: profiles?.find(p => p.id === f.user_id),
+        product: products?.find((p: any) => p.id === f.product_id),
       }));
-      setFavorites(formatted);
 
-      // Calculate stats
-      const uniqueUsers = new Set(data.map((f: any) => f.user_id)).size;
-      const uniqueProducts = new Set(data.map((f: any) => f.product_id)).size;
+      setFavorites(formatted);
       setStats({
-        totalFavorites: data.length,
-        uniqueUsers,
-        uniqueProducts,
+        totalFavorites: favData.length,
+        uniqueUsers: userIds.length,
+        uniqueProducts: productIds.length,
       });
+    } catch (err) {
+      console.error("Error loading favorites:", err);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const formatDate = (dateStr: string) => {

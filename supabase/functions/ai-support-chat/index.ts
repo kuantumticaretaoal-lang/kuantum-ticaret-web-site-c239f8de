@@ -6,6 +6,13 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Fallback models to try
+const GEMINI_MODELS = [
+  "gemini-2.0-flash",
+  "gemini-1.5-flash-latest",
+  "gemini-pro",
+];
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -112,36 +119,75 @@ Yapamayacakların:
 
     console.log("Calling Gemini API with", contents.length, "messages");
 
-    const aiResponse = await fetch(
-       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${geminiApiKey}`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          contents: contents,
-          generationConfig: {
-            temperature: 0.7,
-             maxOutputTokens: 1000,
-          },
-        }),
-      }
-    );
+    // Try each model until one works
+    let assistantResponse = null;
+    let lastError = null;
 
-    if (!aiResponse.ok) {
-      const errorText = await aiResponse.text();
-      console.error("Gemini API error:", errorText);
+    for (const model of GEMINI_MODELS) {
+      try {
+        console.log(`Trying model: ${model}`);
+        
+        const aiResponse = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiApiKey}`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              contents: contents,
+              generationConfig: {
+                temperature: 0.7,
+                maxOutputTokens: 1024,
+                topP: 0.8,
+                topK: 40,
+              },
+            }),
+          }
+        );
+
+        if (aiResponse.ok) {
+          const aiData = await aiResponse.json();
+          assistantResponse = aiData.candidates?.[0]?.content?.parts?.[0]?.text;
+          
+          if (assistantResponse) {
+            console.log(`Success with model ${model}:`, assistantResponse.substring(0, 100));
+            break;
+          }
+        } else {
+          const errorText = await aiResponse.text();
+          console.log(`Model ${model} failed:`, errorText.substring(0, 200));
+          lastError = errorText;
+          
+          // If it's a rate limit error, try the next model
+          if (aiResponse.status === 429) {
+            continue;
+          }
+          // If it's a 404, the model doesn't exist, try the next one
+          if (aiResponse.status === 404) {
+            continue;
+          }
+        }
+      } catch (modelError) {
+        console.error(`Error with model ${model}:`, modelError);
+        lastError = modelError;
+      }
+    }
+
+    if (!assistantResponse) {
+      console.error("All models failed. Last error:", lastError);
+      
+      // Return a helpful fallback response
+      const fallbackResponses = [
+        `Merhaba! 🛍️ Şu anda yoğunluk nedeniyle yanıt vermekte gecikmeler yaşanıyor. Lütfen birkaç dakika sonra tekrar deneyin veya bize ${siteSettings?.email || "e-posta"} üzerinden ulaşabilirsiniz.`,
+        `Selamlar! ⏳ Sistemimiz şu anda çok yoğun. Lütfen birazdan tekrar deneyin. Acil sorularınız için ${siteSettings?.phone || "telefon"} numaramızdan bize ulaşabilirsiniz.`,
+      ];
+      
       return new Response(
-        JSON.stringify({ response: "Üzgünüm, şu anda yanıt veremiyorum. Lütfen daha sonra tekrar deneyin." }),
+        JSON.stringify({ response: fallbackResponses[Math.floor(Math.random() * fallbackResponses.length)] }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
-
-    const aiData = await aiResponse.json();
-    const assistantResponse = aiData.candidates?.[0]?.content?.parts?.[0]?.text || "Yanıt alınamadı.";
-
-    console.log("Gemini response received:", assistantResponse.substring(0, 100));
 
     return new Response(
       JSON.stringify({ response: assistantResponse }),

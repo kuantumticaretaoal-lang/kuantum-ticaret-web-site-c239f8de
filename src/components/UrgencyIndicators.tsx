@@ -43,23 +43,24 @@ export const UrgencyIndicators = ({ productId, stockQuantity, stockStatus }: Urg
       };
 
       settingsData.forEach((s) => {
-        if (s.setting_key === "low_stock") {
+        // Handle both old and new key formats
+        if (s.setting_key === "low_stock" || s.setting_key === "low_stock_warning") {
           parsed.low_stock = { 
             enabled: s.is_enabled || false, 
             threshold: s.threshold || 5, 
-            text: s.display_text || "" 
+            text: s.display_text || "Son {count} adet kaldı!" 
           };
-        } else if (s.setting_key === "view_count") {
+        } else if (s.setting_key === "view_count" || s.setting_key === "view_count_display") {
           parsed.view_count = { 
             enabled: s.is_enabled || false, 
-            threshold: s.threshold || 50, 
-            text: s.display_text || "" 
+            threshold: s.threshold || 1, // Show if at least 1 view
+            text: s.display_text || "Bugün {count} kişi görüntüledi" 
           };
-        } else if (s.setting_key === "cart_count") {
+        } else if (s.setting_key === "cart_count" || s.setting_key === "cart_add_count") {
           parsed.cart_count = { 
             enabled: s.is_enabled || false, 
-            threshold: s.threshold || 10, 
-            text: s.display_text || "" 
+            threshold: s.threshold || 1, // Show if at least 1 cart add
+            text: s.display_text || "{count} kişi sepetine ekledi" 
           };
         }
       });
