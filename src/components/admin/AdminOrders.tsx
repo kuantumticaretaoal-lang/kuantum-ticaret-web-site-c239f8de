@@ -567,9 +567,18 @@ export const AdminOrders = () => {
           </TableRow>
         ) : (
           ordersList.map((order) => {
-            const orderTotal = order.order_items?.reduce(
+            // Use saved order totals if available, otherwise calculate from items
+            const savedTotal = order.total_amount ? parseFloat(order.total_amount) : null;
+            const savedSubtotal = order.subtotal_amount ? parseFloat(order.subtotal_amount) : null;
+            const savedDiscount = order.discount_amount ? parseFloat(order.discount_amount) : 0;
+            
+            const calculatedTotal = order.order_items?.reduce(
               (sum: number, item: any) => sum + (parseFloat(item.price) * item.quantity), 0
             ) || 0;
+            
+            const displayTotal = savedTotal !== null ? savedTotal : calculatedTotal;
+            const displaySubtotal = savedSubtotal !== null ? savedSubtotal : calculatedTotal;
+            
             return (
             <TableRow key={order.id}>
               <TableCell className="font-mono text-xs">{order.order_code}</TableCell>
@@ -593,8 +602,17 @@ export const AdminOrders = () => {
                   </div>
                 )) || "-"}
               </TableCell>
-            <TableCell className="font-bold text-primary">
-              ₺{orderTotal.toFixed(2)}
+            <TableCell>
+              <div className="space-y-1">
+                {savedDiscount > 0 && (
+                  <div className="text-xs text-muted-foreground line-through">
+                    ₺{displaySubtotal.toFixed(2)}
+                  </div>
+                )}
+                <div className="font-bold text-primary">
+                  ₺{displayTotal.toFixed(2)}
+                </div>
+              </div>
             </TableCell>
            <TableCell>
              {order.applied_coupon_code && (
@@ -604,9 +622,14 @@ export const AdminOrders = () => {
                  </Badge>
                </div>
              )}
-             {order.discount_amount > 0 && (
+             {savedDiscount > 0 && (
+               <div className="text-xs text-green-600 font-medium">
+                 -₺{savedDiscount.toFixed(2)} indirim
+               </div>
+             )}
+             {!order.applied_coupon_code && savedDiscount > 0 && (
                <div className="text-xs text-muted-foreground">
-                 ₺{parseFloat(order.discount_amount).toFixed(2)} indirim
+                 (Premium indirim)
                </div>
              )}
            </TableCell>

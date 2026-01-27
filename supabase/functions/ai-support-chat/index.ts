@@ -6,13 +6,6 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Fallback models to try
-const GEMINI_MODELS = [
-  "gemini-2.0-flash",
-  "gemini-1.5-flash-latest",
-  "gemini-pro",
-];
-
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -32,20 +25,20 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Get previous messages for context
-    let contextMessages: { role: string; parts: { text: string }[] }[] = [];
+    // Get previous messages for context (last 6 messages)
+    let contextMessages: { role: string; content: string }[] = [];
     if (threadId) {
       const { data: prevMessages } = await supabase
         .from("live_support_messages")
         .select("role, content")
         .eq("thread_id", threadId)
         .order("created_at", { ascending: true })
-        .limit(10);
+        .limit(6);
 
       if (prevMessages) {
         contextMessages = prevMessages.map((m) => ({
-          role: m.role === "assistant" ? "model" : "user",
-          parts: [{ text: m.content }],
+          role: m.role === "assistant" ? "assistant" : "user",
+          content: m.content,
         }));
       }
     }
@@ -53,12 +46,12 @@ serve(async (req) => {
     // Get some product info for context
     const { data: products } = await supabase
       .from("products")
-      .select("title, price, discounted_price, stock_status")
-      .limit(10);
+      .select("title, price, discounted_price, stock_status, description")
+      .limit(15);
 
     const productContext = products
       ? products
-          .map((p) => `- ${p.title}: ${p.discounted_price || p.price} TL (${p.stock_status === "in_stock" ? "Stokta" : "Stok dışı"})`)
+          .map((p) => `- ${p.title}: ${p.discounted_price || p.price} TL (${p.stock_status === "in_stock" ? "Stokta" : "Stok dışı"})${p.description ? " - " + p.description.substring(0, 50) : ""}`)
           .join("\n")
       : "";
 
@@ -68,135 +61,156 @@ serve(async (req) => {
       .select("*")
       .maybeSingle();
 
-    const systemPrompt = `Sen Kuantum Ticaret'in yapay zeka destekli müşteri hizmetleri asistanısın. Türkçe konuşuyorsun.
+    // Get about us info
+    const { data: aboutUs } = await supabase
+      .from("about_us")
+      .select("content")
+      .maybeSingle();
+
+    const systemPrompt = `Sen Kuantum Ticaret'in yapay zeka destekli müşteri hizmetleri asistanısın. Türkçe konuşuyorsun ve müşterilere yardımcı olmak için varsın.
 
 Site Bilgileri:
-- E-posta: ${siteSettings?.email || "Belirtilmemiş"}
-- Telefon: ${siteSettings?.phone || "Belirtilmemiş"}
-- Adres: ${siteSettings?.address || "Belirtilmemiş"}
+- E-posta: ${siteSettings?.email || "info@kuantumticaret.com"}
+- Telefon: ${siteSettings?.phone || "+90 555 123 45 67"}
+- Adres: ${siteSettings?.address || "Türkiye"}
 
-Mevcut Ürünler:
-${productContext}
+Hakkımızda:
+${aboutUs?.content ? aboutUs.content.substring(0, 300) : "Kuantum Ticaret, kaliteli ürünler sunan güvenilir bir e-ticaret platformudur."}
 
-Görevin:
-1. Müşteri sorularını nazikçe yanıtla
-2. Ürün bilgisi, sipariş takibi, iade/değişim konularında yardımcı ol
-3. Teknik sorunlarda /contact sayfasına yönlendir
-4. Kısa, net ve yardımsever yanıtlar ver
-5. Emoji kullanarak samimi bir ton oluştur
+Mevcut Ürünlerimiz:
+${productContext || "Çeşitli ürünler mevcut."}
 
-Yapamayacakların:
+ÖNEMLİ KURALLAR:
+1. Her zaman nazik, yardımsever ve profesyonel ol
+2. Ürünler, siparişler, teslimat ve iade konularında yardımcı ol
+3. Fiyat ve stok bilgisi ver
+4. Sipariş takibi için /account sayfasını öner
+5. Teknik sorunlar için iletişim sayfasını öner
+6. Kısa, net ve anlaşılır yanıtlar ver (maksimum 2-3 cümle)
+7. Emoji kullanarak samimi bir ton oluştur 🛍️
+8. Bilmediğin konularda dürüst ol ve iletişim bilgilerini paylaş
+
+YAPAMAZSIN:
 - Sipariş oluşturma veya iptal etme
-- Ödeme alma
-- Sistem değişikliği yapma`;
+- Ödeme alma veya iade işlemi yapma
+- Şifre sıfırlama
+- Kişisel veri paylaşma`;
 
-    const geminiApiKey = Deno.env.get("GEMINI_API_KEY");
+    // Use Lovable AI API
+    const lovableApiKey = Deno.env.get("LOVABLE_API_KEY");
     
-    if (!geminiApiKey) {
-      console.error("GEMINI_API_KEY not found");
+    if (!lovableApiKey) {
+      console.error("LOVABLE_API_KEY not found");
       return new Response(
-        JSON.stringify({ response: "Şu anda destek hizmeti kullanılamıyor. Lütfen daha sonra tekrar deneyin." }),
+        JSON.stringify({ 
+          response: `Merhaba! 🛍️ Size yardımcı olmak için buradayım. Ürünlerimiz hakkında bilgi almak, sipariş durumunuzu sorgulamak veya herhangi bir konuda destek almak isterseniz lütfen sorunuzu yazın. İletişim: ${siteSettings?.email || "info@kuantumticaret.com"} | ${siteSettings?.phone || "+90 555 123 45 67"}` 
+        }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Build conversation history for Gemini
-    const contents = [
-      {
-        role: "user",
-        parts: [{ text: systemPrompt }],
-      },
-      {
-        role: "model",
-        parts: [{ text: "Anladım! Kuantum Ticaret'in müşteri hizmetleri asistanı olarak size yardımcı olmaya hazırım. 🛍️" }],
-      },
+    // Build messages array for Lovable AI
+    const messages = [
+      { role: "system", content: systemPrompt },
       ...contextMessages,
-      {
-        role: "user",
-        parts: [{ text: message }],
-      },
+      { role: "user", content: message },
     ];
 
-    console.log("Calling Gemini API with", contents.length, "messages");
+    console.log("Calling Lovable AI with", messages.length, "messages");
 
-    // Try each model until one works
-    let assistantResponse = null;
-    let lastError = null;
+    try {
+      const aiResponse = await fetch("https://api.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${lovableApiKey}`,
+        },
+        body: JSON.stringify({
+          model: "google/gemini-2.5-flash",
+          messages: messages,
+          max_tokens: 512,
+          temperature: 0.7,
+        }),
+      });
 
-    for (const model of GEMINI_MODELS) {
-      try {
-        console.log(`Trying model: ${model}`);
+      if (!aiResponse.ok) {
+        const errorText = await aiResponse.text();
+        console.error("Lovable AI error:", errorText);
         
-        const aiResponse = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiApiKey}`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              contents: contents,
-              generationConfig: {
-                temperature: 0.7,
-                maxOutputTokens: 1024,
-                topP: 0.8,
-                topK: 40,
-              },
-            }),
-          }
-        );
+        // Try with a different model
+        const fallbackResponse = await fetch("https://api.lovable.dev/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${lovableApiKey}`,
+          },
+          body: JSON.stringify({
+            model: "openai/gpt-5-nano",
+            messages: messages,
+            max_tokens: 512,
+            temperature: 0.7,
+          }),
+        });
 
-        if (aiResponse.ok) {
-          const aiData = await aiResponse.json();
-          assistantResponse = aiData.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (fallbackResponse.ok) {
+          const fallbackData = await fallbackResponse.json();
+          const assistantResponse = fallbackData.choices?.[0]?.message?.content;
           
           if (assistantResponse) {
-            console.log(`Success with model ${model}:`, assistantResponse.substring(0, 100));
-            break;
-          }
-        } else {
-          const errorText = await aiResponse.text();
-          console.log(`Model ${model} failed:`, errorText.substring(0, 200));
-          lastError = errorText;
-          
-          // If it's a rate limit error, try the next model
-          if (aiResponse.status === 429) {
-            continue;
-          }
-          // If it's a 404, the model doesn't exist, try the next one
-          if (aiResponse.status === 404) {
-            continue;
+            console.log("Fallback model success:", assistantResponse.substring(0, 100));
+            return new Response(
+              JSON.stringify({ response: assistantResponse }),
+              { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+            );
           }
         }
-      } catch (modelError) {
-        console.error(`Error with model ${model}:`, modelError);
-        lastError = modelError;
+        
+        throw new Error("All models failed");
       }
-    }
 
-    if (!assistantResponse) {
-      console.error("All models failed. Last error:", lastError);
+      const aiData = await aiResponse.json();
+      const assistantResponse = aiData.choices?.[0]?.message?.content;
+
+      if (!assistantResponse) {
+        throw new Error("No response from AI");
+      }
+
+      console.log("AI Response success:", assistantResponse.substring(0, 100));
+
+      return new Response(
+        JSON.stringify({ response: assistantResponse }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    } catch (aiError) {
+      console.error("AI Error:", aiError);
       
-      // Return a helpful fallback response
-      const fallbackResponses = [
-        `Merhaba! 🛍️ Şu anda yoğunluk nedeniyle yanıt vermekte gecikmeler yaşanıyor. Lütfen birkaç dakika sonra tekrar deneyin veya bize ${siteSettings?.email || "e-posta"} üzerinden ulaşabilirsiniz.`,
-        `Selamlar! ⏳ Sistemimiz şu anda çok yoğun. Lütfen birazdan tekrar deneyin. Acil sorularınız için ${siteSettings?.phone || "telefon"} numaramızdan bize ulaşabilirsiniz.`,
-      ];
+      // Smart fallback responses based on user message
+      const lowerMessage = message.toLowerCase();
+      let fallbackResponse = "";
+      
+      if (lowerMessage.includes("merhaba") || lowerMessage.includes("selam") || lowerMessage.includes("hi")) {
+        fallbackResponse = `Merhaba! 👋 Kuantum Ticaret'e hoş geldiniz! Size nasıl yardımcı olabilirim? Ürünlerimiz, siparişleriniz veya herhangi bir konuda sorularınızı yanıtlamaktan mutluluk duyarım. 🛍️`;
+      } else if (lowerMessage.includes("ürün") || lowerMessage.includes("fiyat")) {
+        fallbackResponse = `Ürünlerimizi /products sayfasından inceleyebilirsiniz. 🛍️ Tüm ürünlerimiz kalite garantili ve hızlı kargo ile gönderilmektedir. Belirli bir ürün hakkında bilgi isterseniz lütfen ürün adını yazın!`;
+      } else if (lowerMessage.includes("sipariş") || lowerMessage.includes("kargo")) {
+        fallbackResponse = `Siparişlerinizi takip etmek için /account sayfasından giriş yapabilirsiniz. 📦 Kargo takip numaranız e-posta ile gönderilmektedir. Sorularınız için ${siteSettings?.phone || "telefon numaramızdan"} bize ulaşabilirsiniz.`;
+      } else if (lowerMessage.includes("iade") || lowerMessage.includes("değişim")) {
+        fallbackResponse = `İade ve değişim işlemleri için 14 gün içinde bizimle iletişime geçebilirsiniz. 📧 ${siteSettings?.email || "E-posta"} adresimize ürün fotoğrafları ile birlikte başvurunuzu iletebilirsiniz.`;
+      } else if (lowerMessage.includes("iletişim") || lowerMessage.includes("telefon") || lowerMessage.includes("mail")) {
+        fallbackResponse = `İletişim bilgilerimiz: 📧 ${siteSettings?.email || "info@kuantumticaret.com"} | 📞 ${siteSettings?.phone || "+90 555 123 45 67"} | 📍 ${siteSettings?.address || "Türkiye"}. Size yardımcı olmaktan mutluluk duyarız!`;
+      } else {
+        fallbackResponse = `Merhaba! 🛍️ Sorunuzu aldım. Size en iyi şekilde yardımcı olmak istiyorum. Ürünler, siparişler veya diğer konularda sorularınızı yanıtlayabilirim. Daha fazla bilgi için: ${siteSettings?.email || "info@kuantumticaret.com"} | ${siteSettings?.phone || "+90 555 123 45 67"}`;
+      }
       
       return new Response(
-        JSON.stringify({ response: fallbackResponses[Math.floor(Math.random() * fallbackResponses.length)] }),
+        JSON.stringify({ response: fallbackResponse }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
-
-    return new Response(
-      JSON.stringify({ response: assistantResponse }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
   } catch (error) {
     console.error("Error in ai-support-chat:", error);
     return new Response(
-      JSON.stringify({ response: "Bir hata oluştu. Lütfen tekrar deneyin." }),
+      JSON.stringify({ response: "Bir hata oluştu. Lütfen tekrar deneyin veya iletişim sayfamızdan bize ulaşın. 📧" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
