@@ -44,6 +44,7 @@ const ProductDetail = () => {
   const [customName, setCustomName] = useState("");
   const [selectedSize, setSelectedSize] = useState("");
   const [customPhotoFile, setCustomPhotoFile] = useState<File | null>(null);
+  const [customFile, setCustomFile] = useState<File | null>(null);
 
   useEffect(() => {
     loadProduct();
@@ -311,6 +312,16 @@ const ProductDetail = () => {
       return;
     }
 
+    // Check for custom file if product requires it
+    if (product.allowed_file_types && product.allowed_file_types.length > 0 && !customFile) {
+      toast({
+        variant: "destructive",
+        title: "Dosya Gerekli",
+        description: `Lütfen bir dosya yükleyiniz (${product.allowed_file_types.map((t: string) => `.${t}`).join(", ")} formatında)`,
+      });
+      return;
+    }
+
     let customPhotoUrl = null;
 
     if (customPhotoFile && user) {
@@ -337,7 +348,37 @@ const ProductDetail = () => {
       customPhotoUrl = publicUrl;
     }
 
-    const { error } = await addToCart(id!, quantity, customName || undefined, selectedSize || undefined, customPhotoUrl || undefined);
+    // Upload custom file if provided
+    let customFileUrl = null;
+    if (customFile && user) {
+      const fileExt = customFile.name.split(".").pop();
+      const fileName = `${user.id}/${id}-${Date.now()}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("custom-files")
+        .upload(fileName, customFile);
+
+      if (uploadError) {
+        toast({
+          variant: "destructive",
+          title: "Hata",
+          description: "Dosya yüklenemedi",
+        });
+        return;
+      }
+
+      customFileUrl = fileName; // Store relative path for signed URL generation
+    }
+
+    // Build custom photo URL with file URL if exists
+    let finalPhotoUrl = customPhotoUrl;
+    if (customFileUrl) {
+      finalPhotoUrl = finalPhotoUrl 
+        ? `${finalPhotoUrl}|FILE:${customFileUrl}` 
+        : `FILE:${customFileUrl}`;
+    }
+
+    const { error } = await addToCart(id!, quantity, customName || undefined, selectedSize || undefined, finalPhotoUrl || undefined);
     if (error) {
       toast({
         variant: "destructive",
@@ -352,6 +393,7 @@ const ProductDetail = () => {
       setCustomName("");
       setSelectedSize("");
       setCustomPhotoFile(null);
+      setCustomFile(null);
     }
   };
 
@@ -540,6 +582,60 @@ const ProductDetail = () => {
                       {customPhotoFile && (
                         <p className="text-xs text-muted-foreground">
                           Seçilen: {customPhotoFile.name}
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Özel Dosya Yükleme */}
+                  {product.allowed_file_types && product.allowed_file_types.length > 0 && (
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium flex items-center gap-2">
+                        <Upload className="h-4 w-4" />
+                        Özel Dosya Yükle <span className="text-destructive">*</span>
+                      </label>
+                      <p className="text-xs text-muted-foreground">
+                        Kabul edilen formatlar: {product.allowed_file_types.map((t: string) => `.${t}`).join(", ")}
+                      </p>
+                      <Input
+                        type="file"
+                        accept={product.allowed_file_types.map((t: string) => `.${t}`).join(",")}
+                        onChange={(e) => {
+                          const files = e.target.files;
+                          if (files && files.length === 1) {
+                            const file = files[0];
+                            const ext = file.name.split(".").pop()?.toLowerCase();
+                            if (ext && product.allowed_file_types.map((t: string) => t.toLowerCase()).includes(ext)) {
+                              setCustomFile(file);
+                            } else {
+                              toast({
+                                variant: "destructive",
+                                title: "Hata",
+                                description: `Geçersiz dosya formatı. Kabul edilen: ${product.allowed_file_types.map((t: string) => `.${t}`).join(", ")}`,
+                              });
+                              e.target.value = "";
+                            }
+                          }
+                        }}
+                      />
+                      {customFile && (
+                        <div className="flex items-center gap-2 p-2 bg-muted rounded">
+                          <p className="text-xs text-muted-foreground flex-1">
+                            Seçilen: {customFile.name} ({(customFile.size / 1024 / 1024).toFixed(2)} MB)
+                          </p>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setCustomFile(null)}
+                            className="h-6 w-6 p-0"
+                          >
+                            ×
+                          </Button>
+                        </div>
+                      )}
+                      {product.made_to_order && (
+                        <p className="text-xs text-amber-600 font-medium">
+                          ⚠️ Bu ürün isteğe göre üretilmektedir
                         </p>
                       )}
                     </div>
