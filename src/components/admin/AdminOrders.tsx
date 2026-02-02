@@ -248,18 +248,28 @@ export const AdminOrders = () => {
             .maybeSingle();
 
           if (!existing) {
+              const { data: orderForAmount } = await (supabase as any)
+                .from("orders")
+                .select("total_amount, order_code")
+                .eq("id", orderId)
+                .maybeSingle();
+
             const { data: items } = await (supabase as any)
               .from("order_items")
               .select("price, quantity, product_id")
               .eq("order_id", orderId);
 
-            const total = (items || []).reduce((sum: number, it: any) => sum + (parseFloat(it.price) * it.quantity), 0);
+              const fallbackTotal = (items || []).reduce(
+                (sum: number, it: any) => sum + (Number(it.price) * it.quantity),
+                0
+              );
+              const total = Number(orderForAmount?.total_amount) || fallbackTotal;
 
             if (total > 0) {
               await (supabase as any).from("expenses").insert({
                 type: "income",
                 amount: total,
-                description: `Sipariş No: ${orderId.slice(0, 8)}`,
+                  description: `Sipariş (${orderForAmount?.order_code || orderId.slice(0, 8)})`,
                 order_id: orderId,
               });
             }

@@ -50,9 +50,6 @@ export const AdminOrderStats = () => {
       .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, () => {
         loadStats();
       })
-      .on("postgres_changes", { event: "*", schema: "public", table: "order_items" }, () => {
-        loadStats();
-      })
       .subscribe();
 
     return () => {
@@ -65,8 +62,11 @@ export const AdminOrderStats = () => {
     const { data: orders } = await supabase
       .from("orders")
       .select(`
-        *,
-        order_items(quantity, price)
+        id,
+        created_at,
+        status,
+        total_amount,
+        trashed
       `)
       .eq("trashed", false);
 
@@ -88,11 +88,7 @@ export const AdminOrderStats = () => {
       totalRevenue: orders
         .filter(o => o.status === "delivered")
         .reduce((sum, o) => {
-          const orderTotal = o.order_items?.reduce(
-            (itemSum: number, item: any) => itemSum + (item.quantity * parseFloat(item.price)),
-            0
-          ) || 0;
-          return sum + orderTotal;
+          return sum + (Number((o as any).total_amount) || 0);
         }, 0),
     };
     setStats(newStats);
@@ -111,11 +107,7 @@ export const AdminOrderStats = () => {
       const dayRevenue = dayOrders
         .filter(o => o.status === "delivered")
         .reduce((sum, o) => {
-          const orderTotal = o.order_items?.reduce(
-            (itemSum: number, item: any) => itemSum + (item.quantity * parseFloat(item.price)),
-            0
-          ) || 0;
-          return sum + orderTotal;
+          return sum + (Number((o as any).total_amount) || 0);
         }, 0);
 
       return {
@@ -141,11 +133,7 @@ export const AdminOrderStats = () => {
       const weekRevenue = weekOrders
         .filter(o => o.status === "delivered")
         .reduce((sum, o) => {
-          const orderTotal = o.order_items?.reduce(
-            (itemSum: number, item: any) => itemSum + (item.quantity * parseFloat(item.price)),
-            0
-          ) || 0;
-          return sum + orderTotal;
+          return sum + (Number((o as any).total_amount) || 0);
         }, 0);
 
       return {
@@ -171,11 +159,7 @@ export const AdminOrderStats = () => {
       const monthRevenue = monthOrders
         .filter(o => o.status === "delivered")
         .reduce((sum, o) => {
-          const orderTotal = o.order_items?.reduce(
-            (itemSum: number, item: any) => itemSum + (item.quantity * parseFloat(item.price)),
-            0
-          ) || 0;
-          return sum + orderTotal;
+          return sum + (Number((o as any).total_amount) || 0);
         }, 0);
 
       return {

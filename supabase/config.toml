@@ -15,5 +15,5 @@ verify_jwt = false
 [functions.send-order-notification-email]
 verify_jwt = false
 
-[functions.send-sms-notification]
+[functions.admin-expense-delete]
 verify_jwt = false
