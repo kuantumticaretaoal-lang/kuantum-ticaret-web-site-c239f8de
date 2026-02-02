@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,90 +11,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { exportToExcel, formatDateForExport, formatCurrencyForExport } from "@/lib/excel-export";
 import { Download } from "lucide-react";
+import { useFinances } from "./finances/useFinances";
+import { DeleteExpenseWithVerificationDialog } from "./finances/DeleteExpenseWithVerificationDialog";
 
 export const AdminFinances = () => {
-  const [expenses, setExpenses] = useState<any[]>([]);
   const [newExpense, setNewExpense] = useState({ description: "", amount: "", type: "expense" });
-  const [stats, setStats] = useState({ totalIncome: 0, totalExpense: 0, profit: 0 });
   const { toast } = useToast();
 
-  useEffect(() => {
-    loadFinances();
-
-    const channel = supabase
-      .channel("expenses-changes")
-      .on("postgres_changes", { event: "*", schema: "public", table: "expenses" }, () => {
-        loadFinances();
-      })
-      .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, () => {
-        loadFinances();
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, []);
-
-  const loadFinances = async () => {
-    // Load manual expenses
-    const { data: expensesData } = await (supabase as any)
-      .from("expenses")
-      .select("*")
-      .order("created_at", { ascending: false });
-
-    // Load order incomes
-    const { data: ordersData } = await (supabase as any)
-      .from("orders")
-      .select(`
-        id,
-        created_at,
-        order_items(quantity, price)
-      `)
-      .in("status", ["confirmed", "preparing", "ready", "in_delivery", "delivered"]);
-
-    // Calculate totals
-    let totalIncome = 0;
-    let totalExpense = 0;
-
-    // Calculate from orders
-    const orderIncomes = ordersData?.map((order: any) => {
-      const orderTotal = order.order_items?.reduce(
-        (sum: number, item: any) => sum + (item.quantity * parseFloat(item.price)),
-        0
-      ) || 0;
-      totalIncome += orderTotal;
-      return {
-        id: order.id,
-        description: `Sipariş #${order.id.slice(0, 8)}`,
-        amount: orderTotal,
-        type: "income",
-        created_at: order.created_at,
-      };
-    }) || [];
-
-    // Calculate from manual entries
-    expensesData?.forEach((exp: any) => {
-      const amount = parseFloat(exp.amount);
-      if (exp.type === "income") {
-        totalIncome += amount;
-      } else {
-        totalExpense += amount;
-      }
-    });
-
-    // Combine and sort
-    const allTransactions = [...orderIncomes, ...(expensesData || [])].sort(
-      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-    );
-
-    setExpenses(allTransactions);
-    setStats({
-      totalIncome,
-      totalExpense,
-      profit: totalIncome - totalExpense,
-    });
-  };
+  const { transactions, stats, reload } = useFinances();
 
   const addExpense = async () => {
     if (!newExpense.description || !newExpense.amount) {
@@ -124,28 +48,12 @@ export const AdminFinances = () => {
         description: "İşlem eklendi",
       });
       setNewExpense({ description: "", amount: "", type: "expense" });
-    }
-  };
-
-  const deleteExpense = async (id: string) => {
-    const { error } = await (supabase as any).from("expenses").delete().eq("id", id);
-
-    if (error) {
-      toast({
-        variant: "destructive",
-        title: "Hata",
-        description: "İşlem silinemedi",
-      });
-    } else {
-      toast({
-        title: "Başarılı",
-        description: "İşlem silindi",
-      });
+      reload();
     }
   };
 
   const exportFinances = () => {
-    const exportData = expenses.map(expense => ({
+    const exportData = transactions.map((expense) => ({
       "Tarih": new Date(expense.created_at).toLocaleDateString("tr-TR"),
       "Açıklama": expense.description,
       "Tür": expense.type === "income" ? "Gelir" : "Gider",
@@ -263,7 +171,7 @@ export const AdminFinances = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {expenses.map((expense) => (
+              {transactions.map((expense) => (
                 <TableRow key={expense.id}>
                   <TableCell>{new Date(expense.created_at).toLocaleDateString("tr-TR")}</TableCell>
                   <TableCell>{expense.description}</TableCell>
@@ -275,18 +183,15 @@ export const AdminFinances = () => {
                   <TableCell>
                     <span className={expense.type === "income" ? "text-green-600" : "text-red-600"}>
                       {expense.type === "income" ? "+" : "-"}
-                      {parseFloat(expense.amount).toFixed(2)} ₺
+                      {Number(expense.amount).toFixed(2)} ₺
                     </span>
                   </TableCell>
                   <TableCell>
-                    {!expense.description.includes("Sipariş #") && (
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        onClick={() => deleteExpense(expense.id)}
-                      >
-                        Sil
-                      </Button>
+                    {!expense.order_id && (
+                      <DeleteExpenseWithVerificationDialog
+                        expenseId={expense.id}
+                        onDeleted={reload}
+                      />
                     )}
                   </TableCell>
                 </TableRow>

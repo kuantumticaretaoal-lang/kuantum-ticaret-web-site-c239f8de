@@ -59,6 +59,39 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_action_verifications: {
+        Row: {
+          action_type: string
+          code_hash: string
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          target_id: string
+          used_at: string | null
+        }
+        Insert: {
+          action_type: string
+          code_hash: string
+          created_at?: string
+          email: string
+          expires_at: string
+          id?: string
+          target_id: string
+          used_at?: string | null
+        }
+        Update: {
+          action_type?: string
+          code_hash?: string
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          target_id?: string
+          used_at?: string | null
+        }
+        Relationships: []
+      }
       admin_visibility_settings: {
         Row: {
           id: string
