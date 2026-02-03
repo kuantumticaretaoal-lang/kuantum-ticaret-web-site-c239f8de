@@ -9,7 +9,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, Edit, Tag, Percent, Banknote } from "lucide-react";
+import { Plus, Trash2, Edit, Tag, Percent, Banknote, Download } from "lucide-react";
+import { exportToExcel, formatDateForExport } from "@/lib/excel-export";
 import { Badge } from "@/components/ui/badge";
 
 interface Coupon {
@@ -249,7 +250,23 @@ export const AdminCoupons = () => {
       </div>
 
       {/* Kupon Ekle */}
-      <div className="flex justify-end">
+      <div className="flex justify-between">
+        <Button onClick={() => {
+          const exportData = coupons.map(c => ({
+            "Kod": c.code,
+            "İndirim Türü": c.discount_type === "percentage" ? "Yüzde" : "Sabit Tutar",
+            "İndirim Değeri": c.discount_type === "percentage" ? `%${c.discount_value}` : `₺${c.discount_value}`,
+            "Min. Tutar": `₺${c.min_order_amount}`,
+            "Kullanım": c.max_uses ? `${c.current_uses} / ${c.max_uses}` : c.current_uses.toString(),
+            "Son Tarih": c.expires_at ? formatDateForExport(c.expires_at) : "Süresiz",
+            "Durum": c.is_active ? "Aktif" : "Pasif",
+            "Oluşturulma": formatDateForExport(c.created_at),
+          }));
+          exportToExcel(exportData, 'kuponlar', 'Kuponlar');
+        }} variant="outline" size="sm">
+          <Download className="h-4 w-4 mr-2" />
+          Excel İndir
+        </Button>
         <Dialog open={dialogOpen} onOpenChange={(open) => {
           setDialogOpen(open);
           if (!open) resetForm();

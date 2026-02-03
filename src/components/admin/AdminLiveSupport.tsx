@@ -3,7 +3,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import { MessageCircle, User, Bot, Clock } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { MessageCircle, User, Bot, Clock, Download } from "lucide-react";
+import { exportToExcel, formatDateForExport } from "@/lib/excel-export";
+import { useToast } from "@/hooks/use-toast";
 
 interface Thread {
   id: string;
@@ -26,6 +29,39 @@ export const AdminLiveSupport = () => {
   const [threads, setThreads] = useState<Thread[]>([]);
   const [selectedThread, setSelectedThread] = useState<Thread | null>(null);
   const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+
+  const exportConversations = () => {
+    const exportData = threads.flatMap(thread => {
+      const userName = thread.profile 
+        ? `${thread.profile.first_name} ${thread.profile.last_name}`
+        : "Misafir";
+      
+      if (!thread.messages || thread.messages.length === 0) {
+        return [{
+          "Kullanıcı": userName,
+          "E-posta": thread.profile?.email || "-",
+          "Rol": "-",
+          "Mesaj": "(Mesaj yok)",
+          "Tarih": formatDateForExport(thread.created_at),
+        }];
+      }
+      
+      return thread.messages.map(msg => ({
+        "Kullanıcı": userName,
+        "E-posta": thread.profile?.email || "-",
+        "Rol": msg.role === "user" ? "Kullanıcı" : "Asistan",
+        "Mesaj": msg.content,
+        "Tarih": formatDateForExport(msg.created_at),
+      }));
+    });
+    
+    exportToExcel(exportData, 'canli-destek-gorusmeleri', 'Görüşmeler');
+    toast({
+      title: "Başarılı",
+      description: "Görüşmeler Excel olarak indirildi",
+    });
+  };
 
   useEffect(() => {
     loadThreads();
@@ -122,9 +158,15 @@ export const AdminLiveSupport = () => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <MessageCircle className="h-5 w-5" />
-          Canlı Destek Görüşmeleri
+        <CardTitle className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <MessageCircle className="h-5 w-5" />
+            Canlı Destek Görüşmeleri
+          </div>
+          <Button onClick={exportConversations} variant="outline" size="sm">
+            <Download className="h-4 w-4 mr-2" />
+            Excel İndir
+          </Button>
         </CardTitle>
       </CardHeader>
       <CardContent>

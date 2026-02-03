@@ -44,6 +44,12 @@ const AdminPage = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("orders");
 
+  // Scroll to top when tab changes
+  const handleTabChange = (newTab: string) => {
+    setActiveTab(newTab);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   useEffect(() => {
     checkAdminAccess();
   }, []);
@@ -117,7 +123,7 @@ const AdminPage = () => {
         
         {isMobile ? (
           <div className="space-y-4">
-            <Select value={activeTab} onValueChange={setActiveTab}>
+            <Select value={activeTab} onValueChange={handleTabChange}>
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Sekme Seçin" />
               </SelectTrigger>
@@ -185,7 +191,7 @@ const AdminPage = () => {
             {activeTab === "admin-cart" && <AdminCart />}
           </div>
         ) : (
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
             <div className="overflow-x-auto pb-2">
             <TabsList className="inline-flex w-auto min-w-full flex-wrap">
                 <TabsTrigger value="orders" className="min-w-[100px]">Siparişler</TabsTrigger>
