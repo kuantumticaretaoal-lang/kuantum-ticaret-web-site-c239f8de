@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -10,15 +10,41 @@ import { formatPhoneNumber, formatProvince, formatDistrict } from "@/lib/formatt
 import { logger } from "@/lib/logger";
 import { exportToExcel, formatDateForExport } from "@/lib/excel-export";
 import { Download, Crown, Bell, Sparkles } from "lucide-react";
+import { UserFilters } from "./users/UserFilters";
+import { useUserFilters } from "./users/useUserFilters";
 
 export const AdminUsers = () => {
   const [users, setUsers] = useState<any[]>([]);
   const [premiumUsers, setPremiumUsers] = useState<Set<string>>(new Set());
   const [isMainAdmin, setIsMainAdmin] = useState(false);
-  const [totalUsers, setTotalUsers] = useState(0);
-  const [lastRegistration, setLastRegistration] = useState<string | null>(null);
   const [processingUsers, setProcessingUsers] = useState<Set<string>>(new Set());
   const { toast } = useToast();
+
+  const {
+    filters,
+    sortBy,
+    sortOrder,
+    filteredUsers,
+    handleFilterChange,
+    handleSortChange,
+    resetFilters,
+  } = useUserFilters(users);
+
+  // Get admin IDs for filtering stats
+  const [adminIds, setAdminIds] = useState<Set<string>>(new Set());
+
+  const regularUsersCount = useMemo(() => {
+    return filteredUsers.filter(u => !adminIds.has(u.id)).length;
+  }, [filteredUsers, adminIds]);
+
+  const lastRegistration = useMemo(() => {
+    const regularUsers = filteredUsers.filter(u => !adminIds.has(u.id));
+    if (regularUsers.length === 0) return null;
+    const sorted = [...regularUsers].sort((a, b) => 
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
+    return sorted[0]?.created_at;
+  }, [filteredUsers, adminIds]);
 
   useEffect(() => {
     checkMainAdmin();
@@ -81,21 +107,17 @@ export const AdminUsers = () => {
 
   const loadUsers = async () => {
     try {
-      // Tüm profilleri çek - EN YENİ KAYITLAR EN ÜSTTE
       const { data: allProfiles, error: profileError } = await (supabase as any)
         .from("profiles")
         .select("*")
-        .order("created_at", { ascending: false }); // EN YENİ KAYITLAR EN ÜSTTE
+        .order("created_at", { ascending: false });
       
       if (profileError) {
         logger.error("Kullanıcılar yüklenemedi", profileError);
         setUsers([]);
-        setTotalUsers(0);
-        setLastRegistration(null);
         return;
       }
       
-      // Admin ve yöneticileri filtrele
       const { data: adminRoles, error: rolesError } = await supabase
         .from("user_roles")
         .select("user_id")
@@ -105,27 +127,11 @@ export const AdminUsers = () => {
         logger.error("Admin rolleri yüklenemedi", rolesError);
       }
       
-      const adminIds = new Set(adminRoles?.map(r => r.user_id) || []);
-      const allUsers = allProfiles || [];
-      const regularUsers = allUsers.filter(u => !adminIds.has(u.id));
-      
-      setUsers(allUsers);
-      setTotalUsers(regularUsers.length);
-      
-      // En son kayıt olan normal kullanıcı
-      if (regularUsers.length > 0) {
-        const sortedRegularUsers = [...regularUsers].sort((a, b) => 
-          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-        );
-        setLastRegistration(sortedRegularUsers[0].created_at);
-      } else {
-        setLastRegistration(null);
-      }
+      setAdminIds(new Set(adminRoles?.map(r => r.user_id) || []));
+      setUsers(allProfiles || []);
     } catch (error) {
       logger.error("Kullanıcı yükleme hatası", error);
       setUsers([]);
-      setTotalUsers(0);
-      setLastRegistration(null);
     }
   };
 
@@ -156,7 +162,6 @@ export const AdminUsers = () => {
     setProcessingUsers(prev => new Set(prev).add(userId));
     
     try {
-      // 7 günlük deneme üyeliği oluştur
       const expiresAt = new Date();
       expiresAt.setDate(expiresAt.getDate() + 7);
 
@@ -173,7 +178,6 @@ export const AdminUsers = () => {
 
       if (error) throw error;
 
-      // Kullanıcıya bildirim gönder
       await (supabase as any)
         .from("notifications")
         .insert({
@@ -235,7 +239,7 @@ export const AdminUsers = () => {
   };
 
   const exportUsers = () => {
-    const exportData = users.map(user => ({
+    const exportData = filteredUsers.map(user => ({
       "Ad": user.first_name,
       "Soyad": user.last_name,
       "E-posta": user.email,
@@ -265,10 +269,11 @@ export const AdminUsers = () => {
         </CardTitle>
       </CardHeader>
       <CardContent>
+        {/* Stats */}
         <div className="grid grid-cols-2 gap-4 mb-6">
           <Card>
             <CardContent className="pt-6">
-              <div className="text-2xl font-bold">{totalUsers}</div>
+              <div className="text-2xl font-bold">{regularUsersCount}</div>
               <p className="text-sm text-muted-foreground">Toplam Kullanıcı Sayısı</p>
             </CardContent>
           </Card>
@@ -289,6 +294,23 @@ export const AdminUsers = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* Filters */}
+        <UserFilters
+          filters={filters}
+          sortBy={sortBy}
+          sortOrder={sortOrder}
+          onFilterChange={handleFilterChange}
+          onSortChange={handleSortChange}
+          onReset={resetFilters}
+        />
+
+        {/* Results count */}
+        <div className="text-sm text-muted-foreground mb-4">
+          {filteredUsers.length} kullanıcı bulundu
+          {filteredUsers.length !== users.length && ` (toplam ${users.length})`}
+        </div>
+
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
@@ -298,19 +320,21 @@ export const AdminUsers = () => {
                 <TableHead>Soyad</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Telefon</TableHead>
+                <TableHead>İl/İlçe</TableHead>
+                <TableHead>Kayıt</TableHead>
                 <TableHead>Premium</TableHead>
                 <TableHead>İşlemler</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {users.length === 0 ? (
+              {filteredUsers.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
-                    Henüz kayıtlı kullanıcı yok
+                  <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
+                    Kullanıcı bulunamadı
                   </TableCell>
                 </TableRow>
               ) : (
-                users.map((user, index) => {
+                filteredUsers.map((user, index) => {
                   const isPremium = premiumUsers.has(user.id);
                   const isProcessing = processingUsers.has(user.id);
                   
@@ -321,6 +345,17 @@ export const AdminUsers = () => {
                       <TableCell>{isMainAdmin ? (user.last_name || "-") : "***"}</TableCell>
                       <TableCell>{isMainAdmin ? (user.email || "-") : "***"}</TableCell>
                       <TableCell>{isMainAdmin ? (user.phone ? formatPhoneNumber(user.phone) : "-") : "***"}</TableCell>
+                      <TableCell>
+                        {isMainAdmin ? (
+                          <span className="text-xs">
+                            {formatProvince(user.province) || "-"}
+                            {user.district && ` / ${formatDistrict(user.district)}`}
+                          </span>
+                        ) : "***"}
+                      </TableCell>
+                      <TableCell className="text-xs">
+                        {new Date(user.created_at).toLocaleDateString("tr-TR")}
+                      </TableCell>
                       <TableCell>
                         {isPremium ? (
                           <Badge className="bg-gradient-to-r from-yellow-500 to-amber-500 text-white">
