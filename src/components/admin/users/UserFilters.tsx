@@ -32,6 +32,7 @@ export const UserFilters = ({
   onSortChange,
   onReset,
 }: UserFiltersProps) => {
+  const ALL_VALUE = "__all__";
   const districts = filters.searchProvince
     ? getDistrictsByProvince(filters.searchProvince)
     : [];
@@ -94,9 +95,10 @@ export const UserFilters = ({
         <div>
           <Label className="text-xs">İl</Label>
           <Select
-            value={filters.searchProvince}
+            value={filters.searchProvince || ALL_VALUE}
             onValueChange={(v) => {
-              onFilterChange("searchProvince", v);
+              const nextProvince = v === ALL_VALUE ? "" : v;
+              onFilterChange("searchProvince", nextProvince);
               onFilterChange("searchDistrict", "");
             }}
           >
@@ -104,7 +106,7 @@ export const UserFilters = ({
               <SelectValue placeholder="Tüm iller" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Tüm İller</SelectItem>
+              <SelectItem value={ALL_VALUE}>Tüm İller</SelectItem>
               {TURKISH_PROVINCES.map((p) => (
                 <SelectItem key={p} value={p}>
                   {p}
@@ -116,15 +118,15 @@ export const UserFilters = ({
         <div>
           <Label className="text-xs">İlçe</Label>
           <Select
-            value={filters.searchDistrict}
-            onValueChange={(v) => onFilterChange("searchDistrict", v)}
+            value={filters.searchDistrict || ALL_VALUE}
+            onValueChange={(v) => onFilterChange("searchDistrict", v === ALL_VALUE ? "" : v)}
             disabled={!filters.searchProvince}
           >
             <SelectTrigger className="h-9">
               <SelectValue placeholder="Tüm ilçeler" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Tüm İlçeler</SelectItem>
+              <SelectItem value={ALL_VALUE}>Tüm İlçeler</SelectItem>
               {districts.map((d) => (
                 <SelectItem key={d} value={d}>
                   {d}
