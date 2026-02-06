@@ -7,6 +7,13 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+function json(payload: unknown) {
+  return new Response(JSON.stringify(payload), {
+    status: 200, // IMPORTANT: avoid non-2xx so frontend gets a readable { ok:false, error }
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
+
 function random6DigitCode() {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
@@ -37,6 +44,7 @@ async function sendEmail({
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
+      // NOTE: If you later verify your own domain in Resend, change this to that domain.
       from: "Kuantum Ticaret <onboarding@resend.dev>",
       to: [to],
       subject,
@@ -45,8 +53,8 @@ async function sendEmail({
   });
 
   if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`Resend API error: ${error}`);
+    const errorText = await response.text();
+    throw new Error(`Resend API error (${response.status}): ${errorText}`);
   }
 
   return await response.json();
@@ -56,12 +64,15 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
-    const { step, expenseId, code } = await req.json();
+    const body = await req.json().catch(() => ({}));
+    const step = body?.step;
+    const expenseId = body?.expenseId;
+    const code = body?.code;
+
+    console.log("admin-expense-delete", { step, expenseId: String(expenseId || "").slice(0, 8) });
+
     if (!step || !expenseId) {
-      return new Response(JSON.stringify({ ok: false, error: "Missing step or expenseId" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return json({ ok: false, error: "Missing step or expenseId" });
     }
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -75,22 +86,22 @@ serve(async (req) => {
 
     const { data: userData, error: userErr } = await authed.auth.getUser();
     if (userErr || !userData?.user) {
-      return new Response(JSON.stringify({ ok: false, error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      console.warn("Unauthorized", userErr);
+      return json({ ok: false, error: "Unauthorized" });
     }
 
-    const { data: roleOk } = await authed.rpc("has_role", {
+    const { data: roleOk, error: roleErr } = await authed.rpc("has_role", {
       _user_id: userData.user.id,
       _role: "admin",
     });
 
+    if (roleErr) {
+      console.error("Role check failed", roleErr);
+      return json({ ok: false, error: "Role check failed" });
+    }
+
     if (!roleOk) {
-      return new Response(JSON.stringify({ ok: false, error: "Forbidden" }), {
-        status: 403,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return json({ ok: false, error: "Forbidden" });
     }
 
     const admin = createClient(supabaseUrl, serviceRoleKey);
@@ -103,36 +114,34 @@ serve(async (req) => {
       .maybeSingle();
 
     if (expErr || !expense) {
-      return new Response(JSON.stringify({ ok: false, error: "Expense not found" }), {
-        status: 404,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      console.error("Expense not found", expErr);
+      return json({ ok: false, error: "Expense not found" });
     }
 
     if (expense.order_id) {
-      return new Response(JSON.stringify({ ok: false, error: "Order-linked transactions cannot be deleted" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return json({ ok: false, error: "Order-linked transactions cannot be deleted" });
     }
 
     // Load admin email address from settings
-    const { data: siteSettings } = await admin.from("site_settings").select("email").maybeSingle();
+    const { data: siteSettings, error: settingsErr } = await admin
+      .from("site_settings")
+      .select("email")
+      .maybeSingle();
+
+    if (settingsErr) {
+      console.error("Failed to read site settings", settingsErr);
+      return json({ ok: false, error: "Failed to read admin email" });
+    }
+
     const adminEmail = siteSettings?.email;
     if (!adminEmail) {
-      return new Response(JSON.stringify({ ok: false, error: "Admin email not configured" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return json({ ok: false, error: "Admin email not configured" });
     }
 
     if (step === "request") {
       const resendApiKey = Deno.env.get("RESEND_API_KEY");
       if (!resendApiKey) {
-        return new Response(JSON.stringify({ ok: false, error: "Email service not configured" }), {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        return json({ ok: false, error: "Email service not configured" });
       }
 
       const plain = random6DigitCode();
@@ -149,10 +158,7 @@ serve(async (req) => {
 
       if (insErr) {
         console.error("insert verification failed", insErr);
-        return new Response(JSON.stringify({ ok: false, error: "Failed to create verification" }), {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        return json({ ok: false, error: "Failed to create verification" });
       }
 
       const subject = "İşlem Silme Doğrulama Kodu";
@@ -169,25 +175,25 @@ serve(async (req) => {
         </div>
       `;
 
-      await sendEmail({ apiKey: resendApiKey, to: adminEmail, subject, html });
+      try {
+        await sendEmail({ apiKey: resendApiKey, to: adminEmail, subject, html });
+      } catch (e) {
+        console.error("sendEmail failed", e);
+        return json({ ok: false, error: e instanceof Error ? e.message : "Email send failed" });
+      }
 
-      return new Response(JSON.stringify({ ok: true }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return json({ ok: true });
     }
 
     if (step === "confirm") {
       const normalized = String(code || "").replace(/\D/g, "");
       if (normalized.length !== 6) {
-        return new Response(JSON.stringify({ ok: false, error: "Invalid code" }), {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        return json({ ok: false, error: "Invalid code" });
       }
 
       const codeHash = await sha256Hex(normalized);
 
-      const { data: latest } = await admin
+      const { data: latest, error: verErr } = await admin
         .from("admin_action_verifications")
         .select("id, code_hash, expires_at, used_at")
         .eq("action_type", "delete_expense")
@@ -196,60 +202,49 @@ serve(async (req) => {
         .limit(1)
         .maybeSingle();
 
+      if (verErr) {
+        console.error("verification load failed", verErr);
+        return json({ ok: false, error: "Verification load failed" });
+      }
+
       if (!latest) {
-        return new Response(JSON.stringify({ ok: false, error: "No verification request found" }), {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        return json({ ok: false, error: "No verification request found" });
       }
 
       if (latest.used_at) {
-        return new Response(JSON.stringify({ ok: false, error: "Code already used" }), {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        return json({ ok: false, error: "Code already used" });
       }
 
       if (new Date(latest.expires_at).getTime() < Date.now()) {
-        return new Response(JSON.stringify({ ok: false, error: "Code expired" }), {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        return json({ ok: false, error: "Code expired" });
       }
 
       if (latest.code_hash !== codeHash) {
-        return new Response(JSON.stringify({ ok: false, error: "Wrong code" }), {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        return json({ ok: false, error: "Wrong code" });
       }
 
-      // Mark used, then delete
-      await admin.from("admin_action_verifications").update({ used_at: new Date().toISOString() }).eq("id", latest.id);
-      const { error: delErr } = await admin.from("expenses").delete().eq("id", expenseId);
+      const { error: usedErr } = await admin
+        .from("admin_action_verifications")
+        .update({ used_at: new Date().toISOString() })
+        .eq("id", latest.id);
 
+      if (usedErr) {
+        console.error("failed to mark used", usedErr);
+        return json({ ok: false, error: "Failed to mark code as used" });
+      }
+
+      const { error: delErr } = await admin.from("expenses").delete().eq("id", expenseId);
       if (delErr) {
         console.error("delete expense failed", delErr);
-        return new Response(JSON.stringify({ ok: false, error: "Delete failed" }), {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        return json({ ok: false, error: "Delete failed" });
       }
 
-      return new Response(JSON.stringify({ ok: true }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return json({ ok: true });
     }
 
-    return new Response(JSON.stringify({ ok: false, error: "Unknown step" }), {
-      status: 400,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return json({ ok: false, error: "Unknown step" });
   } catch (e) {
     console.error("admin-expense-delete error", e);
-    return new Response(JSON.stringify({ ok: false, error: e instanceof Error ? e.message : "Unknown error" }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return json({ ok: false, error: e instanceof Error ? e.message : "Unknown error" });
   }
 });

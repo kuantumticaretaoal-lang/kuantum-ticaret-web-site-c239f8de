@@ -341,11 +341,8 @@ const ProductDetail = () => {
         return;
       }
 
-      const { data: { publicUrl } } = supabase.storage
-        .from("custom-photos")
-        .getPublicUrl(fileName);
-
-      customPhotoUrl = publicUrl;
+      // Bucket private olduğu için public URL yerine path saklıyoruz (signed URL ile açılacak)
+      customPhotoUrl = fileName;
     }
 
     // Upload custom file if provided
@@ -370,15 +367,20 @@ const ProductDetail = () => {
       customFileUrl = fileName; // Store relative path for signed URL generation
     }
 
-    // Build custom photo URL with file URL if exists
-    let finalPhotoUrl = customPhotoUrl;
-    if (customFileUrl) {
-      finalPhotoUrl = finalPhotoUrl 
-        ? `${finalPhotoUrl}|FILE:${customFileUrl}` 
-        : `FILE:${customFileUrl}`;
-    }
+    // Store a robust, parseable format for admin/download flows
+    const uploadTokens: string[] = [];
+    if (customPhotoUrl) uploadTokens.push(`PHOTO:${customPhotoUrl}`);
+    if (customFileUrl) uploadTokens.push(`FILE:${customFileUrl}`);
 
-    const { error } = await addToCart(id!, quantity, customName || undefined, selectedSize || undefined, finalPhotoUrl || undefined);
+    const finalPhotoUrl = uploadTokens.length ? uploadTokens.join("|") : null;
+
+    const { error } = await addToCart(
+      id!,
+      quantity,
+      customName || undefined,
+      selectedSize || undefined,
+      finalPhotoUrl || undefined
+    );
     if (error) {
       toast({
         variant: "destructive",

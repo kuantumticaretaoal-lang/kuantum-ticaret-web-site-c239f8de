@@ -16,89 +16,154 @@ import { exportToExcel, formatDateForExport, formatCurrencyForExport } from "@/l
 import { Download, MessageSquare, Send, DollarSign, Eye, FileDown } from "lucide-react";
  import { Badge } from "@/components/ui/badge";
 
-// Custom Photo Viewer with signed URL support
+// Custom upload viewer (photo + file) with signed URL support
 const CustomPhotoViewer = ({ photoUrl }: { photoUrl: string }) => {
-  const [signedUrl, setSignedUrl] = useState<string | null>(null);
+  const [signedPhotoUrl, setSignedPhotoUrl] = useState<string | null>(null);
+  const [signedFileUrl, setSignedFileUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const getSignedUrl = async () => {
+  const parseUploads = (value: string) => {
+    const parts = String(value)
+      .split("|")
+      .map((p) => p.trim())
+      .filter(Boolean);
+
+    let photoPath: string | null = null;
+    let filePath: string | null = null;
+
+    for (const p of parts.length ? parts : [String(value)]) {
+      if (p.startsWith("PHOTO:")) {
+        photoPath = p.slice("PHOTO:".length);
+        continue;
+      }
+      if (p.startsWith("FILE:")) {
+        filePath = p.slice("FILE:".length);
+        continue;
+      }
+
+      // Legacy formats: full URLs
+      if (p.includes("/custom-photos/")) {
+        photoPath = p.split("/custom-photos/")[1]?.split("?")[0] || photoPath;
+        continue;
+      }
+      if (p.includes("/custom-files/")) {
+        filePath = p.split("/custom-files/")[1]?.split("?")[0] || filePath;
+        continue;
+      }
+
+      // Fallback: if it's not a URL, treat as a path (photo)
+      if (!p.startsWith("http")) {
+        photoPath = photoPath || p;
+      }
+    }
+
+    return { photoPath, filePath };
+  };
+
+  const { photoPath, filePath } = parseUploads(photoUrl);
+
+  const ensureSigned = async () => {
+    if ((!photoPath && !filePath) || loading) return;
+
     setLoading(true);
     try {
-      // Extract path from the URL
-      const urlParts = photoUrl.split("/custom-photos/");
-      if (urlParts.length < 2) {
-        // Try custom-files bucket
-        const filesParts = photoUrl.split("/custom-files/");
-        if (filesParts.length >= 2) {
-          const path = filesParts[1];
-          const { data, error } = await supabase.storage
-            .from("custom-files")
-            .createSignedUrl(path, 3600);
-          if (!error && data) {
-            setSignedUrl(data.signedUrl);
-          }
-        }
-        return;
+      if (photoPath && !signedPhotoUrl) {
+        const { data, error } = await supabase.storage
+          .from("custom-photos")
+          .createSignedUrl(photoPath, 3600);
+        if (!error && data?.signedUrl) setSignedPhotoUrl(data.signedUrl);
+        if (error) console.error("custom-photos signed url error", error);
       }
-      
-      const path = urlParts[1];
-      const { data, error } = await supabase.storage
-        .from("custom-photos")
-        .createSignedUrl(path, 3600); // 1 hour expiry
-      
-      if (error) {
-        console.error("Signed URL error:", error);
-        return;
+
+      if (filePath && !signedFileUrl) {
+        const { data, error } = await supabase.storage
+          .from("custom-files")
+          .createSignedUrl(filePath, 3600);
+        if (!error && data?.signedUrl) setSignedFileUrl(data.signedUrl);
+        if (error) console.error("custom-files signed url error", error);
       }
-      
-      setSignedUrl(data.signedUrl);
-    } catch (err) {
-      console.error("Error getting signed URL:", err);
     } finally {
       setLoading(false);
     }
   };
 
-  const downloadFile = async () => {
-    if (!signedUrl) {
-      await getSignedUrl();
-    }
-    if (signedUrl) {
-      const link = document.createElement("a");
-      link.href = signedUrl;
-      link.download = "custom-photo";
-      link.target = "_blank";
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    }
+  const download = async (kind: "photo" | "file") => {
+    await ensureSigned();
+    const url = kind === "photo" ? signedPhotoUrl : signedFileUrl;
+    const name = kind === "photo"
+      ? (photoPath?.split("/").pop() || "custom-photo")
+      : (filePath?.split("/").pop() || "custom-file");
+
+    if (!url) return;
+
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = name;
+    link.target = "_blank";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
+  const open = async (kind: "photo" | "file") => {
+    await ensureSigned();
+    const url = kind === "photo" ? signedPhotoUrl : signedFileUrl;
+    if (url) window.open(url, "_blank");
+  };
+
+  if (!photoPath && !filePath) return null;
+
   return (
-    <div className="flex items-center gap-2">
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={async () => {
-          if (!signedUrl) await getSignedUrl();
-          if (signedUrl) window.open(signedUrl, "_blank");
-        }}
-        disabled={loading}
-        className="text-xs h-6 px-2"
-      >
-        <Eye className="h-3 w-3 mr-1" />
-        {loading ? "Yükleniyor..." : "Görüntüle"}
-      </Button>
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={downloadFile}
-        disabled={loading}
-        className="text-xs h-6 px-2"
-      >
-        <FileDown className="h-3 w-3 mr-1" />
-        İndir
-      </Button>
+    <div className="flex flex-wrap items-center gap-2">
+      {photoPath && (
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => open("photo")}
+            disabled={loading}
+            className="text-xs h-6 px-2"
+          >
+            <Eye className="h-3 w-3 mr-1" />
+            {loading ? "..." : "Fotoğraf"}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => download("photo")}
+            disabled={loading}
+            className="text-xs h-6 px-2"
+          >
+            <FileDown className="h-3 w-3 mr-1" />
+            İndir
+          </Button>
+        </div>
+      )}
+
+      {filePath && (
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => open("file")}
+            disabled={loading}
+            className="text-xs h-6 px-2"
+          >
+            <Eye className="h-3 w-3 mr-1" />
+            {loading ? "..." : "Dosya"}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => download("file")}
+            disabled={loading}
+            className="text-xs h-6 px-2"
+          >
+            <FileDown className="h-3 w-3 mr-1" />
+            İndir
+          </Button>
+        </div>
+      )}
     </div>
   );
 };
