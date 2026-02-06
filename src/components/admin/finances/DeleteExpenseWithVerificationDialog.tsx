@@ -22,6 +22,13 @@ import { Label } from "@/components/ui/label";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { useToast } from "@/hooks/use-toast";
 
+function toUserMessage(e: unknown) {
+  const msg = (e as any)?.message || String(e || "");
+  // Supabase bazen çok jenerik bir mesaj döndürüyor; kullanıcıya daha anlaşılır verelim
+  if (msg.toLowerCase().includes("non-2xx")) return "İşlem sırasında bir hata oluştu. Lütfen tekrar deneyin.";
+  return msg;
+}
+
 export function DeleteExpenseWithVerificationDialog({
   expenseId,
   disabled,
@@ -36,26 +43,32 @@ export function DeleteExpenseWithVerificationDialog({
   const [requesting, setRequesting] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [code, setCode] = useState("");
+  const [requestError, setRequestError] = useState<string | null>(null);
 
   const canVerify = useMemo(() => code.replace(/\D/g, "").length === 6, [code]);
 
   const requestCode = async () => {
+    if (disabled) return;
+
     setRequesting(true);
+    setRequestError(null);
+    setCode("");
+    // Kullanıcı “Evet” dedikten sonra pencere kapanıyor; OTP dialogunu hemen açıp durum gösterelim
+    setCodeDialogOpen(true);
+
     try {
       const { data, error } = await supabase.functions.invoke("admin-expense-delete", {
         body: { step: "request", expenseId },
       });
 
       if (error) throw error;
-      if (!data?.ok) {
-        throw new Error(data?.error || "Kod gönderilemedi");
-      }
+      if (!data?.ok) throw new Error(data?.error || "Kod gönderilemedi");
 
       toast({ title: "Doğrulama kodu gönderildi", description: "Admin e-posta adresine kod iletildi." });
-      setCode("");
-      setCodeDialogOpen(true);
     } catch (e: any) {
-      toast({ variant: "destructive", title: "Hata", description: e?.message || "Kod gönderilemedi" });
+      const msg = toUserMessage(e);
+      setRequestError(msg);
+      toast({ variant: "destructive", title: "Hata", description: msg || "Kod gönderilemedi" });
     } finally {
       setRequesting(false);
     }
@@ -71,15 +84,13 @@ export function DeleteExpenseWithVerificationDialog({
       });
 
       if (error) throw error;
-      if (!data?.ok) {
-        throw new Error(data?.error || "Kod doğrulanamadı");
-      }
+      if (!data?.ok) throw new Error(data?.error || "Kod doğrulanamadı");
 
       toast({ title: "Başarılı", description: "İşlem silindi" });
       setCodeDialogOpen(false);
       onDeleted?.();
     } catch (e: any) {
-      toast({ variant: "destructive", title: "Hata", description: e?.message || "İşlem silinemedi" });
+      toast({ variant: "destructive", title: "Hata", description: toUserMessage(e) || "İşlem silinemedi" });
     } finally {
       setVerifying(false);
     }
@@ -113,7 +124,19 @@ export function DeleteExpenseWithVerificationDialog({
           <DialogHeader>
             <DialogTitle>Doğrulama Kodu</DialogTitle>
           </DialogHeader>
+
           <div className="space-y-3">
+            {requestError && (
+              <div className="text-sm text-destructive">
+                {requestError}
+                <div className="mt-2">
+                  <Button variant="outline" size="sm" onClick={requestCode} disabled={requesting}>
+                    {requesting ? "..." : "Kodu Tekrar Gönder"}
+                  </Button>
+                </div>
+              </div>
+            )}
+
             <div className="space-y-1">
               <Label>Admin e-postasına gelen 6 haneli kod</Label>
               <div className="flex justify-center">
