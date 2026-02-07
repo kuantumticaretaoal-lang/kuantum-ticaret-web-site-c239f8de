@@ -1522,42 +1522,6 @@ export type Database = {
         }
         Relationships: []
       }
-      social_media_items: {
-        Row: {
-          created_at: string | null
-          icon: string | null
-          id: string
-          is_active: boolean | null
-          logo_url: string | null
-          name: string
-          sort_order: number | null
-          updated_at: string | null
-          url: string
-        }
-        Insert: {
-          created_at?: string | null
-          icon?: string | null
-          id?: string
-          is_active?: boolean | null
-          logo_url?: string | null
-          name: string
-          sort_order?: number | null
-          updated_at?: string | null
-          url: string
-        }
-        Update: {
-          created_at?: string | null
-          icon?: string | null
-          id?: string
-          is_active?: boolean | null
-          logo_url?: string | null
-          name?: string
-          sort_order?: number | null
-          updated_at?: string | null
-          url?: string
-        }
-        Relationships: []
-      }
       sponsors: {
         Row: {
           created_at: string | null
