@@ -36,15 +36,53 @@ import AdminProductTranslations from "@/components/admin/AdminProductTranslation
 import { AdminLiveSupport } from "@/components/admin/AdminLiveSupport";
 import { AdminFavorites } from "@/components/admin/AdminFavorites";
 import { AdminCart } from "@/components/admin/AdminCart";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Eye, EyeOff } from "lucide-react";
+
+const ALL_TABS = [
+  { value: "orders", label: "Siparişler" },
+  { value: "order-stats", label: "Sipariş İstatistikleri" },
+  { value: "users", label: "Kullanıcılar" },
+  { value: "user-stats", label: "Kullanıcı İstatistikleri" },
+  { value: "products", label: "Ürünler" },
+  { value: "categories", label: "Kategoriler" },
+  { value: "questions", label: "Sorular" },
+  { value: "contact", label: "İletişim" },
+  { value: "social", label: "Sosyal Medya" },
+  { value: "sponsors", label: "Sponsorlar" },
+  { value: "analytics", label: "Ziyaretçiler" },
+  { value: "finances", label: "Gelir-Gider" },
+  { value: "messages", label: "Mesajlar" },
+  { value: "notifications", label: "Bildirimler" },
+  { value: "managers", label: "Yöneticiler" },
+  { value: "coupons", label: "Kuponlar" },
+  { value: "about", label: "Hakkımızda" },
+  { value: "banners", label: "Kampanya Bannerları" },
+  { value: "premium", label: "Premium" },
+  { value: "policies", label: "Politikalar" },
+  { value: "languages", label: "Diller" },
+  { value: "translations", label: "Çeviriler" },
+  { value: "urgency", label: "Aciliyet Ayarları" },
+  { value: "shipping", label: "Kargo Ayarları" },
+  { value: "shipping-companies", label: "Kargo Şirketleri" },
+  { value: "product-translations", label: "Ürün Çevirileri" },
+  { value: "live-support", label: "Canlı Destek" },
+  { value: "admin-favorites", label: "Favoriler" },
+  { value: "admin-cart", label: "Sepet Takibi" },
+];
 
 const AdminPage = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isMainAdmin, setIsMainAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("orders");
+  const [visibilitySettings, setVisibilitySettings] = useState<Record<string, boolean>>({});
+  const [showVisibilityPanel, setShowVisibilityPanel] = useState(false);
 
-  // Scroll to top when tab changes
   const handleTabChange = (newTab: string) => {
     setActiveTab(newTab);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -54,6 +92,12 @@ const AdminPage = () => {
     checkAdminAccess();
   }, []);
 
+  useEffect(() => {
+    if (isAdmin) {
+      loadVisibilitySettings();
+    }
+  }, [isAdmin]);
+
   const checkAdminAccess = async () => {
     const { data: { session } } = await supabase.auth.getSession();
     
@@ -62,42 +106,80 @@ const AdminPage = () => {
       return;
     }
 
-    // Retry with exponential backoff instead of arbitrary delay
     const maxAttempts = 5;
     const baseDelay = 100;
 
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
       const { data, error } = await (supabase as any)
         .from("user_roles")
-        .select("role")
+        .select("role, is_main_admin")
         .eq("user_id", session.user.id)
         .eq("role", "admin")
         .maybeSingle();
 
-      // Success - user is admin
       if (data) {
         setIsAdmin(true);
+        setIsMainAdmin(data.is_main_admin === true);
         setLoading(false);
         return;
       }
 
-      // Real error (not just missing data)
       if (error && error.code !== 'PGRST116') {
         logger.error('Error checking admin role', error);
         navigate("/");
         return;
       }
 
-      // Wait before retry with exponential backoff
       if (attempt < maxAttempts - 1) {
         const delay = baseDelay * Math.pow(2, attempt);
         await new Promise(resolve => setTimeout(resolve, delay));
       }
     }
 
-    // After all attempts, user is not admin
     navigate("/");
   };
+
+  const loadVisibilitySettings = async () => {
+    const { data } = await supabase
+      .from("admin_visibility_settings")
+      .select("setting_key, visible");
+    
+    if (data) {
+      const settings: Record<string, boolean> = {};
+      data.forEach((s: any) => {
+        settings[s.setting_key] = s.visible !== false;
+      });
+      setVisibilitySettings(settings);
+    }
+  };
+
+  const updateVisibility = async (tabKey: string, visible: boolean) => {
+    const { data: existing } = await supabase
+      .from("admin_visibility_settings")
+      .select("id")
+      .eq("setting_key", tabKey)
+      .maybeSingle();
+
+    if (existing) {
+      await supabase
+        .from("admin_visibility_settings")
+        .update({ visible })
+        .eq("setting_key", tabKey);
+    } else {
+      await supabase
+        .from("admin_visibility_settings")
+        .insert({ setting_key: tabKey, visible });
+    }
+
+    setVisibilitySettings(prev => ({ ...prev, [tabKey]: visible }));
+  };
+
+  const isTabVisible = (tabKey: string): boolean => {
+    if (isMainAdmin) return true;
+    return visibilitySettings[tabKey] !== false;
+  };
+
+  const visibleTabs = ALL_TABS.filter(tab => isTabVisible(tab.value));
 
   if (loading) {
     return (
@@ -115,232 +197,117 @@ const AdminPage = () => {
     return null;
   }
 
+  const renderTabContent = (tabValue: string) => {
+    switch (tabValue) {
+      case "orders": return <AdminOrders />;
+      case "order-stats": return <AdminOrderStats />;
+      case "users": return <AdminUsers />;
+      case "user-stats": return <AdminUserStats />;
+      case "products": return <AdminProducts />;
+      case "categories": return <AdminCategories />;
+      case "questions": return <AdminProductQuestions />;
+      case "contact": return <AdminContact />;
+      case "social": return <AdminSocialMedia />;
+      case "sponsors": return <AdminSponsors />;
+      case "analytics": return <AdminAnalytics />;
+      case "finances": return <AdminFinances />;
+      case "messages": return <AdminMessages />;
+      case "notifications": return <AdminNotifications />;
+      case "managers": return <AdminManagers />;
+      case "coupons": return <AdminCoupons />;
+      case "about": return <AdminAbout />;
+      case "banners": return <AdminCampaignBanners />;
+      case "premium": return <AdminPremium />;
+      case "policies": return <AdminPolicies />;
+      case "languages": return <AdminLanguages />;
+      case "translations": return <AdminTranslations />;
+      case "urgency": return <AdminUrgencySettings />;
+      case "shipping": return <AdminShipping />;
+      case "shipping-companies": return <AdminShippingCompanies />;
+      case "product-translations": return <AdminProductTranslations />;
+      case "live-support": return <AdminLiveSupport />;
+      case "admin-favorites": return <AdminFavorites />;
+      case "admin-cart": return <AdminCart />;
+      default: return null;
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
       <div className="container mx-auto px-4 py-8">
-        <h1 className="text-4xl font-bold mb-8">Admin Paneli</h1>
+        <div className="flex items-center justify-between mb-8">
+          <h1 className="text-4xl font-bold">Admin Paneli</h1>
+          {isMainAdmin && (
+            <button
+              onClick={() => setShowVisibilityPanel(!showVisibilityPanel)}
+              className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              {showVisibilityPanel ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              Sekme Görünürlüğü
+            </button>
+          )}
+        </div>
+
+        {/* Visibility Panel for Main Admin */}
+        {isMainAdmin && showVisibilityPanel && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="text-lg">Alt Yönetici Sekme Görünürlüğü</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {ALL_TABS.map((tab) => (
+                  <div key={tab.value} className="flex items-center justify-between gap-2 p-2 rounded border">
+                    <Label htmlFor={`visibility-${tab.value}`} className="text-sm cursor-pointer">
+                      {tab.label}
+                    </Label>
+                    <Switch
+                      id={`visibility-${tab.value}`}
+                      checked={visibilitySettings[tab.value] !== false}
+                      onCheckedChange={(checked) => updateVisibility(tab.value, checked)}
+                    />
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
         
         {isMobile ? (
           <div className="space-y-4">
             <Select value={activeTab} onValueChange={handleTabChange}>
-              <SelectTrigger className="w-full">
+              <SelectTrigger className="w-full bg-background border-input">
                 <SelectValue placeholder="Sekme Seçin" />
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="orders">Siparişler</SelectItem>
-                <SelectItem value="order-stats">Sipariş İstatistikleri</SelectItem>
-                <SelectItem value="users">Kullanıcılar</SelectItem>
-                <SelectItem value="user-stats">Kullanıcı İstatistikleri</SelectItem>
-                <SelectItem value="products">Ürünler</SelectItem>
-                <SelectItem value="categories">Kategoriler</SelectItem>
-                <SelectItem value="questions">Sorular</SelectItem>
-                <SelectItem value="contact">İletişim</SelectItem>
-                <SelectItem value="social">Sosyal Medya</SelectItem>
-                <SelectItem value="sponsors">Sponsorlar</SelectItem>
-                <SelectItem value="analytics">Ziyaretçiler</SelectItem>
-                <SelectItem value="finances">Gelir-Gider</SelectItem>
-                <SelectItem value="messages">Mesajlar</SelectItem>
-                <SelectItem value="notifications">Bildirimler</SelectItem>
-                <SelectItem value="managers">Yöneticiler</SelectItem>
-                <SelectItem value="coupons">Kuponlar</SelectItem>
-                <SelectItem value="about">Hakkımızda</SelectItem>
-                <SelectItem value="banners">Kampanya Bannerları</SelectItem>
-                <SelectItem value="premium">Premium</SelectItem>
-                <SelectItem value="policies">Politikalar</SelectItem>
-                <SelectItem value="languages">Diller</SelectItem>
-                <SelectItem value="translations">Çeviriler</SelectItem>
-                <SelectItem value="urgency">Aciliyet Ayarları</SelectItem>
-                <SelectItem value="shipping">Kargo Ayarları</SelectItem>
-                <SelectItem value="shipping-companies">Kargo Şirketleri</SelectItem>
-                <SelectItem value="product-translations">Ürün Çevirileri</SelectItem>
-                <SelectItem value="live-support">Canlı Destek</SelectItem>
-                <SelectItem value="admin-favorites">Favoriler</SelectItem>
-                <SelectItem value="admin-cart">Sepet Takibi</SelectItem>
+              <SelectContent className="bg-popover border-border max-h-[60vh]">
+                {visibleTabs.map((tab) => (
+                  <SelectItem key={tab.value} value={tab.value}>
+                    {tab.label}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
 
-            {activeTab === "orders" && <AdminOrders />}
-            {activeTab === "order-stats" && <AdminOrderStats />}
-            {activeTab === "users" && <AdminUsers />}
-            {activeTab === "user-stats" && <AdminUserStats />}
-            {activeTab === "products" && <AdminProducts />}
-            {activeTab === "categories" && <AdminCategories />}
-            {activeTab === "questions" && <AdminProductQuestions />}
-            {activeTab === "contact" && <AdminContact />}
-            {activeTab === "social" && <AdminSocialMedia />}
-            {activeTab === "sponsors" && <AdminSponsors />}
-            {activeTab === "analytics" && <AdminAnalytics />}
-            {activeTab === "finances" && <AdminFinances />}
-            {activeTab === "messages" && <AdminMessages />}
-            {activeTab === "notifications" && <AdminNotifications />}
-            {activeTab === "managers" && <AdminManagers />}
-            {activeTab === "coupons" && <AdminCoupons />}
-            {activeTab === "about" && <AdminAbout />}
-            {activeTab === "banners" && <AdminCampaignBanners />}
-            {activeTab === "premium" && <AdminPremium />}
-            {activeTab === "policies" && <AdminPolicies />}
-            {activeTab === "languages" && <AdminLanguages />}
-            {activeTab === "translations" && <AdminTranslations />}
-            {activeTab === "urgency" && <AdminUrgencySettings />}
-            {activeTab === "shipping" && <AdminShipping />}
-            {activeTab === "shipping-companies" && <AdminShippingCompanies />}
-            {activeTab === "product-translations" && <AdminProductTranslations />}
-            {activeTab === "live-support" && <AdminLiveSupport />}
-            {activeTab === "admin-favorites" && <AdminFavorites />}
-            {activeTab === "admin-cart" && <AdminCart />}
+            {renderTabContent(activeTab)}
           </div>
         ) : (
           <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
             <div className="overflow-x-auto pb-2">
-            <TabsList className="inline-flex w-auto min-w-full flex-wrap">
-                <TabsTrigger value="orders" className="min-w-[100px]">Siparişler</TabsTrigger>
-                <TabsTrigger value="order-stats" className="min-w-[130px]">Sipariş İstatistikleri</TabsTrigger>
-                <TabsTrigger value="users" className="min-w-[100px]">Kullanıcılar</TabsTrigger>
-                <TabsTrigger value="user-stats" className="min-w-[130px]">Kullanıcı İstatistikleri</TabsTrigger>
-                <TabsTrigger value="products" className="min-w-[100px]">Ürünler</TabsTrigger>
-                <TabsTrigger value="categories" className="min-w-[100px]">Kategoriler</TabsTrigger>
-                <TabsTrigger value="questions" className="min-w-[100px]">Sorular</TabsTrigger>
-                <TabsTrigger value="contact" className="min-w-[100px]">İletişim</TabsTrigger>
-                <TabsTrigger value="social" className="min-w-[100px]">Sosyal Medya</TabsTrigger>
-                <TabsTrigger value="sponsors" className="min-w-[100px]">Sponsorlar</TabsTrigger>
-                <TabsTrigger value="analytics" className="min-w-[100px]">Ziyaretçiler</TabsTrigger>
-                <TabsTrigger value="finances" className="min-w-[100px]">Gelir-Gider</TabsTrigger>
-                <TabsTrigger value="messages" className="min-w-[100px]">Mesajlar</TabsTrigger>
-                <TabsTrigger value="notifications" className="min-w-[100px]">Bildirimler</TabsTrigger>
-                <TabsTrigger value="managers" className="min-w-[100px]">Yöneticiler</TabsTrigger>
-                <TabsTrigger value="coupons" className="min-w-[100px]">Kuponlar</TabsTrigger>
-                <TabsTrigger value="about" className="min-w-[100px]">Hakkımızda</TabsTrigger>
-                <TabsTrigger value="banners" className="min-w-[130px]">Kampanya Bannerları</TabsTrigger>
-                <TabsTrigger value="premium" className="min-w-[100px]">Premium</TabsTrigger>
-                <TabsTrigger value="policies" className="min-w-[100px]">Politikalar</TabsTrigger>
-                <TabsTrigger value="languages" className="min-w-[100px]">Diller</TabsTrigger>
-                <TabsTrigger value="translations" className="min-w-[100px]">Çeviriler</TabsTrigger>
-                <TabsTrigger value="urgency" className="min-w-[130px]">Aciliyet Ayarları</TabsTrigger>
-                <TabsTrigger value="shipping" className="min-w-[130px]">Kargo Ayarları</TabsTrigger>
-                <TabsTrigger value="shipping-companies" className="min-w-[130px]">Kargo Şirketleri</TabsTrigger>
-                <TabsTrigger value="product-translations" className="min-w-[130px]">Ürün Çevirileri</TabsTrigger>
-                <TabsTrigger value="live-support" className="min-w-[130px]">Canlı Destek</TabsTrigger>
-                <TabsTrigger value="admin-favorites" className="min-w-[100px]">Favoriler</TabsTrigger>
-                <TabsTrigger value="admin-cart" className="min-w-[130px]">Sepet Takibi</TabsTrigger>
+              <TabsList className="inline-flex w-auto min-w-full flex-wrap">
+                {visibleTabs.map((tab) => (
+                  <TabsTrigger key={tab.value} value={tab.value} className="min-w-[100px]">
+                    {tab.label}
+                  </TabsTrigger>
+                ))}
               </TabsList>
             </div>
 
-            <TabsContent value="orders">
-              <AdminOrders />
-            </TabsContent>
-
-            <TabsContent value="order-stats">
-              <AdminOrderStats />
-            </TabsContent>
-
-            <TabsContent value="users">
-              <AdminUsers />
-            </TabsContent>
-
-            <TabsContent value="user-stats">
-              <AdminUserStats />
-            </TabsContent>
-
-            <TabsContent value="products">
-              <AdminProducts />
-            </TabsContent>
-
-            <TabsContent value="categories">
-              <AdminCategories />
-            </TabsContent>
-
-            <TabsContent value="questions">
-              <AdminProductQuestions />
-            </TabsContent>
-
-            <TabsContent value="contact">
-              <AdminContact />
-            </TabsContent>
-
-            <TabsContent value="social">
-              <AdminSocialMedia />
-            </TabsContent>
-
-            <TabsContent value="sponsors">
-              <AdminSponsors />
-            </TabsContent>
-
-            <TabsContent value="analytics">
-              <AdminAnalytics />
-            </TabsContent>
-
-            <TabsContent value="finances">
-              <AdminFinances />
-            </TabsContent>
-
-            <TabsContent value="notifications">
-              <AdminNotifications />
-            </TabsContent>
-
-            <TabsContent value="messages">
-              <AdminMessages />
-            </TabsContent>
-
-            <TabsContent value="managers">
-              <AdminManagers />
-            </TabsContent>
-
-            <TabsContent value="coupons">
-              <AdminCoupons />
-            </TabsContent>
-
-            <TabsContent value="about">
-              <AdminAbout />
-            </TabsContent>
-
-            <TabsContent value="banners">
-              <AdminCampaignBanners />
-            </TabsContent>
-
-            <TabsContent value="premium">
-              <AdminPremium />
-            </TabsContent>
-
-            <TabsContent value="policies">
-              <AdminPolicies />
-            </TabsContent>
-
-            <TabsContent value="languages">
-              <AdminLanguages />
-            </TabsContent>
-
-            <TabsContent value="translations">
-              <AdminTranslations />
-            </TabsContent>
-
-            <TabsContent value="urgency">
-              <AdminUrgencySettings />
-            </TabsContent>
-
-            <TabsContent value="shipping">
-              <AdminShipping />
-            </TabsContent>
-            
-            <TabsContent value="shipping-companies">
-              <AdminShippingCompanies />
-            </TabsContent>
-            
-            <TabsContent value="product-translations">
-              <AdminProductTranslations />
-            </TabsContent>
-            
-            <TabsContent value="live-support">
-              <AdminLiveSupport />
-            </TabsContent>
-            
-            <TabsContent value="admin-favorites">
-              <AdminFavorites />
-            </TabsContent>
-            
-            <TabsContent value="admin-cart">
-              <AdminCart />
-            </TabsContent>
+            {visibleTabs.map((tab) => (
+              <TabsContent key={tab.value} value={tab.value}>
+                {renderTabContent(tab.value)}
+              </TabsContent>
+            ))}
           </Tabs>
         )}
       </div>

@@ -1,47 +1,68 @@
-import { useEffect } from "react";
+import { useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 export const PushNotificationManager = () => {
-  useEffect(() => {
-    requestNotificationPermission();
-    setupRealtimeNotifications();
+  const showNotification = useCallback((title: string, body: string) => {
+    if (Notification.permission === "granted") {
+      // Try to use service worker notification for better mobile support
+      if ("serviceWorker" in navigator && navigator.serviceWorker.controller) {
+        navigator.serviceWorker.controller.postMessage({
+          type: "SHOW_NOTIFICATION",
+          title,
+          body,
+        });
+      } else {
+        // Fallback to regular notification
+        try {
+          const notification = new Notification(title, {
+            body,
+            icon: "/favicon.ico",
+            badge: "/favicon.ico",
+            tag: `notification-${Date.now()}`,
+            requireInteraction: false,
+            silent: false,
+          });
+
+          notification.onclick = () => {
+            window.focus();
+            notification.close();
+          };
+
+          setTimeout(() => notification.close(), 5000);
+        } catch (error) {
+          console.warn("Notification creation failed:", error);
+        }
+      }
+    }
   }, []);
 
-  const requestNotificationPermission = async () => {
+  const requestNotificationPermission = useCallback(async () => {
     if (!("Notification" in window)) {
       console.log("Bu tarayıcı bildirimleri desteklemiyor");
-      return;
+      return false;
+    }
+
+    if (Notification.permission === "granted") {
+      return true;
     }
 
     if (Notification.permission === "default") {
-      const permission = await Notification.requestPermission();
-      console.log("Bildirim izni:", permission);
+      try {
+        const permission = await Notification.requestPermission();
+        console.log("Bildirim izni:", permission);
+        return permission === "granted";
+      } catch (error) {
+        console.warn("Notification permission request failed:", error);
+        return false;
+      }
     }
-  };
 
-  const showNotification = (title: string, body: string) => {
-    if (Notification.permission === "granted") {
-      const notification = new Notification(title, {
-        body,
-        icon: "/favicon.ico",
-        badge: "/favicon.ico",
-        tag: `notification-${Date.now()}`,
-        requireInteraction: false,
-      });
+    return false;
+  }, []);
 
-      notification.onclick = () => {
-        window.focus();
-        notification.close();
-      };
-
-      // Auto close after 5 seconds
-      setTimeout(() => notification.close(), 5000);
-    }
-  };
-
-  const setupRealtimeNotifications = async () => {
+  const setupRealtimeNotifications = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!user) return null;
 
     const channel = supabase
       .channel("push-notifications")
@@ -60,10 +81,38 @@ export const PushNotificationManager = () => {
       )
       .subscribe();
 
-    return () => {
-      supabase.removeChannel(channel);
+    return channel;
+  }, [showNotification]);
+
+  useEffect(() => {
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+
+    const init = async () => {
+      await requestNotificationPermission();
+      channel = await setupRealtimeNotifications();
     };
-  };
+
+    init();
+
+    // Re-setup when user changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (channel) {
+        supabase.removeChannel(channel);
+        channel = null;
+      }
+      
+      if (session?.user) {
+        channel = await setupRealtimeNotifications();
+      }
+    });
+
+    return () => {
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
+      subscription.unsubscribe();
+    };
+  }, [requestNotificationPermission, setupRealtimeNotifications]);
 
   return null;
 };

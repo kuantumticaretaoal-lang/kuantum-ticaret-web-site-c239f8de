@@ -3,10 +3,20 @@ import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Instagram, Youtube, Linkedin, MapPin, Phone } from "lucide-react";
+import * as LucideIcons from "lucide-react";
+
+interface SocialMediaItem {
+  id: string;
+  name: string;
+  url: string;
+  icon: string | null;
+  logo_url: string | null;
+  sort_order: number;
+  is_active: boolean;
+}
 
 const FollowPage = () => {
-  const [socialMedia, setSocialMedia] = useState<any>(null);
+  const [socialItems, setSocialItems] = useState<SocialMediaItem[]>([]);
   const [aboutUs, setAboutUs] = useState("");
 
   useEffect(() => {
@@ -14,8 +24,8 @@ const FollowPage = () => {
     loadAboutUs();
 
     const socialChannel = supabase
-      .channel("social-media-changes")
-      .on("postgres_changes", { event: "*", schema: "public", table: "social_media" }, () => {
+      .channel("social-media-items-public")
+      .on("postgres_changes", { event: "*", schema: "public", table: "social_media_items" }, () => {
         loadSocialMedia();
       })
       .subscribe();
@@ -35,11 +45,12 @@ const FollowPage = () => {
 
   const loadSocialMedia = async () => {
     const { data } = await (supabase as any)
-      .from("social_media")
+      .from("social_media_items")
       .select("*")
-      .maybeSingle();
+      .eq("is_active", true)
+      .order("sort_order", { ascending: true });
     
-    if (data) setSocialMedia(data);
+    if (data) setSocialItems(data);
   };
 
   const loadAboutUs = async () => {
@@ -51,33 +62,11 @@ const FollowPage = () => {
     if (data) setAboutUs(data.content || "");
   };
 
-  const socialLinks = [
-    {
-      name: "Instagram",
-      icon: Instagram,
-      url: socialMedia?.instagram,
-    },
-    {
-      name: "YouTube",
-      icon: Youtube,
-      url: socialMedia?.youtube,
-    },
-    {
-      name: "LinkedIn",
-      icon: Linkedin,
-      url: socialMedia?.linkedin,
-    },
-    {
-      name: "WhatsApp",
-      icon: Phone,
-      url: socialMedia?.whatsapp,
-    },
-    {
-      name: "Google Business",
-      icon: MapPin,
-      url: socialMedia?.google_business,
-    },
-  ].filter(link => link.url);
+  const getIconComponent = (iconName: string | null) => {
+    if (!iconName) return null;
+    const IconComponent = (LucideIcons as any)[iconName];
+    return IconComponent ? <IconComponent className="h-8 w-8 text-white" /> : null;
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -85,7 +74,7 @@ const FollowPage = () => {
       <div className="container mx-auto px-4 py-16">
         <h1 className="text-4xl md:text-5xl font-bold text-center mb-12">Bizi Takip Edin!</h1>
         
-        {socialLinks.length === 0 ? (
+        {socialItems.length === 0 ? (
           <Card className="max-w-2xl mx-auto">
             <CardContent className="py-12 text-center">
               <p className="text-muted-foreground">
@@ -95,19 +84,31 @@ const FollowPage = () => {
           </Card>
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
-            {socialLinks.map((link) => (
+            {socialItems.map((item) => (
               <a
-                key={link.name}
-                href={link.url}
+                key={item.id}
+                href={item.url}
                 target="_blank"
                 rel="noopener noreferrer"
               >
                 <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full">
                   <CardContent className="flex flex-col items-center justify-center p-8 gap-4">
-                    <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
-                      <link.icon className="h-8 w-8 text-white" />
+                    <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center overflow-hidden">
+                      {item.logo_url ? (
+                        <img
+                          src={item.logo_url}
+                          alt={item.name}
+                          className="w-10 h-10 object-contain"
+                        />
+                      ) : (
+                        getIconComponent(item.icon) || (
+                          <span className="text-white font-bold text-xl">
+                            {item.name.charAt(0)}
+                          </span>
+                        )
+                      )}
                     </div>
-                    <h3 className="font-semibold text-lg">{link.name}</h3>
+                    <h3 className="font-semibold text-lg">{item.name}</h3>
                   </CardContent>
                 </Card>
               </a>
