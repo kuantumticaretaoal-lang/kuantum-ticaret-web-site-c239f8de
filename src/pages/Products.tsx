@@ -482,19 +482,19 @@ const Products = () => {
                   </div>
                 )}
                 <CardHeader>
-                  <CardTitle className="text-lg">{product.title}</CardTitle>
+                  <CardTitle className="text-lg">{getProductTitle(product)}</CardTitle>
                   <div className="flex items-center justify-between">
                     <div>
                       {product.discounted_price ? (
                         <div className="flex items-center gap-2">
-                          <span className="text-lg line-through text-muted-foreground">₺{parseFloat(product.price).toFixed(2)}</span>
-                          <span className="text-2xl font-bold text-green-600">₺{parseFloat(product.discounted_price).toFixed(2)}</span>
+                          <span className="text-lg line-through text-muted-foreground">{formatPrice(parseFloat(product.price))}</span>
+                          <span className="text-2xl font-bold text-success">{formatPrice(parseFloat(product.discounted_price))}</span>
                           <Badge variant="destructive" className="text-xs">
                             %{Math.round(((parseFloat(product.price) - parseFloat(product.discounted_price)) / parseFloat(product.price)) * 100)}
                           </Badge>
                         </div>
                       ) : (
-                        <span className="text-2xl font-bold text-primary">₺{parseFloat(product.price).toFixed(2)}</span>
+                        <span className="text-2xl font-bold text-primary">{formatPrice(parseFloat(product.price))}</span>
                       )}
                     </div>
                     {product.stock_status !== 'in_stock' && (

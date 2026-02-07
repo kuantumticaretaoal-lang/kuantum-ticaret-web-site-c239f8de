@@ -25,6 +25,7 @@ import { AlsoBoughtProducts } from "@/components/AlsoBoughtProducts";
 import { ShareButtons } from "@/components/ShareButtons";
 import { UrgencyIndicators } from "@/components/UrgencyIndicators";
 import { CampaignBanner } from "@/components/CampaignBanner";
+import { useTranslations } from "@/hooks/use-translations";
 
 const ProductDetail = () => {
   const { id } = useParams();
@@ -33,6 +34,7 @@ const ProductDetail = () => {
   const { toggleFavorite, isFavorite } = useFavorites();
   const { checkDailyLimit, DAILY_LIMIT } = useRateLimit();
   const { addToRecentlyViewed } = useRecentlyViewed();
+  const { formatPrice } = useTranslations();
   const [product, setProduct] = useState<any>(null);
   const [reviews, setReviews] = useState<any[]>([]);
   const [questions, setQuestions] = useState<any[]>([]);
@@ -500,7 +502,7 @@ const ProductDetail = () => {
               )}
 
               <div className="text-4xl font-bold text-primary mb-4">
-                ₺{parseFloat(product.price).toFixed(2)}
+                {formatPrice(parseFloat(product.price))}
               </div>
 
               {product.description && (
