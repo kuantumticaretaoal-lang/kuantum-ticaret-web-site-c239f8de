@@ -124,10 +124,10 @@ const AdminPage = () => {
         {isMobile ? (
           <div className="space-y-4">
             <Select value={activeTab} onValueChange={handleTabChange}>
-              <SelectTrigger className="w-full">
+              <SelectTrigger className="w-full bg-background border-border">
                 <SelectValue placeholder="Sekme Seçin" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-background border-border max-h-[60vh] overflow-y-auto">
                 <SelectItem value="orders">Siparişler</SelectItem>
                 <SelectItem value="order-stats">Sipariş İstatistikleri</SelectItem>
                 <SelectItem value="users">Kullanıcılar</SelectItem>
@@ -136,7 +136,7 @@ const AdminPage = () => {
                 <SelectItem value="categories">Kategoriler</SelectItem>
                 <SelectItem value="questions">Sorular</SelectItem>
                 <SelectItem value="contact">İletişim</SelectItem>
-                <SelectItem value="social">Sosyal Medya</SelectItem>
+                <SelectItem value="social">Bizi Takip Edin!</SelectItem>
                 <SelectItem value="sponsors">Sponsorlar</SelectItem>
                 <SelectItem value="analytics">Ziyaretçiler</SelectItem>
                 <SelectItem value="finances">Gelir-Gider</SelectItem>
