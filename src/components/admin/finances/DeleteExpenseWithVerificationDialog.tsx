@@ -83,14 +83,21 @@ export function DeleteExpenseWithVerificationDialog({
         body: { step: "confirm", expenseId, code },
       });
 
-      if (error) throw error;
-      if (!data?.ok) throw new Error(data?.error || "Kod doğrulanamadı");
+      if (error) {
+        throw new Error(error.message || "Sunucu hatası");
+      }
+      
+      if (!data?.ok) {
+        throw new Error(data?.error || "Kod doğrulanamadı");
+      }
 
       toast({ title: "Başarılı", description: "İşlem silindi" });
       setCodeDialogOpen(false);
+      setCode("");
       onDeleted?.();
     } catch (e: any) {
-      toast({ variant: "destructive", title: "Hata", description: toUserMessage(e) || "İşlem silinemedi" });
+      const msg = toUserMessage(e);
+      toast({ variant: "destructive", title: "Hata", description: msg || "İşlem silinemedi" });
     } finally {
       setVerifying(false);
     }
