@@ -7,6 +7,8 @@ import { useOnlinePresence } from "@/hooks/use-online-presence";
 import { TranslationProvider } from "@/contexts/TranslationContext";
 import { LiveSupportWidget } from "@/components/LiveSupportWidget";
 import { PushNotificationManager } from "@/components/PushNotificationManager";
+import { ThemeProvider } from "@/components/ThemeProvider";
+import { useScrollToTop } from "@/hooks/useScrollToTop";
 import Index from "./pages/Index";
 import Products from "./pages/Products";
 import ProductDetail from "./pages/ProductDetail";
@@ -28,11 +30,17 @@ import { CookieConsent } from "./components/CookieConsent";
 
 const queryClient = new QueryClient();
 
+const ScrollToTop = () => {
+  useScrollToTop();
+  return null;
+};
+
 const AppContent = () => {
-  useOnlinePresence(); // Tüm kullanıcılar için çevrimiçi presence tracking
+  useOnlinePresence();
   
   return (
     <>
+      <ScrollToTop />
       <VisitorTracker />
       <CookieConsent />
       <LiveSupportWidget />
@@ -60,17 +68,19 @@ const AppContent = () => {
 };
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TranslationProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <AppContent />
-        </BrowserRouter>
-      </TooltipProvider>
-    </TranslationProvider>
-  </QueryClientProvider>
+  <ThemeProvider defaultTheme="light" attribute="class" storageKey="kuantum-theme">
+    <QueryClientProvider client={queryClient}>
+      <TranslationProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <AppContent />
+          </BrowserRouter>
+        </TooltipProvider>
+      </TranslationProvider>
+    </QueryClientProvider>
+  </ThemeProvider>
 );
 
 export default App;

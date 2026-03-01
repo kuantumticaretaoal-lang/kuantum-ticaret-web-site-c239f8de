@@ -1,11 +1,30 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 export const PushNotificationManager = () => {
+  const registeredRef = useRef(false);
+
   useEffect(() => {
+    if (registeredRef.current) return;
+    registeredRef.current = true;
+
+    registerServiceWorker();
     requestNotificationPermission();
     setupRealtimeNotifications();
   }, []);
+
+  const registerServiceWorker = async () => {
+    if (!("serviceWorker" in navigator)) return;
+
+    try {
+      const registration = await navigator.serviceWorker.register("/sw-notifications.js", {
+        scope: "/",
+      });
+      console.log("Service Worker registered:", registration.scope);
+    } catch (error) {
+      console.warn("Service Worker registration failed:", error);
+    }
+  };
 
   const requestNotificationPermission = async () => {
     if (!("Notification" in window)) {
@@ -20,23 +39,51 @@ export const PushNotificationManager = () => {
   };
 
   const showNotification = (title: string, body: string) => {
-    if (Notification.permission === "granted") {
-      const notification = new Notification(title, {
+    if (Notification.permission !== "granted") return;
+
+    // Try service worker notification first (works in background on mobile)
+    if ("serviceWorker" in navigator && navigator.serviceWorker.controller) {
+      navigator.serviceWorker.controller.postMessage({
+        type: "SHOW_NOTIFICATION",
+        title,
         body,
-        icon: "/favicon.ico",
-        badge: "/favicon.ico",
-        tag: `notification-${Date.now()}`,
-        requireInteraction: false,
       });
 
-      notification.onclick = () => {
-        window.focus();
-        notification.close();
-      };
-
-      // Auto close after 5 seconds
-      setTimeout(() => notification.close(), 5000);
+      // Also try via service worker registration
+      navigator.serviceWorker.ready.then((registration) => {
+        registration.showNotification(title, {
+          body,
+          icon: "/favicon.ico",
+          badge: "/favicon.ico",
+          tag: `notification-${Date.now()}`,
+          requireInteraction: false,
+        });
+      }).catch(() => {
+        // Fallback to regular notification
+        showFallbackNotification(title, body);
+      });
+    } else {
+      showFallbackNotification(title, body);
     }
+  };
+
+  const showFallbackNotification = (title: string, body: string) => {
+    if (Notification.permission !== "granted") return;
+
+    const notification = new Notification(title, {
+      body,
+      icon: "/favicon.ico",
+      badge: "/favicon.ico",
+      tag: `notification-${Date.now()}`,
+      requireInteraction: false,
+    });
+
+    notification.onclick = () => {
+      window.focus();
+      notification.close();
+    };
+
+    setTimeout(() => notification.close(), 5000);
   };
 
   const setupRealtimeNotifications = async () => {

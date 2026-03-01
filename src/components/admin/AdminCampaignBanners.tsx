@@ -34,6 +34,7 @@ interface Banner {
   priority: number;
   is_dismissible: boolean;
   scroll_speed: number;
+  link_url: string | null;
 }
 
 // Hazır arka plan şablonları
@@ -73,6 +74,7 @@ const defaultBanner: Omit<Banner, 'id'> = {
   priority: 0,
   is_dismissible: true,
   scroll_speed: 15,
+  link_url: null,
 };
 
 export const AdminCampaignBanners = () => {
@@ -198,6 +200,7 @@ export const AdminCampaignBanners = () => {
       priority: banner.priority,
       is_dismissible: banner.is_dismissible ?? true,
       scroll_speed: banner.scroll_speed || 15,
+      link_url: banner.link_url || null,
     });
     setIsDialogOpen(true);
   };
@@ -353,6 +356,18 @@ export const AdminCampaignBanners = () => {
                     />
                     <p className="text-xs text-muted-foreground mt-1">
                       Varsayılan: 15 saniye. 5-60 arası bir değer girin.
+                    </p>
+                  </div>
+
+                  <div>
+                    <Label>Tıklama Linki (opsiyonel)</Label>
+                    <Input
+                      value={formData.link_url || ''}
+                      onChange={(e) => setFormData({ ...formData, link_url: e.target.value || null })}
+                      placeholder="https://... (tıklandığında yönlendirilecek link)"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Dolu bırakılırsa banner tıklanabilir olur.
                     </p>
                   </div>
                 </CardContent>

@@ -16,6 +16,7 @@ interface Banner {
   hide_days_after_close: number;
   is_dismissible: boolean;
   scroll_speed: number;
+  link_url: string | null;
 }
 
 interface TimeRemaining {
@@ -165,7 +166,8 @@ export const CampaignBanner = ({ currentPage }: CampaignBannerProps) => {
 
       setBanner({
         ...b,
-        scroll_speed: b.scroll_speed || 15
+        scroll_speed: b.scroll_speed || 15,
+        link_url: b.link_url || null,
       });
       return;
     }
@@ -243,10 +245,17 @@ export const CampaignBanner = ({ currentPage }: CampaignBannerProps) => {
 
   const scrollSpeed = banner.scroll_speed || 15;
 
+  const handleBannerClick = () => {
+    if (banner.link_url) {
+      window.open(banner.link_url, "_blank", "noopener,noreferrer");
+    }
+  };
+
   return (
     <div 
-      className="relative w-full py-2 sm:py-3 px-2 sm:px-4 overflow-hidden"
+      className={`relative w-full py-2 sm:py-3 px-2 sm:px-4 overflow-hidden ${banner.link_url ? "cursor-pointer" : ""}`}
       style={getBackgroundStyle()}
+      onClick={handleBannerClick}
     >
       <div className="container mx-auto flex items-center justify-between gap-2 sm:gap-4">
         {/* Kayan yazı veya başlık */}
@@ -314,7 +323,10 @@ export const CampaignBanner = ({ currentPage }: CampaignBannerProps) => {
             variant="ghost"
             size="icon"
             className="h-5 w-5 sm:h-6 sm:w-6 hover:bg-white/20 flex-shrink-0"
-            onClick={handleDismiss}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDismiss();
+            }}
             style={{ color: banner.text_color }}
           >
             <X className="h-3 w-3 sm:h-4 sm:w-4" />

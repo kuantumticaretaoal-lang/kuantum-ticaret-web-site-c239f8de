@@ -183,6 +183,7 @@ export type Database = {
           id: string
           is_active: boolean | null
           is_dismissible: boolean | null
+          link_url: string | null
           priority: number | null
           scroll_speed: number | null
           scrolling_text: string | null
@@ -208,6 +209,7 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           is_dismissible?: boolean | null
+          link_url?: string | null
           priority?: number | null
           scroll_speed?: number | null
           scrolling_text?: string | null
@@ -233,6 +235,7 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           is_dismissible?: boolean | null
+          link_url?: string | null
           priority?: number | null
           scroll_speed?: number | null
           scrolling_text?: string | null
