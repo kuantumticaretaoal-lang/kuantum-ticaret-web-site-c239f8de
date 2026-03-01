@@ -9,7 +9,7 @@ const corsHeaders = {
 
 function json(payload: unknown) {
   return new Response(JSON.stringify(payload), {
-    status: 200, // IMPORTANT: avoid non-2xx so frontend gets a readable { ok:false, error }
+    status: 200,
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 }
@@ -24,40 +24,6 @@ async function sha256Hex(input: string): Promise<string> {
   return Array.from(new Uint8Array(hash))
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
-}
-
-async function sendEmail({
-  apiKey,
-  to,
-  subject,
-  html,
-}: {
-  apiKey: string;
-  to: string;
-  subject: string;
-  html: string;
-}) {
-  const response = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      // NOTE: If you later verify your own domain in Resend, change this to that domain.
-      from: "Kuantum Ticaret <onboarding@resend.dev>",
-      to: [to],
-      subject,
-      html,
-    }),
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Resend API error (${response.status}): ${errorText}`);
-  }
-
-  return await response.json();
 }
 
 serve(async (req) => {
@@ -135,13 +101,13 @@ serve(async (req) => {
 
     const adminEmail = siteSettings?.email;
     if (!adminEmail) {
-      return json({ ok: false, error: "Admin email not configured" });
+      return json({ ok: false, error: "Admin email not configured in site settings" });
     }
 
     if (step === "request") {
       const resendApiKey = Deno.env.get("RESEND_API_KEY");
       if (!resendApiKey) {
-        return json({ ok: false, error: "Email service not configured" });
+        return json({ ok: false, error: "Email service not configured (RESEND_API_KEY missing)" });
       }
 
       const plain = random6DigitCode();
@@ -175,12 +141,30 @@ serve(async (req) => {
         </div>
       `;
 
-      try {
-        await sendEmail({ apiKey: resendApiKey, to: adminEmail, subject, html });
-      } catch (e) {
-        console.error("sendEmail failed", e);
-        return json({ ok: false, error: e instanceof Error ? e.message : "Email send failed" });
+      // Send email via Resend
+      console.log("Sending verification email to:", adminEmail);
+      const emailResponse = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${resendApiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          from: "Kuantum Ticaret <onboarding@resend.dev>",
+          to: [adminEmail],
+          subject,
+          html,
+        }),
+      });
+
+      if (!emailResponse.ok) {
+        const errorText = await emailResponse.text();
+        console.error(`Resend API error (${emailResponse.status}):`, errorText);
+        return json({ ok: false, error: `E-posta gönderilemedi: ${errorText}` });
       }
+
+      const emailResult = await emailResponse.json();
+      console.log("Email sent successfully:", emailResult);
 
       return json({ ok: true });
     }

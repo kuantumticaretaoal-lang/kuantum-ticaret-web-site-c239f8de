@@ -500,7 +500,14 @@ const ProductDetail = () => {
               )}
 
               <div className="text-4xl font-bold text-primary mb-4">
-                ₺{parseFloat(product.price).toFixed(2)}
+                {product.discounted_price ? (
+                  <div className="flex items-center gap-3">
+                    <span className="line-through text-2xl text-muted-foreground">₺{parseFloat(product.price).toFixed(2)}</span>
+                    <span>₺{parseFloat(product.discounted_price).toFixed(2)}</span>
+                  </div>
+                ) : (
+                  <>₺{parseFloat(product.price).toFixed(2)}</>
+                )}
               </div>
 
               {product.description && (
