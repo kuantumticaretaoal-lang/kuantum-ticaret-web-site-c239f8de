@@ -46,6 +46,7 @@ export const AdminProducts = () => {
   const [lowStockProducts, setLowStockProducts] = useState(0);
   const [showSizeOptions, setShowSizeOptions] = useState(false);
   const [showFileTypeOptions, setShowFileTypeOptions] = useState(false);
+  const [showEditFileTypeOptions, setShowEditFileTypeOptions] = useState(false);
   
   const availablePromotions = [
     "En Geç Yarın Kargoda",
@@ -762,6 +763,7 @@ export const AdminProducts = () => {
                           category_ids: product.product_categories?.map((pc: any) => pc.category_id) || []
                         });
                         setEditImages(product.product_images || []);
+                        setShowEditFileTypeOptions(false);
                       }}
                     >
                       <Pencil className="h-4 w-4" />
@@ -956,6 +958,67 @@ export const AdminProducts = () => {
                   />
                   <span className="text-sm font-medium">Özel Fotoğraf Yükleme</span>
                 </label>
+              </div>
+
+              <div>
+                <label className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    checked={editProduct.made_to_order || false}
+                    onChange={(e) => setEditProduct({ ...editProduct, made_to_order: e.target.checked })}
+                  />
+                  <span className="text-sm font-medium">İsteğe Göre Üretim</span>
+                </label>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Sipariş alındıktan sonra üretilecek ürünler için işaretleyin
+                </p>
+              </div>
+
+              <div>
+                <Label>Özel Dosya Türleri (Müşteri yüklemesi için)</Label>
+                <div className="relative">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full justify-between"
+                    onClick={() => setShowEditFileTypeOptions(!showEditFileTypeOptions)}
+                  >
+                    {editProduct.allowed_file_types?.length > 0
+                      ? `${editProduct.allowed_file_types.length} dosya türü seçildi`
+                      : "Dosya türü seç"}
+                  </Button>
+                  {showEditFileTypeOptions && (
+                    <div className="absolute z-10 w-full mt-1 p-3 bg-background border rounded-md shadow-lg max-h-48 overflow-y-auto">
+                      <div className="grid grid-cols-4 gap-2">
+                        {availableFileTypes.map((type) => (
+                          <label key={type} className="flex items-center space-x-1 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={editProduct.allowed_file_types?.includes(type) || false}
+                              onChange={(e) => {
+                                const currentTypes = editProduct.allowed_file_types || [];
+                                if (e.target.checked) {
+                                  setEditProduct({ ...editProduct, allowed_file_types: [...currentTypes, type] });
+                                } else {
+                                  setEditProduct({
+                                    ...editProduct,
+                                    allowed_file_types: currentTypes.filter((t: string) => t !== type),
+                                  });
+                                }
+                              }}
+                            />
+                            <span className="text-xs">.{type}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+                {editProduct.allowed_file_types?.length > 0 && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Seçili: {editProduct.allowed_file_types.map((t: string) => `.${t}`).join(", ")}
+                  </p>
+                )}
               </div>
               <div>
                 <Label>Mevcut Resimler</Label>

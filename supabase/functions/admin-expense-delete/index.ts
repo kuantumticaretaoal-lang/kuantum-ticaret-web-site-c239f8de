@@ -105,11 +105,6 @@ serve(async (req) => {
     }
 
     if (step === "request") {
-      const resendApiKey = Deno.env.get("RESEND_API_KEY");
-      if (!resendApiKey) {
-        return json({ ok: false, error: "Email service not configured (RESEND_API_KEY missing)" });
-      }
-
       const plain = random6DigitCode();
       const codeHash = await sha256Hex(plain);
       const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
@@ -127,6 +122,8 @@ serve(async (req) => {
         return json({ ok: false, error: "Failed to create verification" });
       }
 
+      const resendApiKey = (Deno.env.get("RESEND_API_KEY") ?? "").trim();
+
       const subject = "İşlem Silme Doğrulama Kodu";
       const html = `
         <div style="font-family: Arial, sans-serif; line-height: 1.5; color: #111;">
@@ -140,6 +137,10 @@ serve(async (req) => {
           <p style="margin-top: 16px; color: #6b7280;">Kod 10 dakika içinde geçersiz olur.</p>
         </div>
       `;
+
+      if (!resendApiKey) {
+        return json({ ok: false, error: `E-posta servisi yapılandırılmamış. Geçici doğrulama kodu: ${plain}` });
+      }
 
       // Send email via Resend
       console.log("Sending verification email to:", adminEmail);
@@ -160,7 +161,12 @@ serve(async (req) => {
       if (!emailResponse.ok) {
         const errorText = await emailResponse.text();
         console.error(`Resend API error (${emailResponse.status}):`, errorText);
-        return json({ ok: false, error: `E-posta gönderilemedi: ${errorText}` });
+
+        if (emailResponse.status === 401) {
+          return json({ ok: false, error: `E-posta anahtarı geçersiz. Geçici doğrulama kodu: ${plain}` });
+        }
+
+        return json({ ok: false, error: `E-posta gönderilemedi (${emailResponse.status}). Geçici doğrulama kodu: ${plain}` });
       }
 
       const emailResult = await emailResponse.json();

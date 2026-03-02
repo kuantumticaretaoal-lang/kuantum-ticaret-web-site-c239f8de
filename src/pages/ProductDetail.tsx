@@ -25,6 +25,7 @@ import { AlsoBoughtProducts } from "@/components/AlsoBoughtProducts";
 import { ShareButtons } from "@/components/ShareButtons";
 import { UrgencyIndicators } from "@/components/UrgencyIndicators";
 import { CampaignBanner } from "@/components/CampaignBanner";
+import { useTranslations } from "@/hooks/use-translations";
 
 const ProductDetail = () => {
   const { id } = useParams();
@@ -33,6 +34,7 @@ const ProductDetail = () => {
   const { toggleFavorite, isFavorite } = useFavorites();
   const { checkDailyLimit, DAILY_LIMIT } = useRateLimit();
   const { addToRecentlyViewed } = useRecentlyViewed();
+  const { formatPrice } = useTranslations();
   const [product, setProduct] = useState<any>(null);
   const [reviews, setReviews] = useState<any[]>([]);
   const [questions, setQuestions] = useState<any[]>([]);
@@ -502,11 +504,11 @@ const ProductDetail = () => {
               <div className="text-4xl font-bold text-primary mb-4">
                 {product.discounted_price ? (
                   <div className="flex items-center gap-3">
-                    <span className="line-through text-2xl text-muted-foreground">₺{parseFloat(product.price).toFixed(2)}</span>
-                    <span>₺{parseFloat(product.discounted_price).toFixed(2)}</span>
+                    <span className="line-through text-2xl text-muted-foreground">{formatPrice(parseFloat(product.price))}</span>
+                    <span>{formatPrice(parseFloat(product.discounted_price))}</span>
                   </div>
                 ) : (
-                  <>₺{parseFloat(product.price).toFixed(2)}</>
+                  <>{formatPrice(parseFloat(product.price))}</>
                 )}
               </div>
 
