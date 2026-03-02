@@ -7,21 +7,13 @@ const RATE_LIMIT = 20; // requests per hour
 const RATE_WINDOW = 60 * 60 * 1000; // 1 hour in ms
 const MAX_MESSAGE_LENGTH = 500;
 
-// Allowed origins
-const allowedOrigins = [
-  "https://ldfhcfkflzgebnehbanr.lovableproject.com",
-  "https://kuantum-ticaret-web-site.lovable.app",
-  "http://localhost:5173",
-  "http://localhost:8080",
-];
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
 
-function getCorsHeaders(req: Request) {
-  const origin = req.headers.get("origin") || "";
-  const allowedOrigin = allowedOrigins.includes(origin) ? origin : allowedOrigins[0];
-  return {
-    "Access-Control-Allow-Origin": allowedOrigin,
-    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  };
+function getCorsHeaders(_: Request) {
+  return corsHeaders;
 }
 
 function isRateLimited(clientKey: string): boolean {

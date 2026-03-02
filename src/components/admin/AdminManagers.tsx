@@ -4,24 +4,91 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { logger } from "@/lib/logger";
+
+const TAB_PERMISSION_OPTIONS = [
+  { key: "orders", label: "Siparişler" },
+  { key: "order-stats", label: "Sipariş İstatistikleri" },
+  { key: "users", label: "Kullanıcılar" },
+  { key: "user-stats", label: "Kullanıcı İstatistikleri" },
+  { key: "products", label: "Ürünler" },
+  { key: "categories", label: "Kategoriler" },
+  { key: "questions", label: "Sorular" },
+  { key: "contact", label: "İletişim" },
+  { key: "social", label: "Sosyal Medya" },
+  { key: "sponsors", label: "Sponsorlar" },
+  { key: "analytics", label: "Ziyaretçiler" },
+  { key: "finances", label: "Gelir-Gider" },
+  { key: "messages", label: "Mesajlar" },
+  { key: "notifications", label: "Bildirimler" },
+  { key: "coupons", label: "Kuponlar" },
+  { key: "about", label: "Hakkımızda" },
+  { key: "banners", label: "Kampanya Bannerları" },
+  { key: "premium", label: "Premium" },
+  { key: "policies", label: "Politikalar" },
+  { key: "languages", label: "Diller" },
+  { key: "translations", label: "Çeviriler" },
+  { key: "urgency", label: "Aciliyet Ayarları" },
+  { key: "shipping", label: "Kargo Ayarları" },
+  { key: "shipping-companies", label: "Kargo Şirketleri" },
+  { key: "product-translations", label: "Ürün Çevirileri" },
+  { key: "live-support", label: "Canlı Destek" },
+  { key: "admin-favorites", label: "Favoriler" },
+  { key: "admin-cart", label: "Sepet Takibi" },
+] as const;
+
+interface ManagerPermissions {
+  tabs: Record<string, boolean>;
+  usersSensitiveData: boolean;
+}
 
 export const AdminManagers = () => {
   const [admins, setAdmins] = useState<any[]>([]);
   const [newAdminEmail, setNewAdminEmail] = useState("");
   const [editingRole, setEditingRole] = useState<string | null>(null);
   const [newRole, setNewRole] = useState("");
+  const [isMainAdmin, setIsMainAdmin] = useState(false);
+  const [permissionDialogOpen, setPermissionDialogOpen] = useState(false);
+  const [selectedManager, setSelectedManager] = useState<any>(null);
+  const [permissions, setPermissions] = useState<ManagerPermissions>({ tabs: {}, usersSensitiveData: false });
+  const [savingPermissions, setSavingPermissions] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
+    checkMainAdmin();
     loadAdmins();
   }, []);
 
+  const checkMainAdmin = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data } = await supabase
+      .from("user_roles")
+      .select("is_main_admin")
+      .eq("user_id", user.id)
+      .eq("role", "admin")
+      .maybeSingle();
+
+    setIsMainAdmin(data?.is_main_admin === true);
+  };
+
   const loadAdmins = async () => {
-    // Get all admin roles first with custom_role
     const { data: adminRoles, error: rolesError } = await supabase
       .from("user_roles")
       .select("id, user_id, role, is_main_admin, created_at, custom_role")
@@ -30,11 +97,7 @@ export const AdminManagers = () => {
 
     if (rolesError) {
       logger.error("Admin rolleri yüklenemedi", rolesError);
-      toast({
-        variant: "destructive",
-        title: "Hata",
-        description: "Yönetici rolleri yüklenemedi: " + rolesError.message,
-      });
+      toast({ variant: "destructive", title: "Hata", description: "Yönetici rolleri yüklenemedi" });
       return;
     }
 
@@ -43,8 +106,7 @@ export const AdminManagers = () => {
       return;
     }
 
-    // Get profile data for each admin
-    const userIds = adminRoles.map(role => role.user_id);
+    const userIds = adminRoles.map((role) => role.user_id);
     const { data: profiles, error: profilesError } = await supabase
       .from("profiles")
       .select("id, first_name, last_name, email")
@@ -52,27 +114,21 @@ export const AdminManagers = () => {
 
     if (profilesError) {
       logger.error("Profiller yüklenemedi", profilesError);
-      toast({
-        variant: "destructive",
-        title: "Hata",
-        description: "Profiller yüklenemedi: " + profilesError.message,
-      });
+      toast({ variant: "destructive", title: "Hata", description: "Profiller yüklenemedi" });
       return;
     }
 
-    // Combine the data
-    const adminsWithProfiles = adminRoles.map(role => ({
+    const adminsWithProfiles = adminRoles.map((role) => ({
       ...role,
-      profiles: profiles?.find(p => p.id === role.user_id) || null
+      profiles: profiles?.find((p) => p.id === role.user_id) || null,
     }));
 
     setAdmins(adminsWithProfiles);
   };
 
   const addAdmin = async () => {
-    if (!newAdminEmail) return;
+    if (!newAdminEmail || !isMainAdmin) return;
 
-    // Find user by email in profiles table
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
       .select("id")
@@ -80,15 +136,10 @@ export const AdminManagers = () => {
       .maybeSingle();
 
     if (profileError || !profile) {
-      toast({
-        variant: "destructive",
-        title: "Hata",
-        description: "Kullanıcı bulunamadı: " + (profileError?.message || "Email eşleşmedi"),
-      });
+      toast({ variant: "destructive", title: "Hata", description: "Kullanıcı bulunamadı" });
       return;
     }
 
-    // Check if already admin
     const { data: existingRole } = await supabase
       .from("user_roles")
       .select("id")
@@ -97,32 +148,20 @@ export const AdminManagers = () => {
       .maybeSingle();
 
     if (existingRole) {
-      toast({
-        variant: "destructive",
-        title: "Hata",
-        description: "Bu kullanıcı zaten yönetici",
-      });
+      toast({ variant: "destructive", title: "Hata", description: "Bu kullanıcı zaten yönetici" });
       return;
     }
 
-    const { error } = await supabase
-      .from("user_roles")
-      .insert({ user_id: profile.id, role: "admin" });
+    const { error } = await supabase.from("user_roles").insert({ user_id: profile.id, role: "admin" });
 
     if (error) {
-      toast({
-        variant: "destructive",
-        title: "Hata",
-        description: "Admin eklenemedi: " + error.message,
-      });
-    } else {
-      toast({
-        title: "Başarılı",
-        description: "Yönetici eklendi",
-      });
-      setNewAdminEmail("");
-      loadAdmins();
+      toast({ variant: "destructive", title: "Hata", description: "Yönetici eklenemedi" });
+      return;
     }
+
+    toast({ title: "Başarılı", description: "Yönetici eklendi" });
+    setNewAdminEmail("");
+    loadAdmins();
   };
 
   const removeAdmin = async (userId: string) => {
@@ -133,27 +172,17 @@ export const AdminManagers = () => {
       .eq("role", "admin");
 
     if (error) {
-      toast({
-        variant: "destructive",
-        title: "Hata",
-        description: "Yönetici kaldırılamadı: " + error.message,
-      });
-    } else {
-      toast({
-        title: "Başarılı",
-        description: "Yönetici yetkisi kaldırıldı",
-      });
-      loadAdmins();
+      toast({ variant: "destructive", title: "Hata", description: "Yönetici kaldırılamadı" });
+      return;
     }
+
+    toast({ title: "Başarılı", description: "Yönetici yetkisi kaldırıldı" });
+    loadAdmins();
   };
 
   const updateRole = async (userId: string) => {
     if (!newRole.trim()) {
-      toast({
-        variant: "destructive",
-        title: "Hata",
-        description: "Lütfen rol bilgisi girin",
-      });
+      toast({ variant: "destructive", title: "Hata", description: "Lütfen rol bilgisi girin" });
       return;
     }
 
@@ -164,19 +193,101 @@ export const AdminManagers = () => {
       .eq("role", "admin");
 
     if (error) {
-      toast({
-        variant: "destructive",
-        title: "Hata",
-        description: "Rol güncellenemedi: " + error.message,
-      });
-    } else {
-      toast({
-        title: "Başarılı",
-        description: "Rol güncellendi",
-      });
-      setEditingRole(null);
-      setNewRole("");
-      loadAdmins();
+      toast({ variant: "destructive", title: "Hata", description: "Rol güncellenemedi" });
+      return;
+    }
+
+    toast({ title: "Başarılı", description: "Rol güncellendi" });
+    setEditingRole(null);
+    setNewRole("");
+    loadAdmins();
+  };
+
+  const buildDefaultPermissions = (): ManagerPermissions => ({
+    tabs: Object.fromEntries(TAB_PERMISSION_OPTIONS.map((tab) => [tab.key, true])),
+    usersSensitiveData: false,
+  });
+
+  const openPermissionsDialog = async (manager: any) => {
+    const defaults = buildDefaultPermissions();
+    setSelectedManager(manager);
+    setPermissions(defaults);
+    setPermissionDialogOpen(true);
+
+    const { data: rows, error } = await (supabase as any)
+      .from("admin_visibility_settings")
+      .select("setting_key, visible")
+      .like("setting_key", `manager:${manager.user_id}:%`);
+
+    if (error) {
+      logger.error("Manager yetkileri yüklenemedi", error);
+      return;
+    }
+
+    const nextPermissions = { ...defaults, tabs: { ...defaults.tabs } };
+
+    (rows || []).forEach((row: any) => {
+      const settingKey = String(row.setting_key);
+      const visible = row.visible !== false;
+
+      if (settingKey.includes(":tab:")) {
+        const tabKey = settingKey.split(":tab:")[1];
+        if (tabKey) nextPermissions.tabs[tabKey] = visible;
+      } else if (settingKey.endsWith(":users_sensitive_data")) {
+        nextPermissions.usersSensitiveData = visible;
+      }
+    });
+
+    setPermissions(nextPermissions);
+  };
+
+  const upsertVisibilitySetting = async (settingKey: string, visible: boolean) => {
+    const { data: existing } = await (supabase as any)
+      .from("admin_visibility_settings")
+      .select("id")
+      .eq("setting_key", settingKey)
+      .maybeSingle();
+
+    if (existing?.id) {
+      return (supabase as any)
+        .from("admin_visibility_settings")
+        .update({ visible, updated_at: new Date().toISOString() })
+        .eq("id", existing.id);
+    }
+
+    return (supabase as any).from("admin_visibility_settings").insert({
+      setting_key: settingKey,
+      visible,
+      updated_at: new Date().toISOString(),
+    });
+  };
+
+  const savePermissions = async () => {
+    if (!selectedManager) return;
+
+    setSavingPermissions(true);
+
+    try {
+      await Promise.all([
+        ...TAB_PERMISSION_OPTIONS.map((tab) =>
+          upsertVisibilitySetting(
+            `manager:${selectedManager.user_id}:tab:${tab.key}`,
+            permissions.tabs[tab.key] !== false
+          )
+        ),
+        upsertVisibilitySetting(
+          `manager:${selectedManager.user_id}:users_sensitive_data`,
+          permissions.usersSensitiveData
+        ),
+      ]);
+
+      toast({ title: "Başarılı", description: "Yönetici yetkileri güncellendi" });
+      setPermissionDialogOpen(false);
+    } catch (error) {
+      logger.error("Yönetici yetkileri kaydedilemedi", error);
+      toast({ variant: "destructive", title: "Hata", description: "Yetkiler kaydedilemedi" });
+    } finally {
+      setSavingPermissions(false);
     }
   };
 
@@ -186,20 +297,22 @@ export const AdminManagers = () => {
         <CardTitle>Yöneticiler</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4 mb-6">
-          <div>
-            <Label>Yeni Yönetici Ekle</Label>
-            <div className="flex gap-2">
-              <Input
-                type="email"
-                value={newAdminEmail}
-                onChange={(e) => setNewAdminEmail(e.target.value)}
-                placeholder="Email adresi"
-              />
-              <Button onClick={addAdmin}>Ekle</Button>
+        {isMainAdmin && (
+          <div className="space-y-4 mb-6">
+            <div>
+              <Label>Yeni Yönetici Ekle</Label>
+              <div className="flex gap-2">
+                <Input
+                  type="email"
+                  value={newAdminEmail}
+                  onChange={(e) => setNewAdminEmail(e.target.value)}
+                  placeholder="Email adresi"
+                />
+                <Button onClick={addAdmin}>Ekle</Button>
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         <Table>
           <TableHeader>
@@ -229,10 +342,14 @@ export const AdminManagers = () => {
                       <Button size="sm" onClick={() => updateRole(admin.user_id)}>
                         Kaydet
                       </Button>
-                      <Button size="sm" variant="ghost" onClick={() => {
-                        setEditingRole(null);
-                        setNewRole("");
-                      }}>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => {
+                          setEditingRole(null);
+                          setNewRole("");
+                        }}
+                      >
                         İptal
                       </Button>
                     </div>
@@ -241,10 +358,10 @@ export const AdminManagers = () => {
                   )}
                 </TableCell>
                 <TableCell>
-                  <div className="flex gap-2">
-                    {!admin.is_main_admin && editingRole !== admin.user_id && (
-                      <Button 
-                        size="sm" 
+                  <div className="flex gap-2 flex-wrap">
+                    {isMainAdmin && !admin.is_main_admin && editingRole !== admin.user_id && (
+                      <Button
+                        size="sm"
                         variant="outline"
                         onClick={() => {
                           setEditingRole(admin.user_id);
@@ -254,7 +371,14 @@ export const AdminManagers = () => {
                         Rolü Düzenle
                       </Button>
                     )}
-                    {!admin.is_main_admin && (
+
+                    {isMainAdmin && !admin.is_main_admin && (
+                      <Button size="sm" variant="outline" onClick={() => openPermissionsDialog(admin)}>
+                        Yetkileri Yönet
+                      </Button>
+                    )}
+
+                    {isMainAdmin && !admin.is_main_admin && (
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <Button size="sm" variant="destructive">
@@ -264,15 +388,11 @@ export const AdminManagers = () => {
                         <AlertDialogContent>
                           <AlertDialogHeader>
                             <AlertDialogTitle>Yönetici yetkisini kaldırmak istediğinizden emin misiniz?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Bu işlem geri alınamaz.
-                            </AlertDialogDescription>
+                            <AlertDialogDescription>Bu işlem geri alınamaz.</AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
                             <AlertDialogCancel>Hayır</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => removeAdmin(admin.user_id)}>
-                              Evet
-                            </AlertDialogAction>
+                            <AlertDialogAction onClick={() => removeAdmin(admin.user_id)}>Evet</AlertDialogAction>
                           </AlertDialogFooter>
                         </AlertDialogContent>
                       </AlertDialog>
@@ -283,6 +403,60 @@ export const AdminManagers = () => {
             ))}
           </TableBody>
         </Table>
+
+        <Dialog open={permissionDialogOpen} onOpenChange={setPermissionDialogOpen}>
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Yönetici Yetkileri</DialogTitle>
+              <DialogDescription>
+                {selectedManager?.profiles?.email} için sekme ve veri görünürlüğünü ayarlayın.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4">
+              <div className="rounded-lg border border-border p-4">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="users-sensitive-data">Kullanıcı hassas verilerini görsün</Label>
+                  <Switch
+                    id="users-sensitive-data"
+                    checked={permissions.usersSensitiveData}
+                    onCheckedChange={(checked) =>
+                      setPermissions((prev) => ({ ...prev, usersSensitiveData: checked }))
+                    }
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <h4 className="text-sm font-medium">Sekme Yetkileri</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {TAB_PERMISSION_OPTIONS.map((tab) => (
+                    <div key={tab.key} className="rounded-lg border border-border p-3 flex items-center justify-between">
+                      <Label htmlFor={`perm-${tab.key}`}>{tab.label}</Label>
+                      <Switch
+                        id={`perm-${tab.key}`}
+                        checked={permissions.tabs[tab.key] !== false}
+                        onCheckedChange={(checked) =>
+                          setPermissions((prev) => ({
+                            ...prev,
+                            tabs: {
+                              ...prev.tabs,
+                              [tab.key]: checked,
+                            },
+                          }))
+                        }
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <Button onClick={savePermissions} className="w-full" disabled={savingPermissions}>
+                {savingPermissions ? "Kaydediliyor..." : "Yetkileri Kaydet"}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </CardContent>
     </Card>
   );

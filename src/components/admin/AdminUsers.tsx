@@ -17,6 +17,7 @@ export const AdminUsers = () => {
   const [users, setUsers] = useState<any[]>([]);
   const [premiumUsers, setPremiumUsers] = useState<Set<string>>(new Set());
   const [isMainAdmin, setIsMainAdmin] = useState(false);
+  const [canViewSensitiveData, setCanViewSensitiveData] = useState(false);
   const [processingUsers, setProcessingUsers] = useState<Set<string>>(new Set());
   const { toast } = useToast();
 
@@ -90,7 +91,21 @@ export const AdminUsers = () => {
       .eq("role", "admin")
       .maybeSingle();
 
-    setIsMainAdmin(data?.is_main_admin === true);
+    const mainAdmin = data?.is_main_admin === true;
+    setIsMainAdmin(mainAdmin);
+
+    if (mainAdmin) {
+      setCanViewSensitiveData(true);
+      return;
+    }
+
+    const { data: visibilitySetting } = await (supabase as any)
+      .from("admin_visibility_settings")
+      .select("visible")
+      .eq("setting_key", `manager:${user.id}:users_sensitive_data`)
+      .maybeSingle();
+
+    setCanViewSensitiveData(visibilitySetting?.visible === true);
   };
 
   const loadPremiumUsers = async () => {
@@ -337,21 +352,22 @@ export const AdminUsers = () => {
                 filteredUsers.map((user, index) => {
                   const isPremium = premiumUsers.has(user.id);
                   const isProcessing = processingUsers.has(user.id);
+                  const shouldMaskSensitive = !isMainAdmin && !canViewSensitiveData;
                   
                   return (
                     <TableRow key={user.id}>
                       <TableCell>{index + 1}</TableCell>
-                      <TableCell>{isMainAdmin ? (user.first_name || "-") : "***"}</TableCell>
-                      <TableCell>{isMainAdmin ? (user.last_name || "-") : "***"}</TableCell>
-                      <TableCell>{isMainAdmin ? (user.email || "-") : "***"}</TableCell>
-                      <TableCell>{isMainAdmin ? (user.phone ? formatPhoneNumber(user.phone) : "-") : "***"}</TableCell>
+                      <TableCell>{shouldMaskSensitive ? "***" : (user.first_name || "-")}</TableCell>
+                      <TableCell>{shouldMaskSensitive ? "***" : (user.last_name || "-")}</TableCell>
+                      <TableCell>{shouldMaskSensitive ? "***" : (user.email || "-")}</TableCell>
+                      <TableCell>{shouldMaskSensitive ? "***" : (user.phone ? formatPhoneNumber(user.phone) : "-")}</TableCell>
                       <TableCell>
-                        {isMainAdmin ? (
+                        {shouldMaskSensitive ? "***" : (
                           <span className="text-xs">
                             {formatProvince(user.province) || "-"}
                             {user.district && ` / ${formatDistrict(user.district)}`}
                           </span>
-                        ) : "***"}
+                        )}
                       </TableCell>
                       <TableCell className="text-xs">
                         {new Date(user.created_at).toLocaleDateString("tr-TR")}

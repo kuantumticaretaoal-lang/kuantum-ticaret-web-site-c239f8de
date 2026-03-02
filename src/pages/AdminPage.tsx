@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
@@ -37,66 +37,159 @@ import { AdminLiveSupport } from "@/components/admin/AdminLiveSupport";
 import { AdminFavorites } from "@/components/admin/AdminFavorites";
 import { AdminCart } from "@/components/admin/AdminCart";
 
+type AdminTabKey =
+  | "orders"
+  | "order-stats"
+  | "users"
+  | "user-stats"
+  | "products"
+  | "categories"
+  | "questions"
+  | "contact"
+  | "social"
+  | "sponsors"
+  | "analytics"
+  | "finances"
+  | "messages"
+  | "notifications"
+  | "managers"
+  | "coupons"
+  | "about"
+  | "banners"
+  | "premium"
+  | "policies"
+  | "languages"
+  | "translations"
+  | "urgency"
+  | "shipping"
+  | "shipping-companies"
+  | "product-translations"
+  | "live-support"
+  | "admin-favorites"
+  | "admin-cart";
+
+interface TabConfig {
+  key: AdminTabKey;
+  label: string;
+  Component: () => JSX.Element;
+}
+
+const ADMIN_TABS: TabConfig[] = [
+  { key: "orders", label: "Siparişler", Component: AdminOrders },
+  { key: "order-stats", label: "Sipariş İstatistikleri", Component: AdminOrderStats },
+  { key: "users", label: "Kullanıcılar", Component: AdminUsers },
+  { key: "user-stats", label: "Kullanıcı İstatistikleri", Component: AdminUserStats },
+  { key: "products", label: "Ürünler", Component: AdminProducts },
+  { key: "categories", label: "Kategoriler", Component: AdminCategories },
+  { key: "questions", label: "Sorular", Component: AdminProductQuestions },
+  { key: "contact", label: "İletişim", Component: AdminContact },
+  { key: "social", label: "Sosyal Medya", Component: AdminSocialMedia },
+  { key: "sponsors", label: "Sponsorlar", Component: AdminSponsors },
+  { key: "analytics", label: "Ziyaretçiler", Component: AdminAnalytics },
+  { key: "finances", label: "Gelir-Gider", Component: AdminFinances },
+  { key: "messages", label: "Mesajlar", Component: AdminMessages },
+  { key: "notifications", label: "Bildirimler", Component: AdminNotifications },
+  { key: "managers", label: "Yöneticiler", Component: AdminManagers },
+  { key: "coupons", label: "Kuponlar", Component: AdminCoupons },
+  { key: "about", label: "Hakkımızda", Component: AdminAbout },
+  { key: "banners", label: "Kampanya Bannerları", Component: AdminCampaignBanners },
+  { key: "premium", label: "Premium", Component: AdminPremium },
+  { key: "policies", label: "Politikalar", Component: AdminPolicies },
+  { key: "languages", label: "Diller", Component: AdminLanguages },
+  { key: "translations", label: "Çeviriler", Component: AdminTranslations },
+  { key: "urgency", label: "Aciliyet Ayarları", Component: AdminUrgencySettings },
+  { key: "shipping", label: "Kargo Ayarları", Component: AdminShipping },
+  { key: "shipping-companies", label: "Kargo Şirketleri", Component: AdminShippingCompanies },
+  { key: "product-translations", label: "Ürün Çevirileri", Component: AdminProductTranslations },
+  { key: "live-support", label: "Canlı Destek", Component: AdminLiveSupport },
+  { key: "admin-favorites", label: "Favoriler", Component: AdminFavorites },
+  { key: "admin-cart", label: "Sepet Takibi", Component: AdminCart },
+];
+
 const AdminPage = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isMainAdmin, setIsMainAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("orders");
+  const [activeTab, setActiveTab] = useState<AdminTabKey>("orders");
+  const [tabVisibility, setTabVisibility] = useState<Record<string, boolean>>({});
 
-  // Scroll to top when tab changes
-  const handleTabChange = (newTab: string) => {
-    setActiveTab(newTab);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
+  const availableTabs = useMemo(() => {
+    if (isMainAdmin) return ADMIN_TABS;
+    return ADMIN_TABS.filter((tab) => tabVisibility[tab.key] !== false);
+  }, [isMainAdmin, tabVisibility]);
 
   useEffect(() => {
     checkAdminAccess();
   }, []);
 
+  useEffect(() => {
+    if (!availableTabs.length) return;
+    const activeStillExists = availableTabs.some((t) => t.key === activeTab);
+    if (!activeStillExists) {
+      setActiveTab(availableTabs[0].key);
+    }
+  }, [availableTabs, activeTab]);
+
+  const handleTabChange = (newTab: string) => {
+    setActiveTab(newTab as AdminTabKey);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   const checkAdminAccess = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
     if (!session) {
       navigate("/login");
       return;
     }
 
-    // Retry with exponential backoff instead of arbitrary delay
-    const maxAttempts = 5;
-    const baseDelay = 100;
+    const { data, error } = await (supabase as any)
+      .from("user_roles")
+      .select("role, is_main_admin")
+      .eq("user_id", session.user.id)
+      .eq("role", "admin")
+      .maybeSingle();
 
-    for (let attempt = 0; attempt < maxAttempts; attempt++) {
-      const { data, error } = await (supabase as any)
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", session.user.id)
-        .eq("role", "admin")
-        .maybeSingle();
+    if (error && error.code !== "PGRST116") {
+      logger.error("Error checking admin role", error);
+      navigate("/");
+      return;
+    }
 
-      // Success - user is admin
-      if (data) {
-        setIsAdmin(true);
-        setLoading(false);
-        return;
-      }
+    if (!data) {
+      navigate("/");
+      return;
+    }
 
-      // Real error (not just missing data)
-      if (error && error.code !== 'PGRST116') {
-        logger.error('Error checking admin role', error);
-        navigate("/");
-        return;
-      }
+    setIsAdmin(true);
+    const mainAdmin = data.is_main_admin === true;
+    setIsMainAdmin(mainAdmin);
 
-      // Wait before retry with exponential backoff
-      if (attempt < maxAttempts - 1) {
-        const delay = baseDelay * Math.pow(2, attempt);
-        await new Promise(resolve => setTimeout(resolve, delay));
+    if (!mainAdmin) {
+      const { data: rows, error: visibilityError } = await (supabase as any)
+        .from("admin_visibility_settings")
+        .select("setting_key, visible")
+        .like("setting_key", `manager:${session.user.id}:tab:%`);
+
+      if (visibilityError) {
+        logger.error("Tab visibility load failed", visibilityError);
+      } else {
+        const visibilityMap: Record<string, boolean> = {};
+        (rows || []).forEach((row: any) => {
+          const tabKey = String(row.setting_key).split(":tab:")[1];
+          if (tabKey) {
+            visibilityMap[tabKey] = row.visible !== false;
+          }
+        });
+        setTabVisibility(visibilityMap);
       }
     }
 
-    // After all attempts, user is not admin
-    navigate("/");
+    setLoading(false);
   };
 
   if (loading) {
@@ -111,236 +204,59 @@ const AdminPage = () => {
     );
   }
 
-  if (!isAdmin) {
-    return null;
-  }
+  if (!isAdmin) return null;
 
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
       <div className="container mx-auto px-4 py-8">
         <h1 className="text-4xl font-bold mb-8">Admin Paneli</h1>
-        
-        {isMobile ? (
+
+        {availableTabs.length === 0 ? (
+          <div className="rounded-lg border border-border bg-card p-6 text-muted-foreground">
+            Bu hesap için aktif yönetim sekmesi bulunmuyor.
+          </div>
+        ) : isMobile ? (
           <div className="space-y-4">
             <Select value={activeTab} onValueChange={handleTabChange}>
               <SelectTrigger className="w-full bg-background border-border">
                 <SelectValue placeholder="Sekme Seçin" />
               </SelectTrigger>
               <SelectContent className="bg-background border-border max-h-[60vh] overflow-y-auto">
-                <SelectItem value="orders">Siparişler</SelectItem>
-                <SelectItem value="order-stats">Sipariş İstatistikleri</SelectItem>
-                <SelectItem value="users">Kullanıcılar</SelectItem>
-                <SelectItem value="user-stats">Kullanıcı İstatistikleri</SelectItem>
-                <SelectItem value="products">Ürünler</SelectItem>
-                <SelectItem value="categories">Kategoriler</SelectItem>
-                <SelectItem value="questions">Sorular</SelectItem>
-                <SelectItem value="contact">İletişim</SelectItem>
-                <SelectItem value="social">Bizi Takip Edin!</SelectItem>
-                <SelectItem value="sponsors">Sponsorlar</SelectItem>
-                <SelectItem value="analytics">Ziyaretçiler</SelectItem>
-                <SelectItem value="finances">Gelir-Gider</SelectItem>
-                <SelectItem value="messages">Mesajlar</SelectItem>
-                <SelectItem value="notifications">Bildirimler</SelectItem>
-                <SelectItem value="managers">Yöneticiler</SelectItem>
-                <SelectItem value="coupons">Kuponlar</SelectItem>
-                <SelectItem value="about">Hakkımızda</SelectItem>
-                <SelectItem value="banners">Kampanya Bannerları</SelectItem>
-                <SelectItem value="premium">Premium</SelectItem>
-                <SelectItem value="policies">Politikalar</SelectItem>
-                <SelectItem value="languages">Diller</SelectItem>
-                <SelectItem value="translations">Çeviriler</SelectItem>
-                <SelectItem value="urgency">Aciliyet Ayarları</SelectItem>
-                <SelectItem value="shipping">Kargo Ayarları</SelectItem>
-                <SelectItem value="shipping-companies">Kargo Şirketleri</SelectItem>
-                <SelectItem value="product-translations">Ürün Çevirileri</SelectItem>
-                <SelectItem value="live-support">Canlı Destek</SelectItem>
-                <SelectItem value="admin-favorites">Favoriler</SelectItem>
-                <SelectItem value="admin-cart">Sepet Takibi</SelectItem>
+                {availableTabs.map((tab) => (
+                  <SelectItem key={tab.key} value={tab.key}>
+                    {tab.label}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
 
-            {activeTab === "orders" && <AdminOrders />}
-            {activeTab === "order-stats" && <AdminOrderStats />}
-            {activeTab === "users" && <AdminUsers />}
-            {activeTab === "user-stats" && <AdminUserStats />}
-            {activeTab === "products" && <AdminProducts />}
-            {activeTab === "categories" && <AdminCategories />}
-            {activeTab === "questions" && <AdminProductQuestions />}
-            {activeTab === "contact" && <AdminContact />}
-            {activeTab === "social" && <AdminSocialMedia />}
-            {activeTab === "sponsors" && <AdminSponsors />}
-            {activeTab === "analytics" && <AdminAnalytics />}
-            {activeTab === "finances" && <AdminFinances />}
-            {activeTab === "messages" && <AdminMessages />}
-            {activeTab === "notifications" && <AdminNotifications />}
-            {activeTab === "managers" && <AdminManagers />}
-            {activeTab === "coupons" && <AdminCoupons />}
-            {activeTab === "about" && <AdminAbout />}
-            {activeTab === "banners" && <AdminCampaignBanners />}
-            {activeTab === "premium" && <AdminPremium />}
-            {activeTab === "policies" && <AdminPolicies />}
-            {activeTab === "languages" && <AdminLanguages />}
-            {activeTab === "translations" && <AdminTranslations />}
-            {activeTab === "urgency" && <AdminUrgencySettings />}
-            {activeTab === "shipping" && <AdminShipping />}
-            {activeTab === "shipping-companies" && <AdminShippingCompanies />}
-            {activeTab === "product-translations" && <AdminProductTranslations />}
-            {activeTab === "live-support" && <AdminLiveSupport />}
-            {activeTab === "admin-favorites" && <AdminFavorites />}
-            {activeTab === "admin-cart" && <AdminCart />}
+            {availableTabs.map((tab) => {
+              if (tab.key !== activeTab) return null;
+              const TabComponent = tab.Component;
+              return <TabComponent key={tab.key} />;
+            })}
           </div>
         ) : (
           <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
             <div className="overflow-x-auto pb-2">
-            <TabsList className="inline-flex w-auto min-w-full flex-wrap">
-                <TabsTrigger value="orders" className="min-w-[100px]">Siparişler</TabsTrigger>
-                <TabsTrigger value="order-stats" className="min-w-[130px]">Sipariş İstatistikleri</TabsTrigger>
-                <TabsTrigger value="users" className="min-w-[100px]">Kullanıcılar</TabsTrigger>
-                <TabsTrigger value="user-stats" className="min-w-[130px]">Kullanıcı İstatistikleri</TabsTrigger>
-                <TabsTrigger value="products" className="min-w-[100px]">Ürünler</TabsTrigger>
-                <TabsTrigger value="categories" className="min-w-[100px]">Kategoriler</TabsTrigger>
-                <TabsTrigger value="questions" className="min-w-[100px]">Sorular</TabsTrigger>
-                <TabsTrigger value="contact" className="min-w-[100px]">İletişim</TabsTrigger>
-                <TabsTrigger value="social" className="min-w-[100px]">Sosyal Medya</TabsTrigger>
-                <TabsTrigger value="sponsors" className="min-w-[100px]">Sponsorlar</TabsTrigger>
-                <TabsTrigger value="analytics" className="min-w-[100px]">Ziyaretçiler</TabsTrigger>
-                <TabsTrigger value="finances" className="min-w-[100px]">Gelir-Gider</TabsTrigger>
-                <TabsTrigger value="messages" className="min-w-[100px]">Mesajlar</TabsTrigger>
-                <TabsTrigger value="notifications" className="min-w-[100px]">Bildirimler</TabsTrigger>
-                <TabsTrigger value="managers" className="min-w-[100px]">Yöneticiler</TabsTrigger>
-                <TabsTrigger value="coupons" className="min-w-[100px]">Kuponlar</TabsTrigger>
-                <TabsTrigger value="about" className="min-w-[100px]">Hakkımızda</TabsTrigger>
-                <TabsTrigger value="banners" className="min-w-[130px]">Kampanya Bannerları</TabsTrigger>
-                <TabsTrigger value="premium" className="min-w-[100px]">Premium</TabsTrigger>
-                <TabsTrigger value="policies" className="min-w-[100px]">Politikalar</TabsTrigger>
-                <TabsTrigger value="languages" className="min-w-[100px]">Diller</TabsTrigger>
-                <TabsTrigger value="translations" className="min-w-[100px]">Çeviriler</TabsTrigger>
-                <TabsTrigger value="urgency" className="min-w-[130px]">Aciliyet Ayarları</TabsTrigger>
-                <TabsTrigger value="shipping" className="min-w-[130px]">Kargo Ayarları</TabsTrigger>
-                <TabsTrigger value="shipping-companies" className="min-w-[130px]">Kargo Şirketleri</TabsTrigger>
-                <TabsTrigger value="product-translations" className="min-w-[130px]">Ürün Çevirileri</TabsTrigger>
-                <TabsTrigger value="live-support" className="min-w-[130px]">Canlı Destek</TabsTrigger>
-                <TabsTrigger value="admin-favorites" className="min-w-[100px]">Favoriler</TabsTrigger>
-                <TabsTrigger value="admin-cart" className="min-w-[130px]">Sepet Takibi</TabsTrigger>
+              <TabsList className="inline-flex w-auto min-w-full flex-wrap">
+                {availableTabs.map((tab) => (
+                  <TabsTrigger key={tab.key} value={tab.key} className="min-w-[120px]">
+                    {tab.label}
+                  </TabsTrigger>
+                ))}
               </TabsList>
             </div>
 
-            <TabsContent value="orders">
-              <AdminOrders />
-            </TabsContent>
-
-            <TabsContent value="order-stats">
-              <AdminOrderStats />
-            </TabsContent>
-
-            <TabsContent value="users">
-              <AdminUsers />
-            </TabsContent>
-
-            <TabsContent value="user-stats">
-              <AdminUserStats />
-            </TabsContent>
-
-            <TabsContent value="products">
-              <AdminProducts />
-            </TabsContent>
-
-            <TabsContent value="categories">
-              <AdminCategories />
-            </TabsContent>
-
-            <TabsContent value="questions">
-              <AdminProductQuestions />
-            </TabsContent>
-
-            <TabsContent value="contact">
-              <AdminContact />
-            </TabsContent>
-
-            <TabsContent value="social">
-              <AdminSocialMedia />
-            </TabsContent>
-
-            <TabsContent value="sponsors">
-              <AdminSponsors />
-            </TabsContent>
-
-            <TabsContent value="analytics">
-              <AdminAnalytics />
-            </TabsContent>
-
-            <TabsContent value="finances">
-              <AdminFinances />
-            </TabsContent>
-
-            <TabsContent value="notifications">
-              <AdminNotifications />
-            </TabsContent>
-
-            <TabsContent value="messages">
-              <AdminMessages />
-            </TabsContent>
-
-            <TabsContent value="managers">
-              <AdminManagers />
-            </TabsContent>
-
-            <TabsContent value="coupons">
-              <AdminCoupons />
-            </TabsContent>
-
-            <TabsContent value="about">
-              <AdminAbout />
-            </TabsContent>
-
-            <TabsContent value="banners">
-              <AdminCampaignBanners />
-            </TabsContent>
-
-            <TabsContent value="premium">
-              <AdminPremium />
-            </TabsContent>
-
-            <TabsContent value="policies">
-              <AdminPolicies />
-            </TabsContent>
-
-            <TabsContent value="languages">
-              <AdminLanguages />
-            </TabsContent>
-
-            <TabsContent value="translations">
-              <AdminTranslations />
-            </TabsContent>
-
-            <TabsContent value="urgency">
-              <AdminUrgencySettings />
-            </TabsContent>
-
-            <TabsContent value="shipping">
-              <AdminShipping />
-            </TabsContent>
-            
-            <TabsContent value="shipping-companies">
-              <AdminShippingCompanies />
-            </TabsContent>
-            
-            <TabsContent value="product-translations">
-              <AdminProductTranslations />
-            </TabsContent>
-            
-            <TabsContent value="live-support">
-              <AdminLiveSupport />
-            </TabsContent>
-            
-            <TabsContent value="admin-favorites">
-              <AdminFavorites />
-            </TabsContent>
-            
-            <TabsContent value="admin-cart">
-              <AdminCart />
-            </TabsContent>
+            {availableTabs.map((tab) => {
+              const TabComponent = tab.Component;
+              return (
+                <TabsContent key={tab.key} value={tab.key}>
+                  <TabComponent />
+                </TabsContent>
+              );
+            })}
           </Tabs>
         )}
       </div>

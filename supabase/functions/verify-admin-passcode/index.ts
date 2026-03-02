@@ -16,21 +16,12 @@ setInterval(() => {
   }
 }, 600000);
 
-// Restrict CORS to prevent CSRF attacks
-const allowedOrigins = [
-  'https://ldfhcfkflzgebnehbanr.lovableproject.com',
-  'http://localhost:5173', // Development
-  'http://localhost:8080'  // Alternative dev port
-];
-
-const getCorsHeaders = (origin: string | null) => ({
-  'Access-Control-Allow-Origin': origin && allowedOrigins.includes(origin) ? origin : allowedOrigins[0],
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-});
+};
 
 serve(async (req: Request) => {
-  const origin = req.headers.get('origin');
-  const corsHeaders = getCorsHeaders(origin);
   
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
