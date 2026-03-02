@@ -1,10 +1,39 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+// Rate limiting map
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+const RATE_LIMIT = 20; // requests per hour
+const RATE_WINDOW = 60 * 60 * 1000; // 1 hour in ms
+const MAX_MESSAGE_LENGTH = 500;
+
+// Allowed origins
+const allowedOrigins = [
+  "https://ldfhcfkflzgebnehbanr.lovableproject.com",
+  "https://kuantum-ticaret-web-site.lovable.app",
+  "http://localhost:5173",
+  "http://localhost:8080",
+];
+
+function getCorsHeaders(req: Request) {
+  const origin = req.headers.get("origin") || "";
+  const allowedOrigin = allowedOrigins.includes(origin) ? origin : allowedOrigins[0];
+  return {
+    "Access-Control-Allow-Origin": allowedOrigin,
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  };
+}
+
+function isRateLimited(clientKey: string): boolean {
+  const now = Date.now();
+  const entry = rateLimitMap.get(clientKey);
+  if (!entry || now > entry.resetAt) {
+    rateLimitMap.set(clientKey, { count: 1, resetAt: now + RATE_WINDOW });
+    return false;
+  }
+  entry.count++;
+  return entry.count > RATE_LIMIT;
+}
 
 // Restricted topics the AI cannot discuss
 const RESTRICTED_TOPICS = [
@@ -15,27 +44,52 @@ const RESTRICTED_TOPICS = [
 ];
 
 function containsRestrictedTopic(message: string): boolean {
-  const lowerMessage = message.toLowerCase();
-  return RESTRICTED_TOPICS.some(topic => lowerMessage.includes(topic));
+  const normalized = message.normalize("NFKD").toLowerCase();
+  return RESTRICTED_TOPICS.some(topic => normalized.includes(topic));
 }
 
 serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
+
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    // Rate limiting by IP
+    const clientIp = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+    if (isRateLimited(clientIp)) {
+      return new Response(
+        JSON.stringify({ error: "Çok fazla istek gönderdiniz. Lütfen bekleyin." }),
+        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const { message, threadId } = await req.json();
 
-    if (!message) {
+    // Input validation
+    if (!message || typeof message !== "string") {
       return new Response(
         JSON.stringify({ error: "Message is required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
+    // Sanitize and limit input
+    const sanitizedMessage = message
+      .replace(/[<>]/g, "")
+      .trim()
+      .substring(0, MAX_MESSAGE_LENGTH);
+
+    if (sanitizedMessage.length === 0) {
+      return new Response(
+        JSON.stringify({ error: "Message is empty" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // Check for restricted topics
-    if (containsRestrictedTopic(message)) {
+    if (containsRestrictedTopic(sanitizedMessage)) {
       return new Response(
         JSON.stringify({ 
           response: "Üzgünüm, bu konuda size yardımcı olamıyorum. 🔒 Güvenlik ve teknik altyapı hakkında bilgi paylaşamam. Ürünlerimiz, siparişleriniz veya diğer konularda size yardımcı olmaktan mutluluk duyarım!" 
@@ -48,9 +102,9 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Get previous messages for context (last 8 messages for better context)
+    // Get previous messages for context (last 8 messages)
     let contextMessages: { role: string; content: string }[] = [];
-    if (threadId) {
+    if (threadId && typeof threadId === "string") {
       const { data: prevMessages } = await supabase
         .from("live_support_messages")
         .select("role, content")
@@ -163,7 +217,6 @@ ${policyList || "İade, gizlilik ve diğer politikalarımız sitede mevcuttur."}
     const lovableApiKey = Deno.env.get("LOVABLE_API_KEY");
     
     if (!lovableApiKey) {
-      console.error("LOVABLE_API_KEY not found");
       return new Response(
         JSON.stringify({ 
           response: `Merhaba! 🛍️ Size yardımcı olmak için buradayım. Ürünlerimiz, siparişleriniz veya herhangi bir konuda sorularınızı yanıtlayabilirim. İletişim: ${siteSettings?.email || "info@kuantumticaret.com"} | ${siteSettings?.phone || ""}` 
@@ -176,10 +229,8 @@ ${policyList || "İade, gizlilik ve diğer politikalarımız sitede mevcuttur."}
     const messages = [
       { role: "system", content: systemPrompt },
       ...contextMessages,
-      { role: "user", content: message },
+      { role: "user", content: sanitizedMessage },
     ];
-
-    console.log("Calling Lovable AI with", messages.length, "messages");
 
     // Try multiple models in order of preference
     const models = [
@@ -192,8 +243,6 @@ ${policyList || "İade, gizlilik ve diğer politikalarımız sitede mevcuttur."}
 
     for (const model of models) {
       try {
-        console.log(`Trying model: ${model}`);
-        
         const aiResponse = await fetch("https://api.lovable.dev/v1/chat/completions", {
           method: "POST",
           headers: {
@@ -204,13 +253,12 @@ ${policyList || "İade, gizlilik ve diğer politikalarımız sitede mevcuttur."}
             model: model,
             messages: messages,
             max_tokens: 600,
-            temperature: 0.8, // Higher temperature for more varied responses
+            temperature: 0.8,
           }),
         });
 
         if (!aiResponse.ok) {
           const errorText = await aiResponse.text();
-          console.error(`Model ${model} failed:`, errorText);
           lastError = new Error(errorText);
           continue;
         }
@@ -219,27 +267,21 @@ ${policyList || "İade, gizlilik ve diğer politikalarımız sitede mevcuttur."}
         const assistantResponse = aiData.choices?.[0]?.message?.content;
 
         if (!assistantResponse) {
-          console.error(`Model ${model} returned no response`);
           continue;
         }
-
-        console.log(`Model ${model} success:`, assistantResponse.substring(0, 100));
 
         return new Response(
           JSON.stringify({ response: assistantResponse }),
           { headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       } catch (err) {
-        console.error(`Model ${model} error:`, err);
         lastError = err as Error;
         continue;
       }
     }
 
     // All models failed, use smart fallback
-    console.error("All models failed, using fallback");
-    
-    const lowerMessage = message.toLowerCase();
+    const lowerMessage = sanitizedMessage.toLowerCase();
     let fallbackResponse = "";
     
     if (lowerMessage.includes("merhaba") || lowerMessage.includes("selam") || lowerMessage.includes("hi") || lowerMessage.includes("hey")) {
@@ -247,24 +289,24 @@ ${policyList || "İade, gizlilik ve diğer politikalarımız sitede mevcuttur."}
     } else if (lowerMessage.includes("ürün") || lowerMessage.includes("fiyat") || lowerMessage.includes("ne kadar")) {
       const randomProduct = products?.[Math.floor(Math.random() * (products?.length || 1))];
       fallbackResponse = randomProduct 
-        ? `Ürünlerimizi /products sayfasından inceleyebilirsiniz! 🛍️ Örneğin "${randomProduct.title}" şu an ${randomProduct.discounted_price || randomProduct.price} TL. Stok durumu için detay sayfasına göz atabilirsiniz.`
+        ? `Ürünlerimizi /products sayfasından inceleyebilirsiniz! 🛍️ Örneğin "${randomProduct.title}" şu an ${randomProduct.discounted_price || randomProduct.price} TL.`
         : `Ürünlerimizi /products sayfasından inceleyebilirsiniz. 🛍️ Tüm ürünlerimiz kalite garantili!`;
     } else if (lowerMessage.includes("sipariş") || lowerMessage.includes("takip")) {
-      fallbackResponse = `Siparişlerinizi takip etmek için hesabınıza giriş yapıp /account sayfasını ziyaret edebilirsiniz. 📦 Sipariş kodunuzla da takip yapabilirsiniz!`;
+      fallbackResponse = `Siparişlerinizi takip etmek için hesabınıza giriş yapıp /account sayfasını ziyaret edebilirsiniz. 📦`;
     } else if (lowerMessage.includes("kargo") || lowerMessage.includes("teslimat") || lowerMessage.includes("gönderim")) {
       fallbackResponse = shippingInfo 
         ? `Kargo seçeneklerimiz:\n${shippingInfo}\n📦 Premium üyelerimize ücretsiz kargo avantajı sunuyoruz!`
-        : `Kargo bilgileri için sipariş esnasında güncel fiyatları görebilirsiniz. 📦 Premium üyelere ücretsiz kargo!`;
+        : `Kargo bilgileri için sipariş esnasında güncel fiyatları görebilirsiniz. 📦`;
     } else if (lowerMessage.includes("iade") || lowerMessage.includes("değişim") || lowerMessage.includes("iptal")) {
-      fallbackResponse = `İade ve değişim işlemleri için 14 gün içinde ${siteSettings?.email || "iletişim sayfamızdan"} bize ulaşabilirsiniz. 📧 Ürün fotoğraflarını eklemeyi unutmayın!`;
+      fallbackResponse = `İade ve değişim işlemleri için 14 gün içinde ${siteSettings?.email || "iletişim sayfamızdan"} bize ulaşabilirsiniz. 📧`;
     } else if (lowerMessage.includes("iletişim") || lowerMessage.includes("telefon") || lowerMessage.includes("mail") || lowerMessage.includes("adres")) {
-      fallbackResponse = `📧 ${siteSettings?.email || "E-posta ile ulaşın"}\n📞 ${siteSettings?.phone || "Telefon numarası sitede"}\n📍 ${siteSettings?.address || "Türkiye"}\n\nSize yardımcı olmaktan mutluluk duyarız! 💫`;
+      fallbackResponse = `📧 ${siteSettings?.email || "E-posta ile ulaşın"}\n📞 ${siteSettings?.phone || ""}\n📍 ${siteSettings?.address || "Türkiye"}`;
     } else if (lowerMessage.includes("premium") || lowerMessage.includes("üyelik") || lowerMessage.includes("vip")) {
-      fallbackResponse = `Premium üyelik avantajları: 👑\n• Özel indirimler\n• Ücretsiz kargo\n• Erken erişim fırsatları\n\nDetaylar için /premium sayfasını ziyaret edin!`;
+      fallbackResponse = `Premium üyelik avantajları: 👑\n• Özel indirimler\n• Ücretsiz kargo\n• Erken erişim\n\nDetaylar için /premium sayfasını ziyaret edin!`;
     } else if (lowerMessage.includes("teşekkür") || lowerMessage.includes("sağol") || lowerMessage.includes("eyv")) {
-      fallbackResponse = `Rica ederim! 😊 Başka bir konuda yardımcı olabilir miyim? Ürünlerimizi incelemek isterseniz /products sayfasını ziyaret edebilirsiniz. İyi alışverişler! 🛍️`;
+      fallbackResponse = `Rica ederim! 😊 Başka bir konuda yardımcı olabilir miyim?`;
     } else {
-      fallbackResponse = `Sorunuzu aldım! 💬 Size en iyi şekilde yardımcı olmak istiyorum. Ürünler, siparişler, kargo veya diğer konularda sorularınızı yanıtlayabilirim.\n\n📧 ${siteSettings?.email || ""}\n📞 ${siteSettings?.phone || ""}`;
+      fallbackResponse = `Sorunuzu aldım! 💬 Ürünler, siparişler, kargo veya diğer konularda sorularınızı yanıtlayabilirim.\n\n📧 ${siteSettings?.email || ""}\n📞 ${siteSettings?.phone || ""}`;
     }
     
     return new Response(
@@ -272,7 +314,7 @@ ${policyList || "İade, gizlilik ve diğer politikalarımız sitede mevcuttur."}
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
-    console.error("Error in ai-support-chat:", error);
+    const corsHeaders = getCorsHeaders(req);
     return new Response(
       JSON.stringify({ response: "Bir hata oluştu. Lütfen tekrar deneyin veya /contact sayfasından bize ulaşın. 📧" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }

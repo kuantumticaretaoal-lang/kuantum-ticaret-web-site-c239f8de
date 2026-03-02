@@ -72,7 +72,7 @@ export const AlsoBoughtProducts = ({ productId }: AlsoBoughtProductsProps) => {
         }
       }
     } catch (error) {
-      console.error('Error loading also bought products:', error);
+      // Error loading also bought products - fail silently
     } finally {
       setLoading(false);
     }

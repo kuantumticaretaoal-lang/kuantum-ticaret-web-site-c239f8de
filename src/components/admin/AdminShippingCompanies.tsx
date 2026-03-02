@@ -56,7 +56,7 @@ const AdminShippingCompanies = () => {
       .order("sort_order", { ascending: true });
 
     if (error) {
-      console.error("Error loading companies:", error);
+      // Error loading companies - fail silently
     } else {
       setCompanies(data || []);
     }

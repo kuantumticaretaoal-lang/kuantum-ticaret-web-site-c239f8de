@@ -17,6 +17,12 @@ export const useOnlinePresence = () => {
         .eq("id", user.id)
         .single();
 
+      // Check if user is admin before tracking presence with details
+      const { data: isAdmin } = await supabase.rpc('has_role', {
+        _user_id: user.id,
+        _role: 'admin' as const,
+      });
+
       presenceChannel = supabase.channel("online-users", {
         config: {
           presence: {
@@ -31,13 +37,21 @@ export const useOnlinePresence = () => {
         })
         .subscribe(async (status) => {
           if (status === "SUBSCRIBED") {
-            await presenceChannel?.track({
-              userId: user.id,
-              email: profile?.email || user.email || "",
-              firstName: profile?.first_name || "",
-              lastName: profile?.last_name || "",
-              timestamp: Date.now(),
-            });
+            // Only broadcast PII for admin users; regular users send minimal data
+            if (isAdmin) {
+              await presenceChannel?.track({
+                userId: user.id,
+                email: profile?.email || user.email || "",
+                firstName: profile?.first_name || "",
+                lastName: profile?.last_name || "",
+                timestamp: Date.now(),
+              });
+            } else {
+              await presenceChannel?.track({
+                userId: user.id,
+                timestamp: Date.now(),
+              });
+            }
           }
         });
     };

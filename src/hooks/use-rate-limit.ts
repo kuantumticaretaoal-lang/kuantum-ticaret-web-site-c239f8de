@@ -18,7 +18,7 @@ export const useRateLimit = () => {
     });
 
     if (error) {
-      console.error("Rate limit check error:", error);
+      // Rate limit check failed silently
       return { allowed: true, remaining: DAILY_LIMIT };
     }
 
