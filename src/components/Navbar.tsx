@@ -282,7 +282,7 @@ const Navbar = () => {
           </Sheet>
 
           <Link to="/" className="flex items-center gap-3">
-            <img src={logo} alt="Kuantum Ticaret" className="h-10 w-auto bg-white p-1 rounded" />
+            <img src={logo} alt="Kuantum Ticaret" width={50} height={40} className="h-10 w-auto bg-white p-1 rounded" />
             <span className="font-bold text-lg hidden sm:block">KUANTUM TİCARET</span>
           </Link>
           
