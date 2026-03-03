@@ -24,13 +24,25 @@
     <link rel="preconnect" href="https://ldfhcfkflzgebnehbanr.supabase.co" crossorigin>
     <link rel="dns-prefetch" href="https://ldfhcfkflzgebnehbanr.supabase.co">
     
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-1WYN50XZKW"></script>
+    <!-- Inline critical CSS for FCP -->
+    <style>
+      #root-loader{display:flex;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(135deg,hsl(215 100% 35%),hsl(215 100% 25%),hsl(25 95% 53%));font-family:system-ui,sans-serif}
+      #root-loader img{background:#fff;padding:12px;border-radius:8px;width:97px;height:80px}
+    </style>
+    <!-- Google tag (gtag.js) - deferred -->
     <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'G-1WYN50XZKW');
+      window.addEventListener('load', function() {
+        var s = document.createElement('script');
+        s.src = 'https://www.googletagmanager.com/gtag/js?id=G-1WYN50XZKW';
+        s.async = true;
+        document.head.appendChild(s);
+        s.onload = function() {
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', 'G-1WYN50XZKW');
+        };
+      });
     </script>
     
   
@@ -47,7 +59,7 @@
 </head>
 
   <body>
-    <div id="root"></div>
+    <div id="root"><div id="root-loader"><img src="/logo.jpg" alt="Kuantum Ticaret" width="97" height="80"></div></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
