@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -10,23 +11,24 @@ import { PushNotificationManager } from "@/components/PushNotificationManager";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { useScrollToTop } from "@/hooks/useScrollToTop";
 import Index from "./pages/Index";
-import Products from "./pages/Products";
-import ProductDetail from "./pages/ProductDetail";
-import CartPage from "./pages/CartPage";
-import ContactPage from "./pages/ContactPage";
-import SponsorsPage from "./pages/SponsorsPage";
-import FollowPage from "./pages/FollowPage";
-import LoginPage from "./pages/LoginPage";
-import RegisterPage from "./pages/RegisterPage";
-import AccountPage from "./pages/AccountPage";
-import AdminPage from "./pages/AdminPage";
-import NotFound from "./pages/NotFound";
 import VisitorTracker from "./components/VisitorTracker";
-import NotificationsPage from "./pages/NotificationsPage";
-import FavoritesPage from "./pages/FavoritesPage";
-import PremiumPage from "./pages/PremiumPage";
-import OrderTrackingPage from "./pages/OrderTrackingPage";
 import { CookieConsent } from "./components/CookieConsent";
+
+const Products = lazy(() => import("./pages/Products"));
+const ProductDetail = lazy(() => import("./pages/ProductDetail"));
+const CartPage = lazy(() => import("./pages/CartPage"));
+const ContactPage = lazy(() => import("./pages/ContactPage"));
+const SponsorsPage = lazy(() => import("./pages/SponsorsPage"));
+const FollowPage = lazy(() => import("./pages/FollowPage"));
+const LoginPage = lazy(() => import("./pages/LoginPage"));
+const RegisterPage = lazy(() => import("./pages/RegisterPage"));
+const AccountPage = lazy(() => import("./pages/AccountPage"));
+const AdminPage = lazy(() => import("./pages/AdminPage"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const NotificationsPage = lazy(() => import("./pages/NotificationsPage"));
+const FavoritesPage = lazy(() => import("./pages/FavoritesPage"));
+const PremiumPage = lazy(() => import("./pages/PremiumPage"));
+const OrderTrackingPage = lazy(() => import("./pages/OrderTrackingPage"));
 
 const queryClient = new QueryClient();
 
@@ -45,24 +47,26 @@ const AppContent = () => {
       <CookieConsent />
       <LiveSupportWidget />
       <PushNotificationManager />
-      <Routes>
-        <Route path="/" element={<Index />} />
-        <Route path="/products" element={<Products />} />
-        <Route path="/products/:id" element={<ProductDetail />} />
-        <Route path="/cart" element={<CartPage />} />
-        <Route path="/contact" element={<ContactPage />} />
-        <Route path="/sponsors" element={<SponsorsPage />} />
-        <Route path="/follow" element={<FollowPage />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
-        <Route path="/account" element={<AccountPage />} />
-        <Route path="/notifications" element={<NotificationsPage />} />
-        <Route path="/favorites" element={<FavoritesPage />} />
-        <Route path="/admin" element={<AdminPage />} />
-        <Route path="/premium" element={<PremiumPage />} />
-        <Route path="/order/:orderCode" element={<OrderTrackingPage />} />
-        <Route path="*" element={<NotFound />} />
-      </Routes>
+      <Suspense fallback={null}>
+        <Routes>
+          <Route path="/" element={<Index />} />
+          <Route path="/products" element={<Products />} />
+          <Route path="/products/:id" element={<ProductDetail />} />
+          <Route path="/cart" element={<CartPage />} />
+          <Route path="/contact" element={<ContactPage />} />
+          <Route path="/sponsors" element={<SponsorsPage />} />
+          <Route path="/follow" element={<FollowPage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+          <Route path="/account" element={<AccountPage />} />
+          <Route path="/notifications" element={<NotificationsPage />} />
+          <Route path="/favorites" element={<FavoritesPage />} />
+          <Route path="/admin" element={<AdminPage />} />
+          <Route path="/premium" element={<PremiumPage />} />
+          <Route path="/order/:orderCode" element={<OrderTrackingPage />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </Suspense>
     </>
   );
 };
