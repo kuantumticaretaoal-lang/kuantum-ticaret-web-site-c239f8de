@@ -56,6 +56,7 @@ const HeroSection = () => {
                 height={233}
                 className="w-full h-auto"
                 style={{ aspectRatio: '304/233' }}
+                fetchPriority="high"
               />
             </div>
           </div>
