@@ -48,13 +48,14 @@ const HeroSection = () => {
           </div>
           
           <div className="flex justify-center lg:justify-end">
-            <div className="bg-white p-8 rounded-2xl shadow-2xl max-w-md">
+            <div className="bg-white p-8 rounded-2xl shadow-2xl max-w-md" style={{ minHeight: 297, minWidth: 320 }}>
               <img 
                 src={logo} 
                 alt="Kuantum Ticaret Logo" 
                 width={304}
                 height={233}
                 className="w-full h-auto"
+                style={{ aspectRatio: '304/233' }}
               />
             </div>
           </div>
