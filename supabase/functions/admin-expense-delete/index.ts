@@ -96,13 +96,9 @@ serve(async (req) => {
 
     if (settingsErr) {
       console.error("Failed to read site settings", settingsErr);
-      return json({ ok: false, error: "Failed to read admin email" });
     }
 
     const adminEmail = siteSettings?.email;
-    if (!adminEmail) {
-      return json({ ok: false, error: "Admin email not configured in site settings" });
-    }
 
     if (step === "request") {
       const plain = random6DigitCode();
@@ -112,7 +108,7 @@ serve(async (req) => {
       const { error: insErr } = await admin.from("admin_action_verifications").insert({
         action_type: "delete_expense",
         target_id: expenseId,
-        email: adminEmail,
+        email: adminEmail || "admin@local",
         code_hash: codeHash,
         expires_at: expiresAt,
       });
@@ -122,55 +118,57 @@ serve(async (req) => {
         return json({ ok: false, error: "Failed to create verification" });
       }
 
+      // Try sending email via Resend
       const resendApiKey = (Deno.env.get("RESEND_API_KEY") ?? "").trim();
+      let emailSent = false;
 
-      const subject = "İşlem Silme Doğrulama Kodu";
-      const html = `
-        <div style="font-family: Arial, sans-serif; line-height: 1.5; color: #111;">
-          <h2>İşlem Silme Doğrulaması</h2>
-          <p>Aşağıdaki işlemi silmek için doğrulama kodu:</p>
-          <div style="padding: 12px; background: #f3f4f6; border-radius: 8px; display: inline-block;">
-            <span style="font-size: 24px; letter-spacing: 6px; font-weight: 700;">${plain}</span>
-          </div>
-          <p style="margin-top: 16px;"><strong>İşlem:</strong> ${expense.description}</p>
-          <p><strong>Tutar:</strong> ${Number(expense.amount).toFixed(2)} TL</p>
-          <p style="margin-top: 16px; color: #6b7280;">Kod 10 dakika içinde geçersiz olur.</p>
-        </div>
-      `;
+      if (resendApiKey && adminEmail) {
+        try {
+          const subject = "İşlem Silme Doğrulama Kodu";
+          const html = `
+            <div style="font-family: Arial, sans-serif; line-height: 1.5; color: #111;">
+              <h2>İşlem Silme Doğrulaması</h2>
+              <p>Aşağıdaki işlemi silmek için doğrulama kodu:</p>
+              <div style="padding: 12px; background: #f3f4f6; border-radius: 8px; display: inline-block;">
+                <span style="font-size: 24px; letter-spacing: 6px; font-weight: 700;">${plain}</span>
+              </div>
+              <p style="margin-top: 16px;"><strong>İşlem:</strong> ${expense.description}</p>
+              <p><strong>Tutar:</strong> ${Number(expense.amount).toFixed(2)} TL</p>
+              <p style="margin-top: 16px; color: #6b7280;">Kod 10 dakika içinde geçersiz olur.</p>
+            </div>
+          `;
 
-      if (!resendApiKey) {
-        return json({ ok: false, error: `E-posta servisi yapılandırılmamış. Geçici doğrulama kodu: ${plain}` });
-      }
+          const emailResponse = await fetch("https://api.resend.com/emails", {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${resendApiKey}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              from: "Kuantum Ticaret <onboarding@resend.dev>",
+              to: [adminEmail],
+              subject,
+              html,
+            }),
+          });
 
-      // Send email via Resend
-      console.log("Sending verification email to:", adminEmail);
-      const emailResponse = await fetch("https://api.resend.com/emails", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${resendApiKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          from: "Kuantum Ticaret <onboarding@resend.dev>",
-          to: [adminEmail],
-          subject,
-          html,
-        }),
-      });
-
-      if (!emailResponse.ok) {
-        const errorText = await emailResponse.text();
-        console.error(`Resend API error (${emailResponse.status}):`, errorText);
-
-        if (emailResponse.status === 401) {
-          return json({ ok: false, error: `E-posta anahtarı geçersiz. Geçici doğrulama kodu: ${plain}` });
+          if (emailResponse.ok) {
+            emailSent = true;
+            console.log("Email sent successfully");
+          } else {
+            const errorText = await emailResponse.text();
+            console.error(`Resend API error (${emailResponse.status}):`, errorText);
+          }
+        } catch (emailErr) {
+          console.error("Email sending failed:", emailErr);
         }
-
-        return json({ ok: false, error: `E-posta gönderilemedi (${emailResponse.status}). Geçici doğrulama kodu: ${plain}` });
       }
 
-      const emailResult = await emailResponse.json();
-      console.log("Email sent successfully:", emailResult);
+      // If email couldn't be sent, return the code directly as fallback
+      if (!emailSent) {
+        console.log("Email not sent, returning code as fallback");
+        return json({ ok: true, fallback_code: plain, message: "E-posta gönderilemedi. Kod ekranda gösterildi." });
+      }
 
       return json({ ok: true });
     }

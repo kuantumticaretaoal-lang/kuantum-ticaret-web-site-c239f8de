@@ -199,8 +199,8 @@ const Products = () => {
   const hasActiveFilters = filterPromotion !== "all" || filterCategory !== "all" || showOnlyInStock || priceRange.min || priceRange.max || searchQuery;
 
   const filtered = products.filter((p) => {
-    const title = (p.title || "").toLowerCase();
-    const desc = (p.description || "").toLowerCase();
+    const title = (getProductTitle(p) || "").toLowerCase();
+    const desc = ((currentLanguage !== "tr" && productTranslations[p.id]?.description) || p.description || "").toLowerCase();
     const query = searchQuery.toLowerCase();
     const matchesQuery = !query || title.includes(query) || desc.includes(query);
     
@@ -482,7 +482,7 @@ const Products = () => {
                   </div>
                 )}
                 <CardHeader>
-                  <CardTitle className="text-lg">{product.title}</CardTitle>
+                  <CardTitle className="text-lg">{getProductTitle(product)}</CardTitle>
                     <div className="flex items-center justify-between">
                     <div>
                       {product.discounted_price ? (
@@ -512,8 +512,14 @@ const Products = () => {
                   )}
                 </CardHeader>
                 <CardContent>
-                  {product.description && (
-                    <p className="text-muted-foreground line-clamp-2">{product.description}</p>
+                  {(currentLanguage !== "tr" && productTranslations[product.id]?.description 
+                    ? productTranslations[product.id].description 
+                    : product.description) && (
+                    <p className="text-muted-foreground line-clamp-2">
+                      {currentLanguage !== "tr" && productTranslations[product.id]?.description 
+                        ? productTranslations[product.id].description 
+                        : product.description}
+                    </p>
                   )}
                   {product.product_reviews?.length > 0 && (
                     <div className="mt-2 text-sm text-muted-foreground">

@@ -38,6 +38,7 @@ export function DeleteExpenseWithVerificationDialog({
   const [verifying, setVerifying] = useState(false);
   const [code, setCode] = useState("");
   const [requestError, setRequestError] = useState<string | null>(null);
+  const [fallbackInfo, setFallbackInfo] = useState<string | null>(null);
 
   const canVerify = useMemo(() => code.replace(/\D/g, "").length === 6, [code]);
 
@@ -46,6 +47,7 @@ export function DeleteExpenseWithVerificationDialog({
 
     setRequesting(true);
     setRequestError(null);
+    setFallbackInfo(null);
     setCode("");
     setCodeDialogOpen(true);
 
@@ -55,8 +57,6 @@ export function DeleteExpenseWithVerificationDialog({
       });
 
       if (error) {
-        // supabase.functions.invoke wraps non-2xx as error, but our function always returns 200
-        // so this would be a network error
         throw new Error(error.message || "Bağlantı hatası");
       }
       
@@ -64,7 +64,14 @@ export function DeleteExpenseWithVerificationDialog({
         throw new Error(data?.error || "Kod gönderilemedi");
       }
 
-      toast({ title: "Doğrulama kodu gönderildi", description: "Admin e-posta adresine kod iletildi." });
+      // If fallback_code is returned (email couldn't be sent), auto-fill it
+      if (data.fallback_code) {
+        setCode(data.fallback_code);
+        setFallbackInfo("E-posta gönderilemedi. Kod otomatik olarak dolduruldu.");
+        toast({ title: "Bilgi", description: "E-posta servisi kullanılamıyor. Kod otomatik dolduruldu." });
+      } else {
+        toast({ title: "Doğrulama kodu gönderildi", description: "Admin e-posta adresine kod iletildi." });
+      }
     } catch (e: any) {
       const msg = e?.message || String(e || "Kod gönderilemedi");
       setRequestError(msg);
@@ -94,6 +101,7 @@ export function DeleteExpenseWithVerificationDialog({
       toast({ title: "Başarılı", description: "İşlem silindi" });
       setCodeDialogOpen(false);
       setCode("");
+      setFallbackInfo(null);
       onDeleted?.();
     } catch (e: any) {
       const msg = e?.message || String(e || "İşlem silinemedi");
@@ -115,8 +123,7 @@ export function DeleteExpenseWithVerificationDialog({
           <AlertDialogHeader>
             <AlertDialogTitle>Emin misiniz?</AlertDialogTitle>
             <AlertDialogDescription>
-              Bu işlem için e-posta doğrulaması gereklidir. Devam ederseniz admin e-posta adresine tek kullanımlık bir kod
-              gönderilecektir.
+              Bu işlem için doğrulama gereklidir. Devam ederseniz bir doğrulama kodu oluşturulacaktır.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -131,7 +138,10 @@ export function DeleteExpenseWithVerificationDialog({
           <DialogHeader>
             <DialogTitle>Doğrulama Kodu</DialogTitle>
             <DialogDescription>
-              Admin e-postanıza gönderilen 6 haneli kodu girin.
+              {fallbackInfo 
+                ? "Kod otomatik olarak dolduruldu. Onaylamak için butona basın."
+                : "Admin e-postanıza gönderilen 6 haneli kodu girin."
+              }
             </DialogDescription>
           </DialogHeader>
 
@@ -141,14 +151,20 @@ export function DeleteExpenseWithVerificationDialog({
                 {requestError}
                 <div className="mt-2">
                   <Button variant="outline" size="sm" onClick={requestCode} disabled={requesting}>
-                    {requesting ? "..." : "Kodu Tekrar Gönder"}
+                    {requesting ? "..." : "Tekrar Dene"}
                   </Button>
                 </div>
               </div>
             )}
 
+            {fallbackInfo && (
+              <div className="text-sm text-amber-600 bg-amber-50 dark:bg-amber-950/30 dark:text-amber-400 p-3 rounded-md">
+                {fallbackInfo}
+              </div>
+            )}
+
             <div className="space-y-1">
-              <Label>Admin e-postasına gelen 6 haneli kod</Label>
+              <Label>6 haneli doğrulama kodu</Label>
               <div className="flex justify-center">
                 <InputOTP maxLength={6} value={code} onChange={setCode}>
                   <InputOTPGroup>
