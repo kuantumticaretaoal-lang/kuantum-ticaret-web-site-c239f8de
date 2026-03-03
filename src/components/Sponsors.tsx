@@ -54,6 +54,8 @@ const Sponsors = ({ showTitle = false }: SponsorsProps) => {
                     <img
                       src={s.logo_url}
                       alt={`${s.name} logosu`}
+                      width={350}
+                      height={128}
                       className="h-32 w-full mx-auto object-contain"
                     />
                   </div>

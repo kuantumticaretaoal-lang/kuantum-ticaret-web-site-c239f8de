@@ -34,7 +34,7 @@ const ShippingInfo = () => {
   };
 
   if (loading) {
-    return null;
+    return <section className="py-16 bg-muted/30" style={{ minHeight: 604 }} />;
   }
 
   if (companies.length === 0) {
@@ -58,6 +58,8 @@ const ShippingInfo = () => {
                     <img
                       src={company.logo_url}
                       alt={company.name}
+                      width={113}
+                      height={80}
                       className="max-h-full max-w-full object-contain"
                     />
                   </div>

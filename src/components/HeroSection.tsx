@@ -12,6 +12,8 @@ const HeroSection = () => {
             <img 
               src={logo} 
               alt="Kuantum Ticaret Logo" 
+              width={97}
+              height={80}
               className="h-20 w-auto mb-8 bg-white p-3 rounded-lg"
             />
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6">
@@ -50,6 +52,8 @@ const HeroSection = () => {
               <img 
                 src={logo} 
                 alt="Kuantum Ticaret Logo" 
+                width={304}
+                height={233}
                 className="w-full h-auto"
               />
             </div>
