@@ -12,6 +12,7 @@ interface SponsorsProps {
 const Sponsors = ({ showTitle = false }: SponsorsProps) => {
   const { t } = useTranslations();
   const [sponsors, setSponsors] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     load();
@@ -30,7 +31,12 @@ const Sponsors = ({ showTitle = false }: SponsorsProps) => {
       .select("*")
       .order("created_at", { ascending: false });
     setSponsors(data || []);
+    setLoading(false);
   };
+
+  if (loading) {
+    return <section className="py-20 bg-muted/30" style={{ minHeight: 400 }} />;
+  }
 
   if (sponsors.length === 0) {
     return null;
