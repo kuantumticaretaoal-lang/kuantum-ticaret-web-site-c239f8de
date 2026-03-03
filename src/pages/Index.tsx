@@ -1,12 +1,14 @@
+import { lazy, Suspense } from "react";
 import Navbar from "@/components/Navbar";
 import HeroSection from "@/components/HeroSection";
-import Sponsors from "@/components/Sponsors";
-import ShippingInfo from "@/components/ShippingInfo";
-import Features from "@/components/Features";
-import CallToAction from "@/components/CallToAction";
 import Footer from "@/components/Footer";
 import { CampaignBanner } from "@/components/CampaignBanner";
 import { useTranslations } from "@/hooks/use-translations";
+
+const Sponsors = lazy(() => import("@/components/Sponsors"));
+const ShippingInfo = lazy(() => import("@/components/ShippingInfo"));
+const Features = lazy(() => import("@/components/Features"));
+const CallToAction = lazy(() => import("@/components/CallToAction"));
 
 const Index = () => {
   const { t } = useTranslations();
@@ -16,10 +18,12 @@ const Index = () => {
       <CampaignBanner currentPage="homepage" />
       <Navbar />
       <HeroSection />
-      <Sponsors showTitle={true} />
-      <ShippingInfo />
-      <Features />
-      <CallToAction />
+      <Suspense fallback={null}>
+        <Sponsors showTitle={true} />
+        <ShippingInfo />
+        <Features />
+        <CallToAction />
+      </Suspense>
       <Footer />
     </div>
   );

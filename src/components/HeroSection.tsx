@@ -1,7 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { ShoppingBag, MessageSquare } from "lucide-react";
-import logo from "@/assets/logo.jpg";
 import { Link } from "react-router-dom";
+
+const logo = "/logo.jpg";
 
 const HeroSection = () => {
   return (
