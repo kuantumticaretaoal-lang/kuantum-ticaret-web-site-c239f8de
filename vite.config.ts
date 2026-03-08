@@ -28,5 +28,16 @@ export default defineConfig(({ mode }) => ({
         comments: false,
       },
     },
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          'vendor-query': ['@tanstack/react-query'],
+          'vendor-supabase': ['@supabase/supabase-js'],
+          'vendor-ui': ['sonner', 'cmdk', 'vaul', 'class-variance-authority', 'clsx', 'tailwind-merge'],
+          'vendor-charts': ['recharts'],
+        },
+      },
+    },
   },
 }));

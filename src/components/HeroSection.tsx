@@ -2,8 +2,6 @@ import { Button } from "@/components/ui/button";
 import { ShoppingBag, MessageSquare } from "lucide-react";
 import { Link } from "react-router-dom";
 
-const logo = "/logo.jpg";
-
 const HeroSection = () => {
   return (
     <section className="bg-gradient-to-br from-primary via-primary-glow to-secondary text-white py-20 lg:py-32">
@@ -11,12 +9,13 @@ const HeroSection = () => {
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           <div>
             <img 
-              src={logo} 
+              src="/logo.jpg" 
               alt="Kuantum Ticaret Logo" 
               width={97}
               height={80}
               className="mb-8 bg-white p-3 rounded-lg"
               style={{ width: 97, height: 80 }}
+              loading="eager"
             />
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6">
               Kuantum Ticaret'e Hoş Geldiniz
@@ -52,13 +51,14 @@ const HeroSection = () => {
           <div className="flex justify-center lg:justify-end">
             <div className="bg-white p-8 rounded-2xl shadow-2xl max-w-md" style={{ minHeight: 297, minWidth: 320 }}>
               <img 
-                src={logo} 
+                src="/logo.jpg" 
                 alt="Kuantum Ticaret Logo" 
                 width={304}
                 height={233}
                 className="w-full h-auto"
                 style={{ aspectRatio: '304/233' }}
                 fetchPriority="high"
+                loading="eager"
               />
             </div>
           </div>
