@@ -2,9 +2,9 @@ import { lazy, Suspense } from "react";
 import Navbar from "@/components/Navbar";
 import HeroSection from "@/components/HeroSection";
 import Footer from "@/components/Footer";
-import { CampaignBanner } from "@/components/CampaignBanner";
 import { useTranslations } from "@/hooks/use-translations";
 
+const CampaignBanner = lazy(() => import("@/components/CampaignBanner").then(m => ({ default: m.CampaignBanner })));
 const Sponsors = lazy(() => import("@/components/Sponsors"));
 const ShippingInfo = lazy(() => import("@/components/ShippingInfo"));
 const Features = lazy(() => import("@/components/Features"));
