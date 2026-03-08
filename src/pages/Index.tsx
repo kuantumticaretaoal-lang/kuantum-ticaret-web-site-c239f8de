@@ -15,7 +15,9 @@ const Index = () => {
   
   return (
     <div className="min-h-screen">
-      <CampaignBanner currentPage="homepage" />
+      <Suspense fallback={null}>
+        <CampaignBanner currentPage="homepage" />
+      </Suspense>
       <Navbar />
       <HeroSection />
       <Suspense fallback={null}>
