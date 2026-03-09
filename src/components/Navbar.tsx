@@ -2,29 +2,16 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Search, User, Settings, Shield, ShoppingCart, Bell, Menu, Heart, Crown } from "lucide-react";
-
+import { Search, ShoppingCart, Bell, Heart } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { signOut } from "@/lib/auth";
 import { getCartItems, getSessionId } from "@/lib/cart";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslations } from "@/hooks/use-translations";
-
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
+import NavbarMobileMenu from "@/components/navbar/NavbarMobileMenu";
+import NavbarDesktopLinks from "@/components/navbar/NavbarDesktopLinks";
+import NavbarUserMenu from "@/components/navbar/NavbarUserMenu";
 
 const Navbar = () => {
   const [user, setUser] = useState<any>(null);
@@ -64,7 +51,6 @@ const Navbar = () => {
       .on("postgres_changes", { event: "*", schema: "public", table: "cart" }, async (payload) => {
         const { data: { user } } = await supabase.auth.getUser();
         const sessionId = getSessionId();
-        
         if (
           (user && (payload.new as any)?.user_id === user.id) ||
           (!user && (payload.new as any)?.session_id === sessionId) ||
@@ -103,7 +89,6 @@ const Navbar = () => {
       .eq("user_id", userId)
       .eq("role", "admin")
       .maybeSingle();
-    
     setIsAdmin(!!data);
   };
 
@@ -115,10 +100,7 @@ const Navbar = () => {
 
   const loadUnreadCount = async () => {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      setUnreadCount(0);
-      return;
-    }
+    if (!user) { setUnreadCount(0); return; }
     const { data } = await (supabase as any)
       .from("notifications")
       .select("id")
@@ -130,16 +112,9 @@ const Navbar = () => {
   const handleSignOut = async () => {
     const { error } = await signOut();
     if (error) {
-      toast({
-        variant: "destructive",
-        title: t("common.error", "Hata"),
-        description: t("auth.logout_error", "Çıkış yapılırken bir hata oluştu"),
-      });
+      toast({ variant: "destructive", title: t("common.error", "Hata"), description: t("auth.logout_error", "Çıkış yapılırken bir hata oluştu") });
     } else {
-      toast({
-        title: t("auth.logout_success", "Çıkış Başarılı"),
-        description: t("auth.goodbye", "Görüşmek üzere!"),
-      });
+      toast({ title: t("auth.logout_success", "Çıkış Başarılı"), description: t("auth.goodbye", "Görüşmek üzere!") });
       navigate("/");
     }
   };
@@ -148,147 +123,23 @@ const Navbar = () => {
     <nav className="bg-gradient-to-r from-primary via-primary-glow to-secondary text-white py-4 sticky top-0 z-50 shadow-lg">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between gap-4">
-          {/* Mobile Menu Button */}
-          <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="lg:hidden text-white hover:text-white hover:bg-white/20">
-                <Menu className="h-6 w-6" />
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="left" className="w-[300px] bg-background">
-              <SheetHeader>
-                <SheetTitle>{t("nav.menu", "Menü")}</SheetTitle>
-              </SheetHeader>
-              <div className="flex flex-col gap-4 mt-6">
-                {/* Mobile Search */}
-                <div className="relative">
-                  <Input 
-                    id="mobile-search-input"
-                    placeholder={t("common.search", "Ürün ara...")}
-                    className="bg-background text-foreground border pr-10"
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        const q = (e.target as HTMLInputElement).value.trim();
-                        navigate(q ? `/products?query=${encodeURIComponent(q)}` : '/products');
-                        setMobileMenuOpen(false);
-                      }
-                    }}
-                  />
-                  <Search 
-                    className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground cursor-pointer hover:text-foreground transition-colors" 
-                    onClick={() => {
-                      const input = document.getElementById('mobile-search-input') as HTMLInputElement;
-                      const q = input?.value.trim();
-                      navigate(q ? `/products?query=${encodeURIComponent(q)}` : '/products');
-                      setMobileMenuOpen(false);
-                    }}
-                  />
-                </div>
-
-                {/* Mobile Navigation Links */}
-                <Link 
-                  to="/products" 
-                  className="text-foreground hover:text-primary transition-colors py-2 border-b"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  {t("nav.products", "Ürünler")}
-                </Link>
-                <Link 
-                  to="/contact" 
-                  className="text-foreground hover:text-primary transition-colors py-2 border-b"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  {t("nav.contact", "İletişim")}
-                </Link>
-                <Link 
-                  to="/sponsors" 
-                  className="text-foreground hover:text-primary transition-colors py-2 border-b"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  {t("nav.sponsors", "Sponsorlarımız")}
-                </Link>
-                <Link 
-                  to="/follow" 
-                  className="text-foreground hover:text-primary transition-colors py-2 border-b"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  {t("nav.follow", "Bizi Takip Edin!")}
-                </Link>
-
-                {/* Mobile User Actions */}
-                {user ? (
-                  <>
-                    <Link 
-                      to="/premium" 
-                      className="text-foreground hover:text-primary transition-colors py-2 border-b flex items-center gap-2"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      <Crown className="h-4 w-4" />
-                      {t("nav.premium", "Premium")}
-                    </Link>
-                    <Link 
-                      to="/favorites" 
-                      className="text-foreground hover:text-primary transition-colors py-2 border-b flex items-center gap-2"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      <Heart className="h-4 w-4" />
-                      {t("nav.favorites", "Favorilerim")}
-                    </Link>
-                    <Link 
-                      to="/account" 
-                      className="text-foreground hover:text-primary transition-colors py-2 border-b flex items-center gap-2"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      <Settings className="h-4 w-4" />
-                      {t("nav.account", "Hesabım")}
-                    </Link>
-                    {isAdmin && (
-                      <Link 
-                        to="/admin" 
-                        className="text-foreground hover:text-primary transition-colors py-2 border-b flex items-center gap-2"
-                        onClick={() => setMobileMenuOpen(false)}
-                      >
-                        <Shield className="h-4 w-4" />
-                        {t("nav.admin", "Admin Paneli")}
-                      </Link>
-                    )}
-                    <Button
-                      variant="outline"
-                      className="w-full mt-2"
-                      onClick={() => {
-                        handleSignOut();
-                        setMobileMenuOpen(false);
-                      }}
-                    >
-                      {t("nav.logout", "Çıkış Yap")}
-                    </Button>
-                  </>
-                ) : (
-                  <div className="flex flex-col gap-2 mt-2">
-                    <Link to="/login" onClick={() => setMobileMenuOpen(false)}>
-                      <Button variant="outline" className="w-full">
-                        {t("nav.login", "Giriş Yap")}
-                      </Button>
-                    </Link>
-                    <Link to="/register" onClick={() => setMobileMenuOpen(false)}>
-                      <Button className="w-full">
-                        {t("nav.register", "Kayıt Ol")}
-                      </Button>
-                    </Link>
-                  </div>
-                )}
-              </div>
-            </SheetContent>
-          </Sheet>
+          <NavbarMobileMenu
+            user={user}
+            isAdmin={isAdmin}
+            mobileMenuOpen={mobileMenuOpen}
+            setMobileMenuOpen={setMobileMenuOpen}
+            handleSignOut={handleSignOut}
+            t={t}
+          />
 
           <Link to="/" className="flex items-center gap-3">
             <img src="/logo.jpg" alt="Kuantum Ticaret" width={50} height={40} className="h-10 w-auto bg-white p-1 rounded" />
             <span className="font-bold text-lg hidden sm:block">KUANTUM TİCARET</span>
           </Link>
-          
+
           <div className="flex-1 max-w-md mx-4 hidden md:block">
             <div className="relative">
-              <Input 
+              <Input
                 id="navbar-search-input"
                 placeholder={t("common.search", "Ürün ara...")}
                 className="bg-white/90 text-foreground border-0 pr-10"
@@ -299,8 +150,8 @@ const Navbar = () => {
                   }
                 }}
               />
-              <Search 
-                className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground cursor-pointer hover:text-foreground transition-colors" 
+              <Search
+                className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground cursor-pointer hover:text-foreground transition-colors"
                 onClick={() => {
                   const input = document.getElementById('navbar-search-input') as HTMLInputElement;
                   const q = input?.value.trim();
@@ -309,37 +160,13 @@ const Navbar = () => {
               />
             </div>
           </div>
-          
+
           <div className="flex items-center gap-2 lg:gap-4">
-            <Link to="/products" className="text-white hover:text-white/80 transition-colors text-sm lg:text-base hidden lg:block">
-              {t("nav.products", "Ürünler")}
-            </Link>
-            <Link to="/contact" className="text-white hover:text-white/80 transition-colors text-sm lg:text-base hidden lg:block">
-              {t("nav.contact", "İletişim")}
-            </Link>
-            <Link to="/sponsors" className="text-white hover:text-white/80 transition-colors text-sm lg:text-base hidden lg:block">
-              {t("nav.sponsors", "Sponsorlarımız")}
-            </Link>
-            <Link to="/follow" className="text-white hover:text-white/80 transition-colors text-sm lg:text-base hidden lg:block">
-              {t("nav.follow", "Bizi Takip Edin!")}
-            </Link>
-            <Link to="/premium" className="text-amber-300 hover:text-amber-200 transition-colors hidden lg:flex" title={t("nav.premium", "Premium")}>
-              <Crown className="h-4 w-4" />
-            </Link>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="relative text-white hover:text-white hover:bg-white/20"
-              onClick={() => navigate("/favorites")}
-            >
+            <NavbarDesktopLinks t={t} />
+            <Button variant="ghost" size="icon" className="relative text-white hover:text-white hover:bg-white/20" onClick={() => navigate("/favorites")}>
               <Heart className="h-5 w-5" />
             </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="relative text-white hover:text-white hover:bg-white/20"
-              onClick={() => navigate("/cart")}
-            >
+            <Button variant="ghost" size="icon" className="relative text-white hover:text-white hover:bg-white/20" onClick={() => navigate("/cart")}>
               <ShoppingCart className="h-5 w-5" />
               {cartCount > 0 && (
                 <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs bg-secondary">
@@ -347,12 +174,7 @@ const Navbar = () => {
                 </Badge>
               )}
             </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="relative text-white hover:text-white hover:bg-white/20"
-              onClick={() => navigate("/notifications")}
-            >
+            <Button variant="ghost" size="icon" className="relative text-white hover:text-white hover:bg-white/20" onClick={() => navigate("/notifications")}>
               <Bell className="h-5 w-5" />
               {unreadCount > 0 && (
                 <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs bg-secondary">
@@ -360,48 +182,7 @@ const Navbar = () => {
                 </Badge>
               )}
             </Button>
-            {user ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="text-white hover:text-white hover:bg-white/20 text-sm lg:text-base hidden lg:flex">
-                    <User className="h-4 w-4 mr-2" />
-                    {t("nav.account", "Hesabım")}
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
-                  <DropdownMenuItem onClick={() => navigate("/account")}>
-                    <Settings className="h-4 w-4 mr-2" />
-                    {t("nav.settings", "Hesap Ayarları")}
-                  </DropdownMenuItem>
-                  {isAdmin && (
-                    <>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={() => navigate("/admin")}>
-                        <Shield className="h-4 w-4 mr-2" />
-                        {t("nav.admin", "Admin Paneli")}
-                      </DropdownMenuItem>
-                    </>
-                  )}
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleSignOut}>
-                    {t("nav.logout", "Çıkış Yap")}
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : (
-              <>
-                <Link to="/login" className="hidden lg:block">
-                  <Button variant="ghost" className="text-white hover:text-white hover:bg-white/20 text-sm lg:text-base">
-                    {t("nav.login", "Giriş Yap")}
-                  </Button>
-                </Link>
-                <Link to="/register" className="hidden lg:block">
-                  <Button className="bg-secondary hover:bg-secondary/90 text-white text-sm lg:text-base">
-                    {t("nav.register", "Kayıt Ol")}
-                  </Button>
-                </Link>
-              </>
-            )}
+            <NavbarUserMenu user={user} isAdmin={isAdmin} handleSignOut={handleSignOut} t={t} />
           </div>
         </div>
       </div>
