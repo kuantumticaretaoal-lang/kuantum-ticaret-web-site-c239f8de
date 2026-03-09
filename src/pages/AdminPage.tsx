@@ -109,6 +109,7 @@ const ADMIN_TABS: TabConfig[] = [
   { key: "live-support", label: "Canlı Destek", Component: AdminLiveSupport },
   { key: "admin-favorites", label: "Favoriler", Component: AdminFavorites },
   { key: "admin-cart", label: "Sepet Takibi", Component: AdminCart },
+  { key: "activity-logs", label: "Aktivite Logları", Component: AdminActivityLogs },
 ];
 
 const AdminPage = () => {
