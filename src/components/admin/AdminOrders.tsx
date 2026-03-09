@@ -370,6 +370,7 @@ export const AdminOrders = () => {
         title: "Başarılı",
         description: "Sipariş durumu güncellendi",
       });
+      logAdminActivity("status_change", `Sipariş ${orderId.slice(0, 8)} durumu "${status}" olarak güncellendi`, "orders", orderId);
       loadOrders();
     }
   };

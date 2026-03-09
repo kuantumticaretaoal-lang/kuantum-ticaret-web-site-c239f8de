@@ -118,7 +118,7 @@ const AdminPage = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isMainAdmin, setIsMainAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<AdminTabKey>("orders");
+  const [activeTab, setActiveTab] = useState<AdminTabKey>("dashboard");
   const [tabVisibility, setTabVisibility] = useState<Record<string, boolean>>({});
 
   const availableTabs = useMemo(() => {
