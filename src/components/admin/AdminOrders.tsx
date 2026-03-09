@@ -13,7 +13,9 @@ import { useToast } from "@/hooks/use-toast";
 import { logger } from "@/lib/logger";
 import { formatPhoneNumber, formatProvince, formatDistrict } from "@/lib/formatters";
 import { exportToExcel, formatDateForExport, formatCurrencyForExport } from "@/lib/excel-export";
-import { Download, MessageSquare, Send, DollarSign, Eye, FileDown } from "lucide-react";
+import { Download, MessageSquare, Send, DollarSign, Eye, FileDown, FileText } from "lucide-react";
+import { generateInvoicePDF } from "@/lib/invoice-pdf";
+import { logAdminActivity } from "@/lib/admin-logger";
  import { Badge } from "@/components/ui/badge";
 
 // Custom upload viewer (photo + file) with signed URL support
