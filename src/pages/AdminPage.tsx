@@ -36,6 +36,8 @@ import AdminProductTranslations from "@/components/admin/AdminProductTranslation
 import { AdminLiveSupport } from "@/components/admin/AdminLiveSupport";
 import { AdminFavorites } from "@/components/admin/AdminFavorites";
 import { AdminCart } from "@/components/admin/AdminCart";
+import { AdminDashboard } from "@/components/admin/AdminDashboard";
+import { AdminActivityLogs } from "@/components/admin/AdminActivityLogs";
 
 type AdminTabKey =
   | "orders"
