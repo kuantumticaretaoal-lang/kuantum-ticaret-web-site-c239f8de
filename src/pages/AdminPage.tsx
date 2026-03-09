@@ -69,7 +69,8 @@ type AdminTabKey =
   | "product-translations"
   | "live-support"
   | "admin-favorites"
-  | "admin-cart";
+  | "admin-cart"
+  | "activity-logs";
 
 interface TabConfig {
   key: AdminTabKey;
