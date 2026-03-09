@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Search, User, Settings, Shield, ShoppingCart, Bell, Menu, Heart, Crown } from "lucide-react";
-import logo from "@/assets/logo.jpg";
+
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { signOut } from "@/lib/auth";
@@ -282,7 +282,7 @@ const Navbar = () => {
           </Sheet>
 
           <Link to="/" className="flex items-center gap-3">
-            <img src={logo} alt="Kuantum Ticaret" width={50} height={40} className="h-10 w-auto bg-white p-1 rounded" />
+            <img src="/logo.jpg" alt="Kuantum Ticaret" width={50} height={40} className="h-10 w-auto bg-white p-1 rounded" />
             <span className="font-bold text-lg hidden sm:block">KUANTUM TİCARET</span>
           </Link>
           
