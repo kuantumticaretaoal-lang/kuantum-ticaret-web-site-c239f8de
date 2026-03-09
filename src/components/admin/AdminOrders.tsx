@@ -13,7 +13,9 @@ import { useToast } from "@/hooks/use-toast";
 import { logger } from "@/lib/logger";
 import { formatPhoneNumber, formatProvince, formatDistrict } from "@/lib/formatters";
 import { exportToExcel, formatDateForExport, formatCurrencyForExport } from "@/lib/excel-export";
-import { Download, MessageSquare, Send, DollarSign, Eye, FileDown } from "lucide-react";
+import { Download, MessageSquare, Send, DollarSign, Eye, FileDown, FileText } from "lucide-react";
+import { generateInvoicePDF } from "@/lib/invoice-pdf";
+import { logAdminActivity } from "@/lib/admin-logger";
  import { Badge } from "@/components/ui/badge";
 
 // Custom upload viewer (photo + file) with signed URL support
@@ -368,6 +370,7 @@ export const AdminOrders = () => {
         title: "Başarılı",
         description: "Sipariş durumu güncellendi",
       });
+      logAdminActivity("status_change", `Sipariş ${orderId.slice(0, 8)} durumu "${status}" olarak güncellendi`, "orders", orderId);
       loadOrders();
     }
   };
@@ -839,6 +842,21 @@ export const AdminOrders = () => {
                         </Button>
                       </div>
                     )}
+                    
+                    {/* Fatura Oluştur */}
+                    <div className="pt-2">
+                      <Button
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => {
+                          generateInvoicePDF(order, order.profiles);
+                          logAdminActivity("export", `Fatura oluşturuldu: ${order.order_code}`, "orders", order.id);
+                        }}
+                      >
+                        <FileText className="h-4 w-4 mr-2" />
+                        Fatura Oluştur
+                      </Button>
+                    </div>
                     
                     {/* Ek Ücret Talep Et */}
                     <div className="pt-4 border-t">

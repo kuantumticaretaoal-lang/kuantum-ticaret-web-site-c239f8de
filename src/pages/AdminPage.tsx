@@ -36,8 +36,11 @@ import AdminProductTranslations from "@/components/admin/AdminProductTranslation
 import { AdminLiveSupport } from "@/components/admin/AdminLiveSupport";
 import { AdminFavorites } from "@/components/admin/AdminFavorites";
 import { AdminCart } from "@/components/admin/AdminCart";
+import { AdminDashboard } from "@/components/admin/AdminDashboard";
+import { AdminActivityLogs } from "@/components/admin/AdminActivityLogs";
 
 type AdminTabKey =
+  | "dashboard"
   | "orders"
   | "order-stats"
   | "users"
@@ -66,7 +69,8 @@ type AdminTabKey =
   | "product-translations"
   | "live-support"
   | "admin-favorites"
-  | "admin-cart";
+  | "admin-cart"
+  | "activity-logs";
 
 interface TabConfig {
   key: AdminTabKey;
@@ -75,6 +79,7 @@ interface TabConfig {
 }
 
 const ADMIN_TABS: TabConfig[] = [
+  { key: "dashboard", label: "Genel Bakış", Component: AdminDashboard },
   { key: "orders", label: "Siparişler", Component: AdminOrders },
   { key: "order-stats", label: "Sipariş İstatistikleri", Component: AdminOrderStats },
   { key: "users", label: "Kullanıcılar", Component: AdminUsers },
@@ -104,6 +109,7 @@ const ADMIN_TABS: TabConfig[] = [
   { key: "live-support", label: "Canlı Destek", Component: AdminLiveSupport },
   { key: "admin-favorites", label: "Favoriler", Component: AdminFavorites },
   { key: "admin-cart", label: "Sepet Takibi", Component: AdminCart },
+  { key: "activity-logs", label: "Aktivite Logları", Component: AdminActivityLogs },
 ];
 
 const AdminPage = () => {
@@ -112,7 +118,7 @@ const AdminPage = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isMainAdmin, setIsMainAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<AdminTabKey>("orders");
+  const [activeTab, setActiveTab] = useState<AdminTabKey>("dashboard");
   const [tabVisibility, setTabVisibility] = useState<Record<string, boolean>>({});
 
   const availableTabs = useMemo(() => {
