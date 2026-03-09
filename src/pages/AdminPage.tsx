@@ -40,6 +40,7 @@ import { AdminDashboard } from "@/components/admin/AdminDashboard";
 import { AdminActivityLogs } from "@/components/admin/AdminActivityLogs";
 
 type AdminTabKey =
+  | "dashboard"
   | "orders"
   | "order-stats"
   | "users"
