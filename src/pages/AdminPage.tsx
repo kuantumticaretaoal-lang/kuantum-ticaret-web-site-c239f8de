@@ -79,6 +79,7 @@ interface TabConfig {
 }
 
 const ADMIN_TABS: TabConfig[] = [
+  { key: "dashboard", label: "Genel Bakış", Component: AdminDashboard },
   { key: "orders", label: "Siparişler", Component: AdminOrders },
   { key: "order-stats", label: "Sipariş İstatistikleri", Component: AdminOrderStats },
   { key: "users", label: "Kullanıcılar", Component: AdminUsers },
