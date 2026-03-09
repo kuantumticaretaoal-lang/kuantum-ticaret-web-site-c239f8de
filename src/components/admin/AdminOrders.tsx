@@ -842,6 +842,21 @@ export const AdminOrders = () => {
                       </div>
                     )}
                     
+                    {/* Fatura Oluştur */}
+                    <div className="pt-2">
+                      <Button
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => {
+                          generateInvoicePDF(order, order.profiles);
+                          logAdminActivity("export", `Fatura oluşturuldu: ${order.order_code}`, "orders", order.id);
+                        }}
+                      >
+                        <FileText className="h-4 w-4 mr-2" />
+                        Fatura Oluştur
+                      </Button>
+                    </div>
+                    
                     {/* Ek Ücret Talep Et */}
                     <div className="pt-4 border-t">
                       <Label className="flex items-center gap-2 mb-2">
