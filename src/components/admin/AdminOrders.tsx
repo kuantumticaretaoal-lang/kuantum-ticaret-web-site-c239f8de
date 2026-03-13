@@ -172,6 +172,7 @@ const CustomPhotoViewer = ({ photoUrl }: { photoUrl: string }) => {
 
 export const AdminOrders = () => {
   const [orders, setOrders] = useState<any[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
   const { toast } = useToast();
 
   useEffect(() => {
