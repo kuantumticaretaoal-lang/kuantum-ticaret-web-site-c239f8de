@@ -318,6 +318,8 @@ export const AdminProducts = () => {
         editProduct.product_categories?.map((pc: any) => pc.category_id) || [];
       await saveProductCategories(editProduct.id, categoryIds);
       
+      await logAdminActivity("update", `Ürün güncellendi: ${editProduct.title}`, "products", editProduct.id);
+      
       toast({
         title: "Başarılı",
         description: "Ürün güncellendi",
