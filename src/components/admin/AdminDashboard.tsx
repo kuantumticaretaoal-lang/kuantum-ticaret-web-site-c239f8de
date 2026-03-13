@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ShoppingCart, Package, TrendingUp, TrendingDown, Users, AlertTriangle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from "recharts";
 
 export const AdminDashboard = () => {
   const [stats, setStats] = useState({
@@ -14,6 +15,8 @@ export const AdminDashboard = () => {
     totalUsers: 0,
     lowStockProducts: [] as any[],
   });
+  const [dailyOrders, setDailyOrders] = useState<any[]>([]);
+  const [dailyRevenue, setDailyRevenue] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -22,12 +25,18 @@ export const AdminDashboard = () => {
 
   const loadDashboardStats = async () => {
     try {
-      const [ordersRes, expensesRes, productsRes, usersRes, lowStockRes] = await Promise.all([
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      const sevenDaysAgoStr = sevenDaysAgo.toISOString();
+
+      const [ordersRes, expensesRes, productsRes, usersRes, lowStockRes, recentOrdersRes, recentExpensesRes] = await Promise.all([
         (supabase as any).from("orders").select("id, status, total_amount, created_at").eq("trashed", false),
         (supabase as any).from("expenses").select("type, amount"),
         (supabase as any).from("products").select("id"),
         (supabase as any).from("profiles").select("id"),
         (supabase as any).from("products").select("id, title, stock_quantity, stock_status").not("stock_quantity", "is", null).lte("stock_quantity", 5),
+        (supabase as any).from("orders").select("id, total_amount, created_at, status").eq("trashed", false).gte("created_at", sevenDaysAgoStr),
+        (supabase as any).from("expenses").select("amount, type, created_at").eq("type", "income").gte("created_at", sevenDaysAgoStr),
       ]);
 
       const orders = ordersRes.data || [];
@@ -50,6 +59,38 @@ export const AdminDashboard = () => {
         totalUsers: usersRes.data?.length || 0,
         lowStockProducts: lowStockRes.data || [],
       });
+
+      // Build 7-day charts
+      const dayMap: Record<string, { orders: number; revenue: number }> = {};
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        const key = d.toISOString().split("T")[0];
+        dayMap[key] = { orders: 0, revenue: 0 };
+      }
+
+      (recentOrdersRes.data || []).forEach((o: any) => {
+        const key = o.created_at?.split("T")[0];
+        if (dayMap[key]) {
+          dayMap[key].orders += 1;
+        }
+      });
+
+      (recentExpensesRes.data || []).forEach((e: any) => {
+        const key = e.created_at?.split("T")[0];
+        if (dayMap[key]) {
+          dayMap[key].revenue += Number(e.amount);
+        }
+      });
+
+      const chartData = Object.entries(dayMap).map(([date, val]) => ({
+        date: new Date(date).toLocaleDateString("tr-TR", { day: "2-digit", month: "short" }),
+        sipariş: val.orders,
+        gelir: val.revenue,
+      }));
+
+      setDailyOrders(chartData);
+      setDailyRevenue(chartData);
     } catch (e) {
       console.error("Dashboard stats error:", e);
     } finally {
@@ -130,6 +171,43 @@ export const AdminDashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.totalUsers}</div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* 7-Day Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Son 7 Gün - Sipariş Sayısı</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={250}>
+              <BarChart data={dailyOrders}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                <XAxis dataKey="date" className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+                <YAxis allowDecimals={false} tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+                <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', color: 'hsl(var(--foreground))' }} />
+                <Bar dataKey="sipariş" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Son 7 Gün - Gelir (₺)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={250}>
+              <LineChart data={dailyRevenue}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                <XAxis dataKey="date" className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+                <YAxis tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+                <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', color: 'hsl(var(--foreground))' }} formatter={(value: number) => [`₺${value.toLocaleString("tr-TR", { minimumFractionDigits: 2 })}`, 'Gelir']} />
+                <Line type="monotone" dataKey="gelir" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ fill: 'hsl(var(--primary))' }} />
+              </LineChart>
+            </ResponsiveContainer>
           </CardContent>
         </Card>
       </div>

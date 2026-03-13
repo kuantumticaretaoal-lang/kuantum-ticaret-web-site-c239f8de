@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { logAdminActivity } from "@/lib/admin-logger";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -235,6 +236,8 @@ export const AdminProducts = () => {
         await saveProductCategories(data.id, newProduct.category_ids);
       }
       
+      await logAdminActivity("create", `Yeni ürün eklendi: ${newProduct.title}`, "products", data.id);
+      
       toast({
         title: "Başarılı",
         description: "Ürün eklendi",
@@ -315,6 +318,8 @@ export const AdminProducts = () => {
         editProduct.product_categories?.map((pc: any) => pc.category_id) || [];
       await saveProductCategories(editProduct.id, categoryIds);
       
+      await logAdminActivity("update", `Ürün güncellendi: ${editProduct.title}`, "products", editProduct.id);
+      
       toast({
         title: "Başarılı",
         description: "Ürün güncellendi",
@@ -326,6 +331,7 @@ export const AdminProducts = () => {
   };
 
   const deleteProduct = async (id: string) => {
+    const product = products.find(p => p.id === id);
     const { error } = await (supabase as any).from("products").delete().eq("id", id);
 
     if (error) {
@@ -335,6 +341,7 @@ export const AdminProducts = () => {
         description: "Ürün silinemedi",
       });
     } else {
+      await logAdminActivity("delete", `Ürün silindi: ${product?.title || id}`, "products", id);
       toast({
         title: "Başarılı",
         description: "Ürün silindi",
