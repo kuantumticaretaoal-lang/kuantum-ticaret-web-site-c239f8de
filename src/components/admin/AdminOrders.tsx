@@ -411,9 +411,21 @@ export const AdminOrders = () => {
   };
 
   const filterOrders = (status: string) => {
-    if (status === "all") return orders;
-    if (status === "trash") return orders.filter((order) => order.trashed === true);
-    return orders.filter((order) => order.status === status);
+    let filtered = orders;
+    if (status === "trash") return filtered.filter((order) => order.trashed === true);
+    if (status !== "all") filtered = filtered.filter((order) => order.status === status);
+    
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      filtered = filtered.filter((order) => {
+        const name = order.profiles ? `${order.profiles.first_name} ${order.profiles.last_name}`.toLowerCase() : "";
+        const code = (order.order_code || "").toLowerCase();
+        const phone = (order.profiles?.phone || "").toLowerCase();
+        return name.includes(q) || code.includes(q) || phone.includes(q);
+      });
+    }
+    
+    return filtered;
   };
 
   const moveToTrash = async (orderId: string) => {
