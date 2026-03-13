@@ -331,6 +331,7 @@ export const AdminProducts = () => {
   };
 
   const deleteProduct = async (id: string) => {
+    const product = products.find(p => p.id === id);
     const { error } = await (supabase as any).from("products").delete().eq("id", id);
 
     if (error) {
@@ -340,6 +341,7 @@ export const AdminProducts = () => {
         description: "Ürün silinemedi",
       });
     } else {
+      await logAdminActivity("delete", `Ürün silindi: ${product?.title || id}`, "products", id);
       toast({
         title: "Başarılı",
         description: "Ürün silindi",
