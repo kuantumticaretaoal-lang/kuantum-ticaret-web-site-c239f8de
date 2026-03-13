@@ -1035,6 +1035,14 @@ export const AdminOrders = () => {
         </CardTitle>
       </CardHeader>
       <CardContent>
+        <div className="mb-4">
+          <Input
+            placeholder="Sipariş kodu, müşteri adı veya telefon ile ara..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="max-w-md"
+          />
+        </div>
         <Tabs defaultValue="all">
           <TabsList>
             <TabsTrigger value="all">Tümü</TabsTrigger>
