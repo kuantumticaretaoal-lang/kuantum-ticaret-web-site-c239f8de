@@ -81,19 +81,21 @@ const AppContent = () => {
 };
 
 const App = () => (
-  <ThemeProvider defaultTheme="light" attribute="class" storageKey="kuantum-theme">
-    <QueryClientProvider client={queryClient}>
-      <TranslationProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <AppContent />
-          </BrowserRouter>
-        </TooltipProvider>
-      </TranslationProvider>
-    </QueryClientProvider>
-  </ThemeProvider>
+  <ErrorBoundary>
+    <ThemeProvider defaultTheme="light" attribute="class" storageKey="kuantum-theme">
+      <QueryClientProvider client={queryClient}>
+        <TranslationProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <AppContent />
+            </BrowserRouter>
+          </TooltipProvider>
+        </TranslationProvider>
+      </QueryClientProvider>
+    </ThemeProvider>
+  </ErrorBoundary>
 );
 
 export default App;
