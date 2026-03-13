@@ -72,7 +72,6 @@ const HeroSection = () => {
                 height={233}
                 className="w-full h-auto"
                 style={{ aspectRatio: '304/233' }}
-                // @ts-ignore
                 loading="eager"
               />
             </div>
