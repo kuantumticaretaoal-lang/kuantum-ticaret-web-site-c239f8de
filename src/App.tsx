@@ -10,6 +10,7 @@ import { LiveSupportWidget } from "@/components/LiveSupportWidget";
 import { PushNotificationManager } from "@/components/PushNotificationManager";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { useScrollToTop } from "@/hooks/useScrollToTop";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import Index from "./pages/Index";
 import VisitorTracker from "./components/VisitorTracker";
 import { CookieConsent } from "./components/CookieConsent";
