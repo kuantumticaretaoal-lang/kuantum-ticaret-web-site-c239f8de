@@ -236,6 +236,8 @@ export const AdminProducts = () => {
         await saveProductCategories(data.id, newProduct.category_ids);
       }
       
+      await logAdminActivity("create", `Yeni ürün eklendi: ${newProduct.title}`, "products", data.id);
+      
       toast({
         title: "Başarılı",
         description: "Ürün eklendi",
