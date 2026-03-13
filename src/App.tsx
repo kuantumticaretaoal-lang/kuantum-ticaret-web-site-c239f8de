@@ -31,7 +31,15 @@ const FavoritesPage = lazy(() => import("./pages/FavoritesPage"));
 const PremiumPage = lazy(() => import("./pages/PremiumPage"));
 const OrderTrackingPage = lazy(() => import("./pages/OrderTrackingPage"));
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000,
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 const ScrollToTop = () => {
   useScrollToTop();
