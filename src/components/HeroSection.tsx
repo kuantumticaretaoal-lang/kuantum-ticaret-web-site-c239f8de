@@ -1,13 +1,18 @@
 import { Button } from "@/components/ui/button";
 import { ShoppingBag, MessageSquare } from "lucide-react";
 import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
 
 const HeroSection = () => {
   return (
-    <section className="bg-gradient-to-br from-primary via-primary-glow to-secondary text-white py-20 lg:py-32">
+    <section className="bg-gradient-to-br from-primary via-primary-glow to-secondary text-white py-20 lg:py-32 overflow-hidden">
       <div className="container mx-auto px-4">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
-          <div>
+          <motion.div
+            initial={{ opacity: 0, x: -40 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.7, ease: "easeOut" }}
+          >
             <img 
               src="/logo.jpg" 
               alt="Kuantum Ticaret Logo" 
@@ -23,7 +28,12 @@ const HeroSection = () => {
             <p className="text-xl md:text-2xl text-white/90 mb-8">
               Kaliteli ürünler, güvenilir hizmet. Size özel tasarlanmış ürünlerimizi keşfedin.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4">
+            <motion.div 
+              className="flex flex-col sm:flex-row gap-4"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.4 }}
+            >
               <Button 
                 asChild
                 size="lg"
@@ -45,10 +55,15 @@ const HeroSection = () => {
                   İletişime Geç
                 </Link>
               </Button>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
           
-          <div className="flex justify-center lg:justify-end">
+          <motion.div 
+            className="flex justify-center lg:justify-end"
+            initial={{ opacity: 0, scale: 0.85 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.7, delay: 0.2, ease: "easeOut" }}
+          >
             <div className="bg-white p-8 rounded-2xl shadow-2xl max-w-md" style={{ minHeight: 297, minWidth: 320 }}>
               <img 
                 src="/logo.jpg" 
@@ -57,11 +72,10 @@ const HeroSection = () => {
                 height={233}
                 className="w-full h-auto"
                 style={{ aspectRatio: '304/233' }}
-                fetchPriority="high"
                 loading="eager"
               />
             </div>
-          </div>
+          </motion.div>
         </div>
       </div>
     </section>

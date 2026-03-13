@@ -10,6 +10,7 @@ import { LiveSupportWidget } from "@/components/LiveSupportWidget";
 import { PushNotificationManager } from "@/components/PushNotificationManager";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { useScrollToTop } from "@/hooks/useScrollToTop";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import Index from "./pages/Index";
 import VisitorTracker from "./components/VisitorTracker";
 import { CookieConsent } from "./components/CookieConsent";
@@ -30,7 +31,15 @@ const FavoritesPage = lazy(() => import("./pages/FavoritesPage"));
 const PremiumPage = lazy(() => import("./pages/PremiumPage"));
 const OrderTrackingPage = lazy(() => import("./pages/OrderTrackingPage"));
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000,
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 const ScrollToTop = () => {
   useScrollToTop();
@@ -72,19 +81,21 @@ const AppContent = () => {
 };
 
 const App = () => (
-  <ThemeProvider defaultTheme="light" attribute="class" storageKey="kuantum-theme">
-    <QueryClientProvider client={queryClient}>
-      <TranslationProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <AppContent />
-          </BrowserRouter>
-        </TooltipProvider>
-      </TranslationProvider>
-    </QueryClientProvider>
-  </ThemeProvider>
+  <ErrorBoundary>
+    <ThemeProvider defaultTheme="light" attribute="class" storageKey="kuantum-theme">
+      <QueryClientProvider client={queryClient}>
+        <TranslationProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <AppContent />
+            </BrowserRouter>
+          </TooltipProvider>
+        </TranslationProvider>
+      </QueryClientProvider>
+    </ThemeProvider>
+  </ErrorBoundary>
 );
 
 export default App;
