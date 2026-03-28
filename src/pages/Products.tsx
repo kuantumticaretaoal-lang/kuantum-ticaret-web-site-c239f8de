@@ -11,6 +11,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { ShoppingCart, Search, X, Filter, ArrowUpDown } from "lucide-react";
+import { Slider } from "@/components/ui/slider";
+import { BackToTop } from "@/components/BackToTop";
 import { useToast } from "@/hooks/use-toast";
 import { logger } from "@/lib/logger";
 import { ProductSkeleton } from "@/components/ProductSkeleton";
@@ -38,6 +40,8 @@ const Products = () => {
   const [showOnlyInStock, setShowOnlyInStock] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [priceRange, setPriceRange] = useState({ min: "", max: "" });
+  const [priceSlider, setPriceSlider] = useState<[number, number]>([0, 50000]);
+  const [maxProductPrice, setMaxProductPrice] = useState(50000);
   const [showFilters, setShowFilters] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
@@ -107,7 +111,13 @@ const Products = () => {
           )
         `)
         .order("created_at", { ascending: false });
-      if (data) setProducts(data);
+      if (data) {
+        setProducts(data);
+        const prices = data.map((p: any) => parseFloat(p.discounted_price || p.price));
+        const mp = Math.max(...prices, 100);
+        setMaxProductPrice(Math.ceil(mp / 100) * 100);
+        setPriceSlider([0, Math.ceil(mp / 100) * 100]);
+      }
     } catch (error) {
       logger.error("Ürünler yüklenemedi", error);
     } finally {
@@ -193,6 +203,7 @@ const Products = () => {
     setFilterCategory("all");
     setShowOnlyInStock(false);
     setPriceRange({ min: "", max: "" });
+    setPriceSlider([0, maxProductPrice]);
     setSearchQuery("");
   };
 
@@ -209,10 +220,8 @@ const Products = () => {
     const productCategoryIds = p.product_categories?.map((pc: any) => pc.category_id) || [];
     const matchesCategory = filterCategory === "all" || productCategoryIds.includes(filterCategory);
     
-    const price = parseFloat(p.price);
-    const minPrice = priceRange.min ? parseFloat(priceRange.min) : 0;
-    const maxPrice = priceRange.max ? parseFloat(priceRange.max) : Infinity;
-    const matchesPrice = price >= minPrice && price <= maxPrice;
+    const effectivePrice = parseFloat(p.discounted_price || p.price);
+    const matchesPrice = effectivePrice >= priceSlider[0] && effectivePrice <= priceSlider[1];
     
     if (filterPromotion === "all") return matchesQuery && matchesStock && matchesCategory && matchesPrice;
     return matchesQuery && matchesStock && matchesCategory && matchesPrice && p.promotion_badges?.includes(filterPromotion);
@@ -341,21 +350,17 @@ const Products = () => {
                   {/* Fiyat Aralığı */}
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Fiyat Aralığı</label>
-                    <div className="flex gap-2">
-                      <Input
-                        type="number"
-                        placeholder="Min ₺"
-                        value={priceRange.min}
-                        onChange={(e) => setPriceRange({ ...priceRange, min: e.target.value })}
-                        className="w-full"
-                      />
-                      <Input
-                        type="number"
-                        placeholder="Max ₺"
-                        value={priceRange.max}
-                        onChange={(e) => setPriceRange({ ...priceRange, max: e.target.value })}
-                        className="w-full"
-                      />
+                    <Slider
+                      min={0}
+                      max={maxProductPrice}
+                      step={10}
+                      value={priceSlider}
+                      onValueChange={(val) => setPriceSlider(val as [number, number])}
+                      className="mt-4"
+                    />
+                    <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                      <span>₺{priceSlider[0].toLocaleString("tr-TR")}</span>
+                      <span>₺{priceSlider[1].toLocaleString("tr-TR")}</span>
                     </div>
                   </div>
 
@@ -533,6 +538,7 @@ const Products = () => {
         )}
       </div>
       <Footer />
+      <BackToTop />
     </div>
   );
 };
