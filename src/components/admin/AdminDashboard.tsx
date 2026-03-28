@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ShoppingCart, Package, TrendingUp, TrendingDown, Users, AlertTriangle } from "lucide-react";
+import { ShoppingCart, Package, TrendingUp, TrendingDown, Users, AlertTriangle, Activity, Clock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from "recharts";
 
@@ -17,6 +17,7 @@ export const AdminDashboard = () => {
   });
   const [dailyOrders, setDailyOrders] = useState<any[]>([]);
   const [dailyRevenue, setDailyRevenue] = useState<any[]>([]);
+  const [recentActivity, setRecentActivity] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -29,7 +30,7 @@ export const AdminDashboard = () => {
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
       const sevenDaysAgoStr = sevenDaysAgo.toISOString();
 
-      const [ordersRes, expensesRes, productsRes, usersRes, lowStockRes, recentOrdersRes, recentExpensesRes] = await Promise.all([
+      const [ordersRes, expensesRes, productsRes, usersRes, lowStockRes, recentOrdersRes, recentExpensesRes, activityRes] = await Promise.all([
         (supabase as any).from("orders").select("id, status, total_amount, created_at").eq("trashed", false),
         (supabase as any).from("expenses").select("type, amount"),
         (supabase as any).from("products").select("id"),
@@ -37,6 +38,7 @@ export const AdminDashboard = () => {
         (supabase as any).from("products").select("id, title, stock_quantity, stock_status").not("stock_quantity", "is", null).lte("stock_quantity", 5),
         (supabase as any).from("orders").select("id, total_amount, created_at, status").eq("trashed", false).gte("created_at", sevenDaysAgoStr),
         (supabase as any).from("expenses").select("amount, type, created_at").eq("type", "income").gte("created_at", sevenDaysAgoStr),
+        (supabase as any).from("admin_activity_logs").select("action_type, action_description, created_at").order("created_at", { ascending: false }).limit(8),
       ]);
 
       const orders = ordersRes.data || [];
@@ -91,6 +93,7 @@ export const AdminDashboard = () => {
 
       setDailyOrders(chartData);
       setDailyRevenue(chartData);
+      setRecentActivity(activityRes.data || []);
     } catch (e) {
       console.error("Dashboard stats error:", e);
     } finally {
@@ -212,29 +215,63 @@ export const AdminDashboard = () => {
         </Card>
       </div>
 
-      {/* Low Stock Alert */}
-      {stats.lowStockProducts.length > 0 && (
-        <Card className="border-destructive/50">
+      {/* Recent Activity & Low Stock */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Recent Activity */}
+        <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-destructive">
-              <AlertTriangle className="h-5 w-5" />
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Activity className="h-5 w-5" />
+              Son Aktiviteler
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {recentActivity.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Henüz aktivite yok.</p>
+            ) : (
+              <div className="space-y-3">
+                {recentActivity.map((activity: any, idx: number) => (
+                  <div key={idx} className="flex items-start gap-3 p-2 rounded-md bg-muted/50">
+                    <Clock className="h-4 w-4 mt-0.5 text-muted-foreground shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium truncate">{activity.action_description}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(activity.created_at).toLocaleString("tr-TR")}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Low Stock Alert */}
+        <Card className={stats.lowStockProducts.length > 0 ? "border-destructive/50" : ""}>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <AlertTriangle className="h-5 w-5 text-destructive" />
               Düşük Stok Uyarısı ({stats.lowStockProducts.length} ürün)
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-2">
-              {stats.lowStockProducts.map((product: any) => (
-                <div key={product.id} className="flex items-center justify-between p-2 rounded-md bg-destructive/5 border border-destructive/20">
-                  <span className="text-sm font-medium">{product.title}</span>
-                  <Badge variant={product.stock_quantity === 0 ? "destructive" : "secondary"}>
-                    {product.stock_quantity === 0 ? "Stokta Yok" : `${product.stock_quantity} adet kaldı`}
-                  </Badge>
-                </div>
-              ))}
-            </div>
+            {stats.lowStockProducts.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Tüm ürünlerin stoğu yeterli.</p>
+            ) : (
+              <div className="space-y-2">
+                {stats.lowStockProducts.map((product: any) => (
+                  <div key={product.id} className="flex items-center justify-between p-2 rounded-md bg-destructive/5 border border-destructive/20">
+                    <span className="text-sm font-medium truncate">{product.title}</span>
+                    <Badge variant={product.stock_quantity === 0 ? "destructive" : "secondary"}>
+                      {product.stock_quantity === 0 ? "Stokta Yok" : `${product.stock_quantity} adet`}
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
-      )}
+      </div>
     </div>
   );
 };
