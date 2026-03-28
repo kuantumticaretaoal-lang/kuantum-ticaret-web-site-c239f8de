@@ -16,6 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Minus, Plus, Trash2, Tag, X, Check } from "lucide-react";
 import { logger } from "@/lib/logger";
 import { Badge } from "@/components/ui/badge";
+import { ReturnRequestForm } from "@/components/ReturnRequestForm";
 
 interface AppliedCoupon {
   id: string;
@@ -750,6 +751,7 @@ const CartPage = () => {
                           <TableHead>{t("cart.products", "Ürünler")}</TableHead>
                           <TableHead>{t("cart.shipping", "Kargo")}</TableHead>
                           <TableHead>{t("cart.total", "Toplam")}</TableHead>
+                          <TableHead>İşlem</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -784,6 +786,14 @@ const CartPage = () => {
                             </TableCell>
                             <TableCell className="font-bold text-primary">
                               {formatPrice(calculateOrderTotal(order))}
+                            </TableCell>
+                            <TableCell>
+                              {order.status === "delivered" && (
+                                <ReturnRequestForm
+                                  orderId={order.id}
+                                  orderCode={order.order_code || order.id.slice(0, 8)}
+                                />
+                              )}
                             </TableCell>
                           </TableRow>
                         ))}
