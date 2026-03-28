@@ -3,6 +3,7 @@ import Navbar from "@/components/Navbar";
 import HeroSection from "@/components/HeroSection";
 import Footer from "@/components/Footer";
 import { useTranslations } from "@/hooks/use-translations";
+import { BackToTop } from "@/components/BackToTop";
 
 const CampaignBanner = lazy(() => import("@/components/CampaignBanner").then(m => ({ default: m.CampaignBanner })));
 const Sponsors = lazy(() => import("@/components/Sponsors"));
@@ -27,6 +28,7 @@ const Index = () => {
         <CallToAction />
       </Suspense>
       <Footer />
+      <BackToTop />
     </div>
   );
 };

@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Search, ShoppingCart, Bell, Heart } from "lucide-react";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { signOut } from "@/lib/auth";
@@ -163,6 +164,7 @@ const Navbar = () => {
 
           <div className="flex items-center gap-2 lg:gap-4">
             <NavbarDesktopLinks t={t} />
+            <ThemeToggle />
             <Button variant="ghost" size="icon" className="relative text-white hover:text-white hover:bg-white/20" onClick={() => navigate("/favorites")}>
               <Heart className="h-5 w-5" />
             </Button>
