@@ -38,6 +38,8 @@ import { AdminFavorites } from "@/components/admin/AdminFavorites";
 import { AdminCart } from "@/components/admin/AdminCart";
 import { AdminDashboard } from "@/components/admin/AdminDashboard";
 import { AdminActivityLogs } from "@/components/admin/AdminActivityLogs";
+import { AdminReturnRequests } from "@/components/admin/AdminReturnRequests";
+import { AdminAbandonedCarts } from "@/components/admin/AdminAbandonedCarts";
 
 type AdminTabKey =
   | "dashboard"
@@ -70,7 +72,9 @@ type AdminTabKey =
   | "live-support"
   | "admin-favorites"
   | "admin-cart"
-  | "activity-logs";
+  | "activity-logs"
+  | "return-requests"
+  | "abandoned-carts";
 
 interface TabConfig {
   key: AdminTabKey;
@@ -110,6 +114,8 @@ const ADMIN_TABS: TabConfig[] = [
   { key: "admin-favorites", label: "Favoriler", Component: AdminFavorites },
   { key: "admin-cart", label: "Sepet Takibi", Component: AdminCart },
   { key: "activity-logs", label: "Aktivite Logları", Component: AdminActivityLogs },
+  { key: "return-requests", label: "İade Talepleri", Component: AdminReturnRequests },
+  { key: "abandoned-carts", label: "Terk Edilmiş Sepetler", Component: AdminAbandonedCarts },
 ];
 
 const AdminPage = () => {
