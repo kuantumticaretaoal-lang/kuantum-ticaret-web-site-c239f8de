@@ -14,6 +14,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import Index from "./pages/Index";
 import VisitorTracker from "./components/VisitorTracker";
 import { CookieConsent } from "./components/CookieConsent";
+import { MobileBottomNav } from "./components/MobileBottomNav";
 
 const Products = lazy(() => import("./pages/Products"));
 const ProductDetail = lazy(() => import("./pages/ProductDetail"));
