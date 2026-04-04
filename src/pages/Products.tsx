@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { ShoppingCart, Search, X, Filter, ArrowUpDown } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { BackToTop } from "@/components/BackToTop";
+import { ProductBreadcrumb } from "@/components/ProductBreadcrumb";
 import { useToast } from "@/hooks/use-toast";
 import { logger } from "@/lib/logger";
 import { ProductSkeleton } from "@/components/ProductSkeleton";
