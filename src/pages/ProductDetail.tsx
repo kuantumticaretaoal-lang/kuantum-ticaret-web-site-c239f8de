@@ -427,13 +427,16 @@ const ProductDetail = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-20 md:pb-0">
       <CampaignBanner currentPage="products" />
       <Navbar />
       <div className="container mx-auto px-4 py-8 lg:py-12">
-        <Button variant="ghost" onClick={() => navigate("/products")} className="mb-6">
-          ← Ürünlere Dön
-        </Button>
+        <ProductBreadcrumb 
+          items={[
+            { label: "Ürünler", href: "/products" },
+            { label: product.title }
+          ]} 
+        />
 
         <div className="grid lg:grid-cols-2 gap-8 lg:gap-12">
           {/* Resim Galerisi */}
