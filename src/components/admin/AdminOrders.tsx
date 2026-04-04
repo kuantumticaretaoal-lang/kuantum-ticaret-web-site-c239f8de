@@ -17,6 +17,7 @@ import { Download, MessageSquare, Send, DollarSign, Eye, FileDown, FileText } fr
 import { generateInvoicePDF } from "@/lib/invoice-pdf";
 import { logAdminActivity } from "@/lib/admin-logger";
  import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 
 // Custom upload viewer (photo + file) with signed URL support
 const CustomPhotoViewer = ({ photoUrl }: { photoUrl: string }) => {
