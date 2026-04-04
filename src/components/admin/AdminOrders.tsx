@@ -738,7 +738,13 @@ export const AdminOrders = () => {
             const displaySubtotal = savedSubtotal !== null ? savedSubtotal : calculatedTotal;
             
             return (
-            <TableRow key={order.id}>
+            <TableRow key={order.id} className={selectedOrders.has(order.id) ? "bg-muted/50" : ""}>
+              <TableCell>
+                <Checkbox
+                  checked={selectedOrders.has(order.id)}
+                  onCheckedChange={() => toggleSelectOrder(order.id)}
+                />
+              </TableCell>
               <TableCell className="font-mono text-xs">{order.order_code}</TableCell>
               <TableCell>
                 {order.profiles?.first_name} {order.profiles?.last_name}
