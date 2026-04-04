@@ -40,6 +40,7 @@ import { AdminDashboard } from "@/components/admin/AdminDashboard";
 import { AdminActivityLogs } from "@/components/admin/AdminActivityLogs";
 import { AdminReturnRequests } from "@/components/admin/AdminReturnRequests";
 import { AdminAbandonedCarts } from "@/components/admin/AdminAbandonedCarts";
+import { AdminProductPerformance } from "@/components/admin/AdminProductPerformance";
 
 type AdminTabKey =
   | "dashboard"
