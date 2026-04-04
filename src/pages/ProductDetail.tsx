@@ -26,6 +26,7 @@ import { ShareButtons } from "@/components/ShareButtons";
 import { UrgencyIndicators } from "@/components/UrgencyIndicators";
 import { CampaignBanner } from "@/components/CampaignBanner";
 import { useTranslations } from "@/hooks/use-translations";
+import { ProductBreadcrumb } from "@/components/ProductBreadcrumb";
 
 const ProductDetail = () => {
   const { id } = useParams();
@@ -426,13 +427,16 @@ const ProductDetail = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-20 md:pb-0">
       <CampaignBanner currentPage="products" />
       <Navbar />
       <div className="container mx-auto px-4 py-8 lg:py-12">
-        <Button variant="ghost" onClick={() => navigate("/products")} className="mb-6">
-          ← Ürünlere Dön
-        </Button>
+        <ProductBreadcrumb 
+          items={[
+            { label: "Ürünler", href: "/products" },
+            { label: product.title }
+          ]} 
+        />
 
         <div className="grid lg:grid-cols-2 gap-8 lg:gap-12">
           {/* Resim Galerisi */}

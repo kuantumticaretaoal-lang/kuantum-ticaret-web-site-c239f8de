@@ -40,6 +40,7 @@ import { AdminDashboard } from "@/components/admin/AdminDashboard";
 import { AdminActivityLogs } from "@/components/admin/AdminActivityLogs";
 import { AdminReturnRequests } from "@/components/admin/AdminReturnRequests";
 import { AdminAbandonedCarts } from "@/components/admin/AdminAbandonedCarts";
+import { AdminProductPerformance } from "@/components/admin/AdminProductPerformance";
 
 type AdminTabKey =
   | "dashboard"
@@ -74,7 +75,8 @@ type AdminTabKey =
   | "admin-cart"
   | "activity-logs"
   | "return-requests"
-  | "abandoned-carts";
+  | "abandoned-carts"
+  | "product-performance";
 
 interface TabConfig {
   key: AdminTabKey;
@@ -116,6 +118,7 @@ const ADMIN_TABS: TabConfig[] = [
   { key: "activity-logs", label: "Aktivite Logları", Component: AdminActivityLogs },
   { key: "return-requests", label: "İade Talepleri", Component: AdminReturnRequests },
   { key: "abandoned-carts", label: "Terk Edilmiş Sepetler", Component: AdminAbandonedCarts },
+  { key: "product-performance", label: "Ürün Performansı", Component: AdminProductPerformance },
 ];
 
 const AdminPage = () => {

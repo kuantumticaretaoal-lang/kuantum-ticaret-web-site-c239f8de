@@ -601,6 +601,36 @@ export type Database = {
           },
         ]
       }
+      faq_items: {
+        Row: {
+          answer: string
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          question: string
+          sort_order: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          answer: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          question: string
+          sort_order?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          answer?: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          question?: string
+          sort_order?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       favorites: {
         Row: {
           created_at: string
@@ -761,11 +791,44 @@ export type Database = {
           },
         ]
       }
+      order_notes: {
+        Row: {
+          admin_id: string
+          created_at: string | null
+          id: string
+          note: string
+          order_id: string
+        }
+        Insert: {
+          admin_id: string
+          created_at?: string | null
+          id?: string
+          note: string
+          order_id: string
+        }
+        Update: {
+          admin_id?: string
+          created_at?: string | null
+          id?: string
+          note?: string
+          order_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_notes_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       orders: {
         Row: {
           applied_coupon_code: string | null
           created_at: string | null
           currency_code: string
+          customer_note: string | null
           delivery_address: string | null
           delivery_type: Database["public"]["Enums"]["delivery_type"]
           discount_amount: number
@@ -790,6 +853,7 @@ export type Database = {
           applied_coupon_code?: string | null
           created_at?: string | null
           currency_code?: string
+          customer_note?: string | null
           delivery_address?: string | null
           delivery_type: Database["public"]["Enums"]["delivery_type"]
           discount_amount?: number
@@ -814,6 +878,7 @@ export type Database = {
           applied_coupon_code?: string | null
           created_at?: string | null
           currency_code?: string
+          customer_note?: string | null
           delivery_address?: string | null
           delivery_type?: Database["public"]["Enums"]["delivery_type"]
           discount_amount?: number
@@ -1299,8 +1364,10 @@ export type Database = {
           promotion_badges: string[] | null
           stock_quantity: number | null
           stock_status: string | null
+          tags: string[] | null
           title: string
           updated_at: string | null
+          video_url: string | null
         }
         Insert: {
           allowed_file_types?: string[] | null
@@ -1317,8 +1384,10 @@ export type Database = {
           promotion_badges?: string[] | null
           stock_quantity?: number | null
           stock_status?: string | null
+          tags?: string[] | null
           title: string
           updated_at?: string | null
+          video_url?: string | null
         }
         Update: {
           allowed_file_types?: string[] | null
@@ -1335,8 +1404,10 @@ export type Database = {
           promotion_badges?: string[] | null
           stock_quantity?: number | null
           stock_status?: string | null
+          tags?: string[] | null
           title?: string
           updated_at?: string | null
+          video_url?: string | null
         }
         Relationships: [
           {
@@ -1661,6 +1732,41 @@ export type Database = {
           name?: string
         }
         Relationships: []
+      }
+      stock_notifications: {
+        Row: {
+          created_at: string | null
+          email: string | null
+          id: string
+          notified: boolean | null
+          product_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          notified?: boolean | null
+          product_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          notified?: boolean | null
+          product_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_notifications_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       supported_languages: {
         Row: {
