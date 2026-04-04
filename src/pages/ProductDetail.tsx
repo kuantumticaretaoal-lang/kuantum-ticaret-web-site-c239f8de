@@ -26,6 +26,7 @@ import { ShareButtons } from "@/components/ShareButtons";
 import { UrgencyIndicators } from "@/components/UrgencyIndicators";
 import { CampaignBanner } from "@/components/CampaignBanner";
 import { useTranslations } from "@/hooks/use-translations";
+import { ProductBreadcrumb } from "@/components/ProductBreadcrumb";
 
 const ProductDetail = () => {
   const { id } = useParams();
