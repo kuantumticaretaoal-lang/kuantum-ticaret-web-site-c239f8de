@@ -75,7 +75,8 @@ type AdminTabKey =
   | "admin-cart"
   | "activity-logs"
   | "return-requests"
-  | "abandoned-carts";
+  | "abandoned-carts"
+  | "product-performance";
 
 interface TabConfig {
   key: AdminTabKey;
