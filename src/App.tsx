@@ -57,6 +57,7 @@ const AppContent = () => {
       <CookieConsent />
       <LiveSupportWidget />
       <PushNotificationManager />
+      <MobileBottomNav />
       <Suspense fallback={null}>
         <Routes>
           <Route path="/" element={<Index />} />
