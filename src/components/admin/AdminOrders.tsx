@@ -663,13 +663,44 @@ export const AdminOrders = () => {
   const OrdersTable = ({ ordersList, showCount = true }: { ordersList: any[], showCount?: boolean }) => (
     <>
       {showCount && (
-        <div className="mb-4 text-sm font-medium text-muted-foreground">
-          Bu sekmedeki toplam sipariş sayısı: {ordersList.length}
+        <div className="mb-4 flex items-center justify-between">
+          <span className="text-sm font-medium text-muted-foreground">
+            Bu sekmedeki toplam sipariş sayısı: {ordersList.length}
+          </span>
         </div>
       )}
+
+      {/* Bulk action bar */}
+      {selectedOrders.size > 0 && (
+        <div className="mb-4 p-3 bg-muted rounded-lg flex flex-wrap items-center gap-2">
+          <span className="text-sm font-medium">{selectedOrders.size} sipariş seçildi</span>
+          <Select onValueChange={bulkUpdateStatus}>
+            <SelectTrigger className="w-[180px] h-8">
+              <SelectValue placeholder="Toplu durum güncelle" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="confirmed">Onayla</SelectItem>
+              <SelectItem value="preparing">Hazırlanıyor</SelectItem>
+              <SelectItem value="ready">Hazır</SelectItem>
+              <SelectItem value="in_delivery">Teslimatta</SelectItem>
+              <SelectItem value="delivered">Teslim Edildi</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button variant="ghost" size="sm" onClick={() => setSelectedOrders(new Set())}>
+            Seçimi Temizle
+          </Button>
+        </div>
+      )}
+
       <Table>
         <TableHeader>
           <TableRow>
+            <TableHead className="w-10">
+              <Checkbox
+                checked={ordersList.length > 0 && selectedOrders.size === ordersList.length}
+                onCheckedChange={() => toggleSelectAll(ordersList)}
+              />
+            </TableHead>
             <TableHead>Sipariş Kodu</TableHead>
             <TableHead>Müşteri</TableHead>
             <TableHead>Telefon</TableHead>
