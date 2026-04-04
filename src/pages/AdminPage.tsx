@@ -118,6 +118,7 @@ const ADMIN_TABS: TabConfig[] = [
   { key: "activity-logs", label: "Aktivite Logları", Component: AdminActivityLogs },
   { key: "return-requests", label: "İade Talepleri", Component: AdminReturnRequests },
   { key: "abandoned-carts", label: "Terk Edilmiş Sepetler", Component: AdminAbandonedCarts },
+  { key: "product-performance", label: "Ürün Performansı", Component: AdminProductPerformance },
 ];
 
 const AdminPage = () => {
