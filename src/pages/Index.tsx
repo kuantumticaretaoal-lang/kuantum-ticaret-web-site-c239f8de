@@ -15,7 +15,7 @@ const Index = () => {
   const { t } = useTranslations();
   
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen pb-20 md:pb-0">
       <Suspense fallback={null}>
         <CampaignBanner currentPage="homepage" />
       </Suspense>
