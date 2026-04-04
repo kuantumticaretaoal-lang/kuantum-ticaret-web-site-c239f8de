@@ -173,7 +173,42 @@ const CustomPhotoViewer = ({ photoUrl }: { photoUrl: string }) => {
 export const AdminOrders = () => {
   const [orders, setOrders] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedOrders, setSelectedOrders] = useState<Set<string>>(new Set());
   const { toast } = useToast();
+
+  const toggleSelectOrder = (id: string) => {
+    setSelectedOrders(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = (ordersList: any[]) => {
+    if (selectedOrders.size === ordersList.length) {
+      setSelectedOrders(new Set());
+    } else {
+      setSelectedOrders(new Set(ordersList.map(o => o.id)));
+    }
+  };
+
+  const bulkUpdateStatus = async (status: string) => {
+    if (selectedOrders.size === 0) return;
+    let successCount = 0;
+    for (const orderId of selectedOrders) {
+      const { error } = await (supabase as any)
+        .from("orders")
+        .update({ status, updated_at: new Date().toISOString() })
+        .eq("id", orderId);
+      if (!error) successCount++;
+    }
+    toast({
+      title: "Toplu Güncelleme",
+      description: `${successCount}/${selectedOrders.size} sipariş "${getStatusText(status)}" olarak güncellendi`,
+    });
+    setSelectedOrders(new Set());
+    loadOrders();
+  };
 
   useEffect(() => {
     loadOrders();
