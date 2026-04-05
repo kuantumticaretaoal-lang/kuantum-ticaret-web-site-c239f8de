@@ -41,6 +41,10 @@ import { AdminActivityLogs } from "@/components/admin/AdminActivityLogs";
 import { AdminReturnRequests } from "@/components/admin/AdminReturnRequests";
 import { AdminAbandonedCarts } from "@/components/admin/AdminAbandonedCarts";
 import { AdminProductPerformance } from "@/components/admin/AdminProductPerformance";
+import { AdminBlog } from "@/components/admin/AdminBlog";
+import { AdminScheduledDiscounts } from "@/components/admin/AdminScheduledDiscounts";
+import { AdminCustomerDetail } from "@/components/admin/AdminCustomerDetail";
+import { AdminNewsletter } from "@/components/admin/AdminNewsletter";
 
 type AdminTabKey =
   | "dashboard"
