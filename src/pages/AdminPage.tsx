@@ -80,7 +80,11 @@ type AdminTabKey =
   | "activity-logs"
   | "return-requests"
   | "abandoned-carts"
-  | "product-performance";
+  | "product-performance"
+  | "blog"
+  | "scheduled-discounts"
+  | "customer-detail"
+  | "newsletter";
 
 interface TabConfig {
   key: AdminTabKey;
@@ -94,6 +98,7 @@ const ADMIN_TABS: TabConfig[] = [
   { key: "order-stats", label: "Sipariş İstatistikleri", Component: AdminOrderStats },
   { key: "users", label: "Kullanıcılar", Component: AdminUsers },
   { key: "user-stats", label: "Kullanıcı İstatistikleri", Component: AdminUserStats },
+  { key: "customer-detail", label: "Müşteri Detayı", Component: AdminCustomerDetail },
   { key: "products", label: "Ürünler", Component: AdminProducts },
   { key: "categories", label: "Kategoriler", Component: AdminCategories },
   { key: "questions", label: "Sorular", Component: AdminProductQuestions },
@@ -123,6 +128,9 @@ const ADMIN_TABS: TabConfig[] = [
   { key: "return-requests", label: "İade Talepleri", Component: AdminReturnRequests },
   { key: "abandoned-carts", label: "Terk Edilmiş Sepetler", Component: AdminAbandonedCarts },
   { key: "product-performance", label: "Ürün Performansı", Component: AdminProductPerformance },
+  { key: "blog", label: "Blog", Component: AdminBlog },
+  { key: "scheduled-discounts", label: "Zamanlı İndirimler", Component: AdminScheduledDiscounts },
+  { key: "newsletter", label: "Bülten", Component: AdminNewsletter },
 ];
 
 const AdminPage = () => {
