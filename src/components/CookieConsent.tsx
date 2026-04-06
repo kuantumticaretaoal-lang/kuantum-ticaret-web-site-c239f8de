@@ -43,9 +43,10 @@ export const CookieConsent = () => {
 
       if (!consents || consents.length === 0) {
         // Kategorileri ve politikayı yükle
-        const [categoriesRes, policyRes] = await Promise.all([
+        const [categoriesRes, policyRes, allPoliciesRes] = await Promise.all([
           supabase.from('cookie_categories').select('*').eq('is_active', true).order('sort_order'),
-          supabase.from('site_policies').select('content').eq('policy_type', 'cookie').single()
+          supabase.from('site_policies').select('content').eq('policy_type', 'cookie').single(),
+          supabase.from('site_policies').select('id, title, policy_type, content').eq('is_active', true)
         ]);
 
         if (categoriesRes.data) {
