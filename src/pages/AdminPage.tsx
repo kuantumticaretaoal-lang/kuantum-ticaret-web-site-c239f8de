@@ -32,7 +32,7 @@ import { AdminUrgencySettings } from "@/components/admin/AdminUrgencySettings";
 import AdminShipping from "@/components/admin/AdminShipping";
 import { AdminTranslations } from "@/components/admin/AdminTranslations";
 import AdminShippingCompanies from "@/components/admin/AdminShippingCompanies";
-// AdminProductTranslations removed - replaced by AI auto-translation
+import { AdminProductTranslations } from "@/components/admin/AdminProductTranslations";
 import { AdminLiveSupport } from "@/components/admin/AdminLiveSupport";
 import { AdminFavorites } from "@/components/admin/AdminFavorites";
 import { AdminCart } from "@/components/admin/AdminCart";
@@ -73,7 +73,7 @@ type AdminTabKey =
   | "urgency"
   | "shipping"
   | "shipping-companies"
-  // product-translations removed
+  | "ai-translations"
   | "live-support"
   | "admin-favorites"
   | "admin-cart"
@@ -121,6 +121,7 @@ const ADMIN_TABS: TabConfig[] = [
   { key: "shipping", label: "Kargo Ayarları", Component: AdminShipping },
   { key: "shipping-companies", label: "Kargo Şirketleri", Component: AdminShippingCompanies },
   
+  { key: "ai-translations", label: "AI Çeviriler", Component: AdminProductTranslations },
   { key: "live-support", label: "Canlı Destek", Component: AdminLiveSupport },
   { key: "admin-favorites", label: "Favoriler", Component: AdminFavorites },
   { key: "admin-cart", label: "Sepet Takibi", Component: AdminCart },

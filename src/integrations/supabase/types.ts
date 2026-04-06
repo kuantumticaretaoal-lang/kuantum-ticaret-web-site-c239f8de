@@ -716,6 +716,41 @@ export type Database = {
         }
         Relationships: []
       }
+      loyalty_points: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          order_id: string | null
+          points: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          id?: string
+          order_id?: string | null
+          points?: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          order_id?: string | null
+          points?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loyalty_points_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           created_at: string | null
@@ -1422,6 +1457,7 @@ export type Database = {
       profiles: {
         Row: {
           address: string
+          avatar_url: string | null
           created_at: string | null
           district: string
           email: string | null
@@ -1434,6 +1470,7 @@ export type Database = {
         }
         Insert: {
           address: string
+          avatar_url?: string | null
           created_at?: string | null
           district: string
           email?: string | null
@@ -1446,6 +1483,7 @@ export type Database = {
         }
         Update: {
           address?: string
+          avatar_url?: string | null
           created_at?: string | null
           district?: string
           email?: string | null
@@ -1455,6 +1493,54 @@ export type Database = {
           phone?: string
           province?: string
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      referral_codes: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          used_by_count: number
+          user_id: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          id?: string
+          used_by_count?: number
+          user_id: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          used_by_count?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      referral_usages: {
+        Row: {
+          coupon_given: boolean | null
+          created_at: string
+          id: string
+          referred_id: string
+          referrer_id: string
+        }
+        Insert: {
+          coupon_given?: boolean | null
+          created_at?: string
+          id?: string
+          referred_id: string
+          referrer_id: string
+        }
+        Update: {
+          coupon_given?: boolean | null
+          created_at?: string
+          id?: string
+          referred_id?: string
+          referrer_id?: string
         }
         Relationships: []
       }

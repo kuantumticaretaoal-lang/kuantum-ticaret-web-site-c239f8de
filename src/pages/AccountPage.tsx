@@ -15,6 +15,8 @@ import { Copy, RefreshCw, Moon, Sun } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import OrderTracking from "@/components/OrderTracking";
 import { useTheme } from "next-themes";
+import { AvatarUpload } from "@/components/AvatarUpload";
+import { LoyaltyCard } from "@/components/LoyaltyCard";
 
 const AccountPage = () => {
   const navigate = useNavigate();
@@ -23,6 +25,7 @@ const AccountPage = () => {
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<any>(null);
   const [email, setEmail] = useState("");
+  const [userId, setUserId] = useState<string | null>(null);
   const [backupCode, setBackupCode] = useState<string | null>(null);
   const [regeneratingCode, setRegeneratingCode] = useState(false);
 
@@ -39,6 +42,7 @@ const AccountPage = () => {
     }
 
     setEmail(session.user.email || "");
+    setUserId(session.user.id);
 
     const { data, error } = await (supabase as any)
       .from("profiles")
@@ -140,9 +144,10 @@ const AccountPage = () => {
       <Navbar />
       <div className="container mx-auto px-4 py-16">
         <Tabs defaultValue="settings" className="max-w-2xl mx-auto">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="settings">Hesap Ayarları</TabsTrigger>
             <TabsTrigger value="tracking">Sipariş Takibi</TabsTrigger>
+            <TabsTrigger value="loyalty">Puanlar & Davet</TabsTrigger>
           </TabsList>
           
           <TabsContent value="tracking">
@@ -155,6 +160,17 @@ const AccountPage = () => {
                 <CardTitle>Hesap Ayarları</CardTitle>
               </CardHeader>
               <CardContent>
+                {/* Avatar upload */}
+                {userId && (
+                  <div className="flex justify-center mb-6">
+                    <AvatarUpload
+                      userId={userId}
+                      currentUrl={profile?.avatar_url}
+                      firstName={profile?.first_name}
+                      onUploaded={(url) => setProfile({ ...profile, avatar_url: url })}
+                    />
+                  </div>
+                )}
                 {/* Dark mode toggle */}
                 <div className="flex items-center justify-between mb-6 p-4 rounded-lg border bg-muted/50">
                   <div className="flex items-center gap-3">
@@ -272,6 +288,9 @@ const AccountPage = () => {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+          <TabsContent value="loyalty">
+            {userId && <LoyaltyCard userId={userId} />}
           </TabsContent>
         </Tabs>
       </div>
