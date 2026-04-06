@@ -141,6 +141,19 @@ export const CookieConsent = () => {
                 Size daha iyi bir deneyim sunmak için çerezler kullanıyoruz. 
                 Tercihlerinizi yönetebilir veya tümünü kabul edebilirsiniz.
               </p>
+              {policies.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-1">
+                  {policies.map(p => (
+                    <button
+                      key={p.id}
+                      onClick={() => { setSelectedPolicy(p); setShowDetails(true); }}
+                      className="text-xs text-primary underline hover:no-underline"
+                    >
+                      {p.title}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
             <div className="flex flex-wrap gap-2">
               <Button variant="outline" size="sm" onClick={() => setShowDetails(true)}>
