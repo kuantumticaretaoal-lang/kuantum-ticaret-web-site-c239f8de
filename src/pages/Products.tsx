@@ -51,13 +51,13 @@ const Products = () => {
   const { toggleFavorite, isFavorite } = useFavorites();
   const { t, formatPrice, currentLanguage } = useTranslations();
 
-  const getPromoVariant = (badge: string): any => {
+  const getPromoBadgeConfig = (badge: string) => {
     const b = (badge || "").toLowerCase();
-    if (b.includes("hızlı teslimat")) return "success";
-    if (b.includes("sınırlı stok")) return "warning";
-    if (b.includes("en geç yarın kargoda")) return "violet";
-    if (b.includes("indirim")) return "destructive";
-    return "secondary";
+    if (b.includes("hızlı teslimat")) return { icon: <Zap className="h-3 w-3" />, className: "bg-emerald-500 text-white border-0 shadow-md shadow-emerald-500/30 animate-pulse" };
+    if (b.includes("sınırlı stok")) return { icon: <Flame className="h-3 w-3" />, className: "bg-gradient-to-r from-orange-500 to-red-500 text-white border-0 shadow-md shadow-orange-500/30 animate-pulse" };
+    if (b.includes("en geç yarın kargoda")) return { icon: <Clock className="h-3 w-3" />, className: "bg-violet-600 text-white border-0 shadow-md shadow-violet-500/30" };
+    if (b.includes("indirim")) return { icon: <TrendingDown className="h-3 w-3" />, className: "bg-gradient-to-r from-red-600 to-pink-600 text-white border-0 shadow-lg shadow-red-500/40 font-bold animate-bounce" };
+    return { icon: <Tag className="h-3 w-3" />, className: "bg-primary text-primary-foreground border-0" };
   };
 
   useEffect(() => {
