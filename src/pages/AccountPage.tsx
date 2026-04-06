@@ -42,6 +42,7 @@ const AccountPage = () => {
     }
 
     setEmail(session.user.email || "");
+    setUserId(session.user.id);
 
     const { data, error } = await (supabase as any)
       .from("profiles")
