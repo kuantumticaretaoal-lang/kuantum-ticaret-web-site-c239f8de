@@ -144,9 +144,10 @@ const AccountPage = () => {
       <Navbar />
       <div className="container mx-auto px-4 py-16">
         <Tabs defaultValue="settings" className="max-w-2xl mx-auto">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="settings">Hesap Ayarları</TabsTrigger>
             <TabsTrigger value="tracking">Sipariş Takibi</TabsTrigger>
+            <TabsTrigger value="loyalty">Puanlar & Davet</TabsTrigger>
           </TabsList>
           
           <TabsContent value="tracking">
