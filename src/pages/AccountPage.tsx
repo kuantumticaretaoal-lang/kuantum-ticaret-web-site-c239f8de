@@ -160,6 +160,17 @@ const AccountPage = () => {
                 <CardTitle>Hesap Ayarları</CardTitle>
               </CardHeader>
               <CardContent>
+                {/* Avatar upload */}
+                {userId && (
+                  <div className="flex justify-center mb-6">
+                    <AvatarUpload
+                      userId={userId}
+                      currentUrl={profile?.avatar_url}
+                      firstName={profile?.first_name}
+                      onUploaded={(url) => setProfile({ ...profile, avatar_url: url })}
+                    />
+                  </div>
+                )}
                 {/* Dark mode toggle */}
                 <div className="flex items-center justify-between mb-6 p-4 rounded-lg border bg-muted/50">
                   <div className="flex items-center gap-3">
