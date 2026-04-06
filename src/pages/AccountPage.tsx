@@ -15,6 +15,8 @@ import { Copy, RefreshCw, Moon, Sun } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import OrderTracking from "@/components/OrderTracking";
 import { useTheme } from "next-themes";
+import { AvatarUpload } from "@/components/AvatarUpload";
+import { LoyaltyCard } from "@/components/LoyaltyCard";
 
 const AccountPage = () => {
   const navigate = useNavigate();
