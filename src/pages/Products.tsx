@@ -10,7 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { ShoppingCart, Search, X, Filter, ArrowUpDown } from "lucide-react";
+import { ShoppingCart, Search, X, Filter, ArrowUpDown, Flame, Zap, Clock, Tag, TrendingDown } from "lucide-react";
+import { ProductComparison } from "@/components/ProductComparison";
 import { Slider } from "@/components/ui/slider";
 import { BackToTop } from "@/components/BackToTop";
 import { ProductBreadcrumb } from "@/components/ProductBreadcrumb";
