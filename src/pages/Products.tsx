@@ -521,9 +521,10 @@ const Products = () => {
                   </div>
                   {product.stock_quantity !== null && product.stock_quantity <= 5 && product.stock_status !== 'out_of_stock' && (
                     <div className="mt-2">
-                      <Badge variant="warning" className="text-xs">
-                        ⚠️ Son {product.stock_quantity} Adet
-                      </Badge>
+                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-bold shadow-sm animate-pulse">
+                        <Flame className="h-3 w-3" />
+                        Son {product.stock_quantity} Adet — Acele Et!
+                      </span>
                     </div>
                   )}
                 </CardHeader>

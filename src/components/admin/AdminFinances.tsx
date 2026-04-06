@@ -187,18 +187,7 @@ export const AdminFinances = () => {
                     </span>
                   </TableCell>
                   <TableCell>
-                    {expense.order_id ? (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        disabled
-                        title="Sipariş kaynaklı kayıtlar güvenlik nedeniyle silinemez"
-                      >
-                        Sil
-                      </Button>
-                    ) : (
-                      <DeleteExpenseWithVerificationDialog expenseId={expense.id} onDeleted={reload} />
-                    )}
+                    <DeleteExpenseWithVerificationDialog expenseId={expense.id} onDeleted={reload} />
                   </TableCell>
                 </TableRow>
               ))}

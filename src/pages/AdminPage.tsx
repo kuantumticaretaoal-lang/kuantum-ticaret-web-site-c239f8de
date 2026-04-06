@@ -120,7 +120,7 @@ const ADMIN_TABS: TabConfig[] = [
   { key: "urgency", label: "Aciliyet Ayarları", Component: AdminUrgencySettings },
   { key: "shipping", label: "Kargo Ayarları", Component: AdminShipping },
   { key: "shipping-companies", label: "Kargo Şirketleri", Component: AdminShippingCompanies },
-  { key: "product-translations", label: "Ürün Çevirileri", Component: AdminProductTranslations },
+  
   { key: "live-support", label: "Canlı Destek", Component: AdminLiveSupport },
   { key: "admin-favorites", label: "Favoriler", Component: AdminFavorites },
   { key: "admin-cart", label: "Sepet Takibi", Component: AdminCart },
