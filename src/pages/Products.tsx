@@ -467,12 +467,16 @@ const Products = () => {
                       </Button>
                     </div>
                     {product.promotion_badges && product.promotion_badges.length > 0 && (
-                      <div className="absolute top-2 left-2 flex flex-col gap-1">
-                        {product.promotion_badges.map((badge: string, idx: number) => (
-                          <Badge key={idx} variant={getPromoVariant(badge)} className="text-xs">
-                            {badge}
-                          </Badge>
-                        ))}
+                      <div className="absolute top-2 left-2 flex flex-col gap-1.5">
+                        {product.promotion_badges.map((badge: string, idx: number) => {
+                          const config = getPromoBadgeConfig(badge);
+                          return (
+                            <span key={idx} className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold ${config.className}`}>
+                              {config.icon}
+                              {badge}
+                            </span>
+                          );
+                        })}
                       </div>
                     )}
                     {product.product_categories && product.product_categories.length > 0 && (
