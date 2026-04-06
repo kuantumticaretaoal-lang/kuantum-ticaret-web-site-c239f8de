@@ -12,6 +12,13 @@ interface CookieCategory {
   is_required: boolean;
 }
 
+interface SitePolicy {
+  id: string;
+  title: string;
+  policy_type: string;
+  content: string | null;
+}
+
 const getDeviceId = (): string => {
   let deviceId = localStorage.getItem('device_id');
   if (!deviceId) {
@@ -27,12 +34,13 @@ export const CookieConsent = () => {
   const [categories, setCategories] = useState<CookieCategory[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<Set<string>>(new Set());
   const [cookiePolicy, setCookiePolicy] = useState<string>('');
+  const [policies, setPolicies] = useState<SitePolicy[]>([]);
+  const [selectedPolicy, setSelectedPolicy] = useState<SitePolicy | null>(null);
 
   useEffect(() => {
     const checkConsent = async () => {
       const deviceId = getDeviceId();
       
-      // Daha önce onay verilmiş mi kontrol et
       const { data: consents } = await supabase
         .from('cookie_consents')
         .select('id')
@@ -40,15 +48,14 @@ export const CookieConsent = () => {
         .limit(1);
 
       if (!consents || consents.length === 0) {
-        // Kategorileri ve politikayı yükle
-        const [categoriesRes, policyRes] = await Promise.all([
+        const [categoriesRes, policyRes, allPoliciesRes] = await Promise.all([
           supabase.from('cookie_categories').select('*').eq('is_active', true).order('sort_order'),
-          supabase.from('site_policies').select('content').eq('policy_type', 'cookie').single()
+          supabase.from('site_policies').select('content').eq('policy_type', 'cookie').single(),
+          supabase.from('site_policies').select('id, title, policy_type, content').eq('is_active', true)
         ]);
 
         if (categoriesRes.data) {
           setCategories(categoriesRes.data);
-          // Zorunlu kategorileri otomatik seç
           const required = new Set(
             categoriesRes.data.filter(c => c.is_required).map(c => c.id)
           );
@@ -57,6 +64,10 @@ export const CookieConsent = () => {
 
         if (policyRes.data) {
           setCookiePolicy(policyRes.data.content || '');
+        }
+
+        if (allPoliciesRes.data) {
+          setPolicies(allPoliciesRes.data as SitePolicy[]);
         }
 
         setIsOpen(true);
@@ -69,14 +80,12 @@ export const CookieConsent = () => {
   const handleAcceptAll = async () => {
     const deviceId = getDeviceId();
     const { data: { user } } = await supabase.auth.getUser();
-
     const consents = categories.map(cat => ({
       device_id: deviceId,
       user_id: user?.id || null,
       category_id: cat.id,
       accepted: true,
     }));
-
     await supabase.from('cookie_consents').insert(consents);
     setIsOpen(false);
   };
@@ -84,14 +93,12 @@ export const CookieConsent = () => {
   const handleAcceptRequired = async () => {
     const deviceId = getDeviceId();
     const { data: { user } } = await supabase.auth.getUser();
-
     const consents = categories.map(cat => ({
       device_id: deviceId,
       user_id: user?.id || null,
       category_id: cat.id,
       accepted: cat.is_required,
     }));
-
     await supabase.from('cookie_consents').insert(consents);
     setIsOpen(false);
   };
@@ -99,21 +106,18 @@ export const CookieConsent = () => {
   const handleAcceptSelected = async () => {
     const deviceId = getDeviceId();
     const { data: { user } } = await supabase.auth.getUser();
-
     const consents = categories.map(cat => ({
       device_id: deviceId,
       user_id: user?.id || null,
       category_id: cat.id,
       accepted: selectedCategories.has(cat.id),
     }));
-
     await supabase.from('cookie_consents').insert(consents);
     setIsOpen(false);
   };
 
   const toggleCategory = (categoryId: string, isRequired: boolean) => {
-    if (isRequired) return; // Zorunlu kategoriler değiştirilemez
-    
+    if (isRequired) return;
     setSelectedCategories(prev => {
       const next = new Set(prev);
       if (next.has(categoryId)) {
@@ -138,9 +142,22 @@ export const CookieConsent = () => {
                 Size daha iyi bir deneyim sunmak için çerezler kullanıyoruz. 
                 Tercihlerinizi yönetebilir veya tümünü kabul edebilirsiniz.
               </p>
+              {policies.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {policies.map(p => (
+                    <button
+                      key={p.id}
+                      onClick={() => { setSelectedPolicy(p); setShowDetails(true); }}
+                      className="text-xs text-primary underline hover:no-underline"
+                    >
+                      📄 {p.title}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
             <div className="flex flex-wrap gap-2">
-              <Button variant="outline" size="sm" onClick={() => setShowDetails(true)}>
+              <Button variant="outline" size="sm" onClick={() => { setSelectedPolicy(null); setShowDetails(true); }}>
                 Tercihleri Yönet
               </Button>
               <Button variant="outline" size="sm" onClick={handleAcceptRequired}>
@@ -152,65 +169,93 @@ export const CookieConsent = () => {
             </div>
           </div>
         ) : (
-          <Dialog open={showDetails} onOpenChange={setShowDetails}>
+          <Dialog open={showDetails} onOpenChange={(open) => { setShowDetails(open); if (!open) setSelectedPolicy(null); }}>
             <DialogContent className="max-w-2xl">
               <DialogHeader>
-                <DialogTitle>Çerez Tercihleri</DialogTitle>
+                <DialogTitle>{selectedPolicy ? selectedPolicy.title : "Çerez Tercihleri"}</DialogTitle>
               </DialogHeader>
               
               <ScrollArea className="max-h-[400px]">
                 <div className="space-y-4">
-                  {cookiePolicy && (
-                    <div className="p-4 bg-muted rounded-lg text-sm">
-                      <p className="whitespace-pre-wrap">{cookiePolicy}</p>
-                    </div>
-                  )}
-
-                  <div className="space-y-3">
-                    {categories.map(category => (
-                      <div 
-                        key={category.id} 
-                        className="flex items-start gap-3 p-3 border rounded-lg"
-                      >
-                        <Checkbox
-                          id={category.id}
-                          checked={selectedCategories.has(category.id)}
-                          disabled={category.is_required}
-                          onCheckedChange={() => toggleCategory(category.id, category.is_required)}
-                        />
-                        <div className="flex-1">
-                          <label 
-                            htmlFor={category.id} 
-                            className="font-medium cursor-pointer"
-                          >
-                            {category.name}
-                            {category.is_required && (
-                              <span className="ml-2 text-xs text-muted-foreground">(Zorunlu)</span>
-                            )}
-                          </label>
-                          {category.description && (
-                            <p className="text-sm text-muted-foreground mt-1">
-                              {category.description}
-                            </p>
-                          )}
-                        </div>
+                  {selectedPolicy ? (
+                    <div className="space-y-3">
+                      <div className="p-4 bg-muted rounded-lg text-sm whitespace-pre-wrap">
+                        {selectedPolicy.content || "İçerik henüz eklenmedi."}
                       </div>
-                    ))}
-                  </div>
+                      <Button variant="ghost" size="sm" onClick={() => setSelectedPolicy(null)}>
+                        ← Çerez Tercihlerine Dön
+                      </Button>
+                    </div>
+                  ) : (
+                    <>
+                      {cookiePolicy && (
+                        <div className="p-4 bg-muted rounded-lg text-sm">
+                          <p className="whitespace-pre-wrap">{cookiePolicy}</p>
+                        </div>
+                      )}
+
+                      {policies.length > 0 && (
+                        <div className="space-y-2">
+                          <h4 className="font-medium text-sm">Politikalarımız</h4>
+                          <div className="flex flex-wrap gap-2">
+                            {policies.map(p => (
+                              <Button key={p.id} variant="outline" size="sm" onClick={() => setSelectedPolicy(p)}>
+                                📄 {p.title}
+                              </Button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="space-y-3">
+                        {categories.map(category => (
+                          <div 
+                            key={category.id} 
+                            className="flex items-start gap-3 p-3 border rounded-lg"
+                          >
+                            <Checkbox
+                              id={category.id}
+                              checked={selectedCategories.has(category.id)}
+                              disabled={category.is_required}
+                              onCheckedChange={() => toggleCategory(category.id, category.is_required)}
+                            />
+                            <div className="flex-1">
+                              <label 
+                                htmlFor={category.id} 
+                                className="font-medium cursor-pointer"
+                              >
+                                {category.name}
+                                {category.is_required && (
+                                  <span className="ml-2 text-xs text-muted-foreground">(Zorunlu)</span>
+                                )}
+                              </label>
+                              {category.description && (
+                                <p className="text-sm text-muted-foreground mt-1">
+                                  {category.description}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  )}
                 </div>
               </ScrollArea>
 
-              <DialogFooter className="flex-col sm:flex-row gap-2">
-                <Button variant="outline" onClick={handleAcceptRequired}>
-                  Yalnızca Zorunlu
-                </Button>
-                <Button variant="outline" onClick={handleAcceptSelected}>
-                  Seçimlerimi Kaydet
-                </Button>
-                <Button onClick={handleAcceptAll}>
-                  Tümünü Kabul Et
-                </Button>
-              </DialogFooter>
+              {!selectedPolicy && (
+                <DialogFooter className="flex-col sm:flex-row gap-2">
+                  <Button variant="outline" onClick={handleAcceptRequired}>
+                    Yalnızca Zorunlu
+                  </Button>
+                  <Button variant="outline" onClick={handleAcceptSelected}>
+                    Seçimlerimi Kaydet
+                  </Button>
+                  <Button onClick={handleAcceptAll}>
+                    Tümünü Kabul Et
+                  </Button>
+                </DialogFooter>
+              )}
             </DialogContent>
           </Dialog>
         )}

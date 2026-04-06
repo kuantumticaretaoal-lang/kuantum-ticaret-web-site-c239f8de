@@ -10,7 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { ShoppingCart, Search, X, Filter, ArrowUpDown } from "lucide-react";
+import { ShoppingCart, Search, X, Filter, ArrowUpDown, Flame, Zap, Clock, Tag, TrendingDown } from "lucide-react";
+import { ProductComparison } from "@/components/ProductComparison";
 import { Slider } from "@/components/ui/slider";
 import { BackToTop } from "@/components/BackToTop";
 import { ProductBreadcrumb } from "@/components/ProductBreadcrumb";
@@ -50,13 +51,13 @@ const Products = () => {
   const { toggleFavorite, isFavorite } = useFavorites();
   const { t, formatPrice, currentLanguage } = useTranslations();
 
-  const getPromoVariant = (badge: string): any => {
+  const getPromoBadgeConfig = (badge: string) => {
     const b = (badge || "").toLowerCase();
-    if (b.includes("hızlı teslimat")) return "success";
-    if (b.includes("sınırlı stok")) return "warning";
-    if (b.includes("en geç yarın kargoda")) return "violet";
-    if (b.includes("indirim")) return "destructive";
-    return "secondary";
+    if (b.includes("hızlı teslimat")) return { icon: <Zap className="h-3 w-3" />, className: "bg-emerald-500 text-white border-0 shadow-md shadow-emerald-500/30 animate-pulse" };
+    if (b.includes("sınırlı stok")) return { icon: <Flame className="h-3 w-3" />, className: "bg-gradient-to-r from-orange-500 to-red-500 text-white border-0 shadow-md shadow-orange-500/30 animate-pulse" };
+    if (b.includes("en geç yarın kargoda")) return { icon: <Clock className="h-3 w-3" />, className: "bg-violet-600 text-white border-0 shadow-md shadow-violet-500/30" };
+    if (b.includes("indirim")) return { icon: <TrendingDown className="h-3 w-3" />, className: "bg-gradient-to-r from-red-600 to-pink-600 text-white border-0 shadow-lg shadow-red-500/40 font-bold animate-bounce" };
+    return { icon: <Tag className="h-3 w-3" />, className: "bg-primary text-primary-foreground border-0" };
   };
 
   useEffect(() => {
@@ -257,7 +258,10 @@ const Products = () => {
       <Navbar />
       <div className="container mx-auto px-4 py-16">
         <ProductBreadcrumb items={[{ label: "Ürünler" }]} />
-        <h1 className="text-4xl md:text-5xl font-bold text-center mb-8">Ürünlerimiz</h1>
+        <div className="flex items-center justify-between mb-8">
+          <h1 className="text-4xl md:text-5xl font-bold text-center flex-1">Ürünlerimiz</h1>
+          <ProductComparison />
+        </div>
         
         {/* Kategoriler */}
         {categories.length > 0 && (
@@ -463,12 +467,16 @@ const Products = () => {
                       </Button>
                     </div>
                     {product.promotion_badges && product.promotion_badges.length > 0 && (
-                      <div className="absolute top-2 left-2 flex flex-col gap-1">
-                        {product.promotion_badges.map((badge: string, idx: number) => (
-                          <Badge key={idx} variant={getPromoVariant(badge)} className="text-xs">
-                            {badge}
-                          </Badge>
-                        ))}
+                      <div className="absolute top-2 left-2 flex flex-col gap-1.5">
+                        {product.promotion_badges.map((badge: string, idx: number) => {
+                          const config = getPromoBadgeConfig(badge);
+                          return (
+                            <span key={idx} className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold ${config.className}`}>
+                              {config.icon}
+                              {badge}
+                            </span>
+                          );
+                        })}
                       </div>
                     )}
                     {product.product_categories && product.product_categories.length > 0 && (
@@ -493,12 +501,13 @@ const Products = () => {
                     <div className="flex items-center justify-between">
                     <div>
                       {product.discounted_price ? (
-                        <div className="flex items-center gap-2">
-                          <span className="text-lg line-through text-muted-foreground">{formatPrice(parseFloat(product.price))}</span>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-sm line-through text-muted-foreground">{formatPrice(parseFloat(product.price))}</span>
                           <span className="text-2xl font-bold text-green-600">{formatPrice(parseFloat(product.discounted_price))}</span>
-                          <Badge variant="destructive" className="text-xs">
+                          <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-md bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs font-bold shadow-sm">
+                            <TrendingDown className="h-3 w-3" />
                             %{Math.round(((parseFloat(product.price) - parseFloat(product.discounted_price)) / parseFloat(product.price)) * 100)}
-                          </Badge>
+                          </span>
                         </div>
                       ) : (
                         <span className="text-2xl font-bold text-primary">{formatPrice(parseFloat(product.price))}</span>
@@ -512,9 +521,10 @@ const Products = () => {
                   </div>
                   {product.stock_quantity !== null && product.stock_quantity <= 5 && product.stock_status !== 'out_of_stock' && (
                     <div className="mt-2">
-                      <Badge variant="warning" className="text-xs">
-                        ⚠️ Son {product.stock_quantity} Adet
-                      </Badge>
+                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-bold shadow-sm animate-pulse">
+                        <Flame className="h-3 w-3" />
+                        Son {product.stock_quantity} Adet — Acele Et!
+                      </span>
                     </div>
                   )}
                 </CardHeader>
