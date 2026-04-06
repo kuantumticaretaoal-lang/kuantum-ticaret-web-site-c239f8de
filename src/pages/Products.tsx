@@ -501,12 +501,13 @@ const Products = () => {
                     <div className="flex items-center justify-between">
                     <div>
                       {product.discounted_price ? (
-                        <div className="flex items-center gap-2">
-                          <span className="text-lg line-through text-muted-foreground">{formatPrice(parseFloat(product.price))}</span>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-sm line-through text-muted-foreground">{formatPrice(parseFloat(product.price))}</span>
                           <span className="text-2xl font-bold text-green-600">{formatPrice(parseFloat(product.discounted_price))}</span>
-                          <Badge variant="destructive" className="text-xs">
+                          <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-md bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs font-bold shadow-sm">
+                            <TrendingDown className="h-3 w-3" />
                             %{Math.round(((parseFloat(product.price) - parseFloat(product.discounted_price)) / parseFloat(product.price)) * 100)}
-                          </Badge>
+                          </span>
                         </div>
                       ) : (
                         <span className="text-2xl font-bold text-primary">{formatPrice(parseFloat(product.price))}</span>
