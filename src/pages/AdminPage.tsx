@@ -73,7 +73,7 @@ type AdminTabKey =
   | "urgency"
   | "shipping"
   | "shipping-companies"
-  // product-translations removed
+  | "ai-translations"
   | "live-support"
   | "admin-favorites"
   | "admin-cart"
