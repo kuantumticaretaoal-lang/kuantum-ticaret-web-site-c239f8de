@@ -258,7 +258,10 @@ const Products = () => {
       <Navbar />
       <div className="container mx-auto px-4 py-16">
         <ProductBreadcrumb items={[{ label: "Ürünler" }]} />
-        <h1 className="text-4xl md:text-5xl font-bold text-center mb-8">Ürünlerimiz</h1>
+        <div className="flex items-center justify-between mb-8">
+          <h1 className="text-4xl md:text-5xl font-bold text-center flex-1">Ürünlerimiz</h1>
+          <ProductComparison />
+        </div>
         
         {/* Kategoriler */}
         {categories.length > 0 && (
