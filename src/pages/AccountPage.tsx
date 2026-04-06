@@ -289,6 +289,9 @@ const AccountPage = () => {
               </CardContent>
             </Card>
           </TabsContent>
+          <TabsContent value="loyalty">
+            {userId && <LoyaltyCard userId={userId} />}
+          </TabsContent>
         </Tabs>
       </div>
       <Footer />
