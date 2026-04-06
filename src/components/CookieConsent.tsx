@@ -27,6 +27,8 @@ export const CookieConsent = () => {
   const [categories, setCategories] = useState<CookieCategory[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<Set<string>>(new Set());
   const [cookiePolicy, setCookiePolicy] = useState<string>('');
+  const [policies, setPolicies] = useState<SitePolicy[]>([]);
+  const [selectedPolicy, setSelectedPolicy] = useState<SitePolicy | null>(null);
 
   useEffect(() => {
     const checkConsent = async () => {
