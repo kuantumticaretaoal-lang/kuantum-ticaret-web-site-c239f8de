@@ -25,6 +25,7 @@ const AccountPage = () => {
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<any>(null);
   const [email, setEmail] = useState("");
+  const [userId, setUserId] = useState<string | null>(null);
   const [backupCode, setBackupCode] = useState<string | null>(null);
   const [regeneratingCode, setRegeneratingCode] = useState(false);
 
