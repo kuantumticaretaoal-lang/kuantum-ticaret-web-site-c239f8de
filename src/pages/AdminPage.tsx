@@ -32,7 +32,7 @@ import { AdminUrgencySettings } from "@/components/admin/AdminUrgencySettings";
 import AdminShipping from "@/components/admin/AdminShipping";
 import { AdminTranslations } from "@/components/admin/AdminTranslations";
 import AdminShippingCompanies from "@/components/admin/AdminShippingCompanies";
-import AdminProductTranslations from "@/components/admin/AdminProductTranslations";
+// AdminProductTranslations removed - replaced by AI auto-translation
 import { AdminLiveSupport } from "@/components/admin/AdminLiveSupport";
 import { AdminFavorites } from "@/components/admin/AdminFavorites";
 import { AdminCart } from "@/components/admin/AdminCart";
