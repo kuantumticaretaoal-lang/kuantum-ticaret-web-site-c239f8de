@@ -17,3 +17,9 @@ verify_jwt = false
 
 [functions.admin-expense-delete]
 verify_jwt = false
+
+[functions.send-login-code]
+verify_jwt = false
+
+[functions.auto-translate-product]
+verify_jwt = false

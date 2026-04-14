@@ -11,7 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { formatLocationData } from "@/lib/formatters";
 import { createBackupCode } from "@/lib/backup-codes";
-import { Copy, RefreshCw, Moon, Sun } from "lucide-react";
+import { Copy, RefreshCw, Moon, Sun, Shield } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import OrderTracking from "@/components/OrderTracking";
 import { useTheme } from "next-themes";
@@ -28,6 +28,8 @@ const AccountPage = () => {
   const [userId, setUserId] = useState<string | null>(null);
   const [backupCode, setBackupCode] = useState<string | null>(null);
   const [regeneratingCode, setRegeneratingCode] = useState(false);
+  const [twoFAEnabled, setTwoFAEnabled] = useState(false);
+  const [twoFALoading, setTwoFALoading] = useState(false);
 
   useEffect(() => {
     loadProfile();
@@ -80,6 +82,14 @@ const AccountPage = () => {
       setBackupCode("********-***-***");
     }
 
+    // Load 2FA setting
+    const { data: twoFA } = await (supabase as any)
+      .from("two_factor_settings")
+      .select("is_enabled")
+      .eq("user_id", session.user.id)
+      .maybeSingle();
+    setTwoFAEnabled(twoFA?.is_enabled === true);
+
     setLoading(false);
   };
 
@@ -117,6 +127,30 @@ const AccountPage = () => {
     } else {
       setBackupCode(code);
       toast({ title: "Yeni Yedek Kod Oluşturuldu", description: "UYARI: Bu kod sadece şimdi görüntülenebilir!", duration: 10000 });
+    }
+  };
+
+  const toggle2FA = async (enabled: boolean) => {
+    if (!userId) return;
+    setTwoFALoading(true);
+    try {
+      const { data: existing } = await (supabase as any)
+        .from("two_factor_settings")
+        .select("id")
+        .eq("user_id", userId)
+        .maybeSingle();
+
+      if (existing) {
+        await (supabase as any).from("two_factor_settings").update({ is_enabled: enabled }).eq("user_id", userId);
+      } else {
+        await (supabase as any).from("two_factor_settings").insert({ user_id: userId, is_enabled: enabled });
+      }
+      setTwoFAEnabled(enabled);
+      toast({ title: enabled ? "2 Adımlı Doğrulama Aktif" : "2 Adımlı Doğrulama Kapatıldı", description: enabled ? "Giriş yaparken e-posta ile kod doğrulaması istenecektir." : "Artık doğrudan giriş yapabilirsiniz." });
+    } catch {
+      toast({ variant: "destructive", title: "Hata", description: "Ayar güncellenemedi" });
+    } finally {
+      setTwoFALoading(false);
     }
   };
 
@@ -183,6 +217,22 @@ const AccountPage = () => {
                   <Switch
                     checked={theme === "dark"}
                     onCheckedChange={(checked) => setTheme(checked ? "dark" : "light")}
+                  />
+                </div>
+
+                {/* 2FA toggle */}
+                <div className="flex items-center justify-between mb-6 p-4 rounded-lg border bg-muted/50">
+                  <div className="flex items-center gap-3">
+                    <Shield className="h-5 w-5" />
+                    <div>
+                      <p className="font-medium text-sm">2 Adımlı Doğrulama</p>
+                      <p className="text-xs text-muted-foreground">Giriş yaparken e-posta ile kod doğrulaması</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={twoFAEnabled}
+                    onCheckedChange={toggle2FA}
+                    disabled={twoFALoading}
                   />
                 </div>
 
