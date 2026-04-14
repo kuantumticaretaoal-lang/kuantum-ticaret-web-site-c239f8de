@@ -82,6 +82,14 @@ const AccountPage = () => {
       setBackupCode("********-***-***");
     }
 
+    // Load 2FA setting
+    const { data: twoFA } = await (supabase as any)
+      .from("two_factor_settings")
+      .select("is_enabled")
+      .eq("user_id", session.user.id)
+      .maybeSingle();
+    setTwoFAEnabled(twoFA?.is_enabled === true);
+
     setLoading(false);
   };
 
