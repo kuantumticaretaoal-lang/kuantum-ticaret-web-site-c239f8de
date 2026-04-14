@@ -11,7 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { formatLocationData } from "@/lib/formatters";
 import { createBackupCode } from "@/lib/backup-codes";
-import { Copy, RefreshCw, Moon, Sun } from "lucide-react";
+import { Copy, RefreshCw, Moon, Sun, Shield } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import OrderTracking from "@/components/OrderTracking";
 import { useTheme } from "next-themes";
@@ -28,6 +28,8 @@ const AccountPage = () => {
   const [userId, setUserId] = useState<string | null>(null);
   const [backupCode, setBackupCode] = useState<string | null>(null);
   const [regeneratingCode, setRegeneratingCode] = useState(false);
+  const [twoFAEnabled, setTwoFAEnabled] = useState(false);
+  const [twoFALoading, setTwoFALoading] = useState(false);
 
   useEffect(() => {
     loadProfile();
