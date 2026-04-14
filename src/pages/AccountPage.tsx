@@ -236,6 +236,7 @@ const AccountPage = () => {
                   />
                 </div>
 
+                <form onSubmit={handleUpdate} className="space-y-4">
                   <div>
                     <Label>Email</Label>
                     <Input value={email} disabled />
