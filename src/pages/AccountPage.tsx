@@ -220,7 +220,22 @@ const AccountPage = () => {
                   />
                 </div>
 
-                <form onSubmit={handleUpdate} className="space-y-4">
+                {/* 2FA toggle */}
+                <div className="flex items-center justify-between mb-6 p-4 rounded-lg border bg-muted/50">
+                  <div className="flex items-center gap-3">
+                    <Shield className="h-5 w-5" />
+                    <div>
+                      <p className="font-medium text-sm">2 Adımlı Doğrulama</p>
+                      <p className="text-xs text-muted-foreground">Giriş yaparken e-posta ile kod doğrulaması</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={twoFAEnabled}
+                    onCheckedChange={toggle2FA}
+                    disabled={twoFALoading}
+                  />
+                </div>
+
                   <div>
                     <Label>Email</Label>
                     <Input value={email} disabled />
