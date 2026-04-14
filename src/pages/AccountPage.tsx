@@ -130,6 +130,30 @@ const AccountPage = () => {
     }
   };
 
+  const toggle2FA = async (enabled: boolean) => {
+    if (!userId) return;
+    setTwoFALoading(true);
+    try {
+      const { data: existing } = await (supabase as any)
+        .from("two_factor_settings")
+        .select("id")
+        .eq("user_id", userId)
+        .maybeSingle();
+
+      if (existing) {
+        await (supabase as any).from("two_factor_settings").update({ is_enabled: enabled }).eq("user_id", userId);
+      } else {
+        await (supabase as any).from("two_factor_settings").insert({ user_id: userId, is_enabled: enabled });
+      }
+      setTwoFAEnabled(enabled);
+      toast({ title: enabled ? "2 Adımlı Doğrulama Aktif" : "2 Adımlı Doğrulama Kapatıldı", description: enabled ? "Giriş yaparken e-posta ile kod doğrulaması istenecektir." : "Artık doğrudan giriş yapabilirsiniz." });
+    } catch {
+      toast({ variant: "destructive", title: "Hata", description: "Ayar güncellenemedi" });
+    } finally {
+      setTwoFALoading(false);
+    }
+  };
+
   const copyToClipboard = () => {
     if (backupCode && !backupCode.includes("*")) {
       navigator.clipboard.writeText(backupCode);
