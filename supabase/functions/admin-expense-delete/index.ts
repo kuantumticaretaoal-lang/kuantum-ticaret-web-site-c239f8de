@@ -7,9 +7,9 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-function json(payload: unknown) {
+function json(payload: unknown, status = 200) {
   return new Response(JSON.stringify(payload), {
-    status: 200,
+    status,
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 }
@@ -32,10 +32,8 @@ serve(async (req) => {
   try {
     const body = await req.json().catch(() => ({}));
     const step = body?.step;
-    const expenseId = body?.expenseId;
-    const code = body?.code;
-
-    console.log("admin-expense-delete", { step, expenseId: String(expenseId || "").slice(0, 8) });
+    const expenseId = String(body?.expenseId ?? "").trim();
+    const code = String(body?.code ?? "");
 
     if (!step || !expenseId) {
       return json({ ok: false, error: "Missing step or expenseId" });
@@ -44,10 +42,12 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const resendApiKey = (Deno.env.get("RESEND_API_KEY") ?? "").trim();
 
     const authHeader = req.headers.get("Authorization") ?? "";
     const authed = createClient(supabaseUrl, anonKey, {
       global: { headers: { Authorization: authHeader } },
+      auth: { autoRefreshToken: false, persistSession: false },
     });
 
     const { data: userData, error: userErr } = await authed.auth.getUser();
@@ -70,12 +70,13 @@ serve(async (req) => {
       return json({ ok: false, error: "Forbidden" });
     }
 
-    const admin = createClient(supabaseUrl, serviceRoleKey);
+    const admin = createClient(supabaseUrl, serviceRoleKey, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
 
-    // Protect: only manual expenses (order_id must be null)
     const { data: expense, error: expErr } = await admin
       .from("expenses")
-      .select("id, order_id, description, amount, type")
+      .select("id, order_id, description, amount, type, created_at")
       .eq("id", expenseId)
       .maybeSingle();
 
@@ -84,11 +85,6 @@ serve(async (req) => {
       return json({ ok: false, error: "Expense not found" });
     }
 
-    if (expense.order_id) {
-      return json({ ok: false, error: "Order-linked transactions cannot be deleted" });
-    }
-
-    // Load admin email address from settings
     const { data: siteSettings, error: settingsErr } = await admin
       .from("site_settings")
       .select("email")
@@ -98,12 +94,19 @@ serve(async (req) => {
       console.error("Failed to read site settings", settingsErr);
     }
 
-    const adminEmail = siteSettings?.email;
+    const adminEmail = siteSettings?.email || userData.user.email || null;
 
     if (step === "request") {
       const plain = random6DigitCode();
       const codeHash = await sha256Hex(plain);
       const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+
+      await admin
+        .from("admin_action_verifications")
+        .delete()
+        .eq("action_type", "delete_expense")
+        .eq("target_id", expenseId)
+        .is("used_at", null);
 
       const { error: insErr } = await admin.from("admin_action_verifications").insert({
         action_type: "delete_expense",
@@ -114,30 +117,14 @@ serve(async (req) => {
       });
 
       if (insErr) {
-        console.error("insert verification failed", insErr);
+        console.error("Insert verification failed", insErr);
         return json({ ok: false, error: "Failed to create verification" });
       }
 
-      // Try sending email via Resend
-      const resendApiKey = (Deno.env.get("RESEND_API_KEY") ?? "").trim();
       let emailSent = false;
 
       if (resendApiKey && adminEmail) {
         try {
-          const subject = "İşlem Silme Doğrulama Kodu";
-          const html = `
-            <div style="font-family: Arial, sans-serif; line-height: 1.5; color: #111;">
-              <h2>İşlem Silme Doğrulaması</h2>
-              <p>Aşağıdaki işlemi silmek için doğrulama kodu:</p>
-              <div style="padding: 12px; background: #f3f4f6; border-radius: 8px; display: inline-block;">
-                <span style="font-size: 24px; letter-spacing: 6px; font-weight: 700;">${plain}</span>
-              </div>
-              <p style="margin-top: 16px;"><strong>İşlem:</strong> ${expense.description}</p>
-              <p><strong>Tutar:</strong> ${Number(expense.amount).toFixed(2)} TL</p>
-              <p style="margin-top: 16px; color: #6b7280;">Kod 10 dakika içinde geçersiz olur.</p>
-            </div>
-          `;
-
           const emailResponse = await fetch("https://api.resend.com/emails", {
             method: "POST",
             headers: {
@@ -147,26 +134,35 @@ serve(async (req) => {
             body: JSON.stringify({
               from: "Kuantum Ticaret <onboarding@resend.dev>",
               to: [adminEmail],
-              subject,
-              html,
+              subject: "Gelir-Gider Silme Doğrulama Kodu",
+              html: `
+                <div style="font-family: Arial, sans-serif; line-height: 1.5; color: #111;">
+                  <h2>Gelir-Gider Silme Doğrulaması</h2>
+                  <p>Aşağıdaki finans hareketini silmek için doğrulama kodu:</p>
+                  <div style="padding: 12px; background: #f3f4f6; border-radius: 8px; display: inline-block;">
+                    <span style="font-size: 24px; letter-spacing: 6px; font-weight: 700;">${plain}</span>
+                  </div>
+                  <p style="margin-top: 16px;"><strong>Açıklama:</strong> ${expense.description}</p>
+                  <p><strong>Tutar:</strong> ${Number(expense.amount).toFixed(2)} TL</p>
+                  <p><strong>Tür:</strong> ${expense.type === "income" ? "Gelir" : "Gider"}</p>
+                  <p><strong>Kaynak:</strong> ${expense.order_id ? "Sipariş bağlantılı kayıt" : "Manuel kayıt"}</p>
+                  <p style="margin-top: 16px; color: #6b7280;">Kod 10 dakika içinde geçersiz olur.</p>
+                </div>
+              `,
             }),
           });
 
           if (emailResponse.ok) {
             emailSent = true;
-            console.log("Email sent successfully");
           } else {
-            const errorText = await emailResponse.text();
-            console.error(`Resend API error (${emailResponse.status}):`, errorText);
+            console.error(`Resend API error (${emailResponse.status}):`, await emailResponse.text());
           }
         } catch (emailErr) {
           console.error("Email sending failed:", emailErr);
         }
       }
 
-      // If email couldn't be sent, return the code directly as fallback
       if (!emailSent) {
-        console.log("Email not sent, returning code as fallback");
         return json({ ok: true, fallback_code: plain, message: "E-posta gönderilemedi. Kod ekranda gösterildi." });
       }
 
@@ -174,7 +170,7 @@ serve(async (req) => {
     }
 
     if (step === "confirm") {
-      const normalized = String(code || "").replace(/\D/g, "");
+      const normalized = code.replace(/\D/g, "");
       if (normalized.length !== 6) {
         return json({ ok: false, error: "Invalid code" });
       }
@@ -191,25 +187,14 @@ serve(async (req) => {
         .maybeSingle();
 
       if (verErr) {
-        console.error("verification load failed", verErr);
+        console.error("Verification load failed", verErr);
         return json({ ok: false, error: "Verification load failed" });
       }
 
-      if (!latest) {
-        return json({ ok: false, error: "No verification request found" });
-      }
-
-      if (latest.used_at) {
-        return json({ ok: false, error: "Code already used" });
-      }
-
-      if (new Date(latest.expires_at).getTime() < Date.now()) {
-        return json({ ok: false, error: "Code expired" });
-      }
-
-      if (latest.code_hash !== codeHash) {
-        return json({ ok: false, error: "Wrong code" });
-      }
+      if (!latest) return json({ ok: false, error: "No verification request found" });
+      if (latest.used_at) return json({ ok: false, error: "Code already used" });
+      if (new Date(latest.expires_at).getTime() < Date.now()) return json({ ok: false, error: "Code expired" });
+      if (latest.code_hash !== codeHash) return json({ ok: false, error: "Wrong code" });
 
       const { error: usedErr } = await admin
         .from("admin_action_verifications")
@@ -217,14 +202,32 @@ serve(async (req) => {
         .eq("id", latest.id);
 
       if (usedErr) {
-        console.error("failed to mark used", usedErr);
+        console.error("Failed to mark used", usedErr);
         return json({ ok: false, error: "Failed to mark code as used" });
       }
 
       const { error: delErr } = await admin.from("expenses").delete().eq("id", expenseId);
       if (delErr) {
-        console.error("delete expense failed", delErr);
+        console.error("Delete expense failed", delErr);
         return json({ ok: false, error: "Delete failed" });
+      }
+
+      const { error: logErr } = await admin.from("admin_activity_logs").insert({
+        admin_id: userData.user.id,
+        action_type: "expense_deleted",
+        action_description: `Finans kaydı silindi: ${expense.description}`,
+        target_table: "expenses",
+        target_id: expenseId,
+        metadata: {
+          amount: expense.amount,
+          type: expense.type,
+          order_id: expense.order_id,
+          created_at: expense.created_at,
+        },
+      });
+
+      if (logErr) {
+        console.error("Admin log insert failed", logErr);
       }
 
       return json({ ok: true });

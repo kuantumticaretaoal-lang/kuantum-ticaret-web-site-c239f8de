@@ -36,8 +36,9 @@ const AccountPage = () => {
   }, []);
 
   const loadProfile = async () => {
+    setLoading(true);
+
     const { data: { session } } = await supabase.auth.getSession();
-    
     if (!session) {
       navigate("/login");
       return;
@@ -46,72 +47,67 @@ const AccountPage = () => {
     setEmail(session.user.email || "");
     setUserId(session.user.id);
 
-    const { data, error } = await (supabase as any)
-      .from("profiles")
-      .select("*")
-      .eq("id", session.user.id)
-      .maybeSingle();
+    const [{ data: profileData, error: profileError }, { data: codeData }, { data: twoFAData }] = await Promise.all([
+      (supabase as any)
+        .from("profiles")
+        .select("*")
+        .eq("id", session.user.id)
+        .maybeSingle(),
+      supabase
+        .from("backup_codes")
+        .select("id")
+        .eq("user_id", session.user.id)
+        .eq("used", false)
+        .maybeSingle(),
+      (supabase as any)
+        .from("two_factor_settings")
+        .select("is_enabled")
+        .eq("user_id", session.user.id)
+        .maybeSingle(),
+    ]);
 
-    if (error) {
-      toast({
-        variant: "destructive",
-        title: "Hata",
-        description: "Profil yüklenemedi",
-      });
-    } else if (data) {
-      const formatted = formatLocationData(data);
-      setProfile(formatted);
+    if (profileError) {
+      toast({ variant: "destructive", title: "Hata", description: "Profil yüklenemedi" });
+    } else if (profileData) {
+      setProfile(formatLocationData(profileData));
     }
 
-    const { data: codeData } = await supabase
-      .from("backup_codes")
-      .select("id")
-      .eq("user_id", session.user.id)
-      .eq("used", false)
-      .maybeSingle();
-    
     if (!codeData) {
-      const { code: newCode } = await createBackupCode(session.user.id);
-      setBackupCode(newCode);
-      toast({
-        title: "Yedek Kod Oluşturuldu",
-        description: "Lütfen bu kodu güvenli bir yerde saklayın.",
-        duration: 10000,
-      });
+      const { code: newCode, error } = await createBackupCode(session.user.id);
+      if (!error && newCode) {
+        setBackupCode(newCode);
+        toast({
+          title: "Yedek kod oluşturuldu",
+          description: "Lütfen bu kodu güvenli bir yerde saklayın; yalnızca şimdi görüntülenebilir.",
+          duration: 10000,
+        });
+      } else {
+        setBackupCode(null);
+      }
     } else {
       setBackupCode("********-***-***");
     }
 
-    // Load 2FA setting
-    const { data: twoFA } = await (supabase as any)
-      .from("two_factor_settings")
-      .select("is_enabled")
-      .eq("user_id", session.user.id)
-      .maybeSingle();
-    setTwoFAEnabled(twoFA?.is_enabled === true);
-
+    setTwoFAEnabled(twoFAData?.is_enabled === true);
     setLoading(false);
   };
 
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) return;
 
     const formatted = formatLocationData(profile);
-
-    const { error } = await supabase
-      .from("profiles")
-      .update(formatted)
-      .eq("id", session.user.id);
+    const { error } = await supabase.from("profiles").update(formatted).eq("id", session.user.id);
 
     if (error) {
       toast({ variant: "destructive", title: "Hata", description: "Profil güncellenemedi" });
-    } else {
-      setProfile(formatted);
-      toast({ title: "Başarılı", description: "Profiliniz güncellendi" });
+      return;
     }
+
+    setProfile(formatted);
+    toast({ title: "Başarılı", description: "Profiliniz güncellendi" });
   };
 
   const handleRegenerateCode = async () => {
@@ -124,29 +120,37 @@ const AccountPage = () => {
 
     if (error || !code) {
       toast({ variant: "destructive", title: "Hata", description: "Kod oluşturulamadı" });
-    } else {
-      setBackupCode(code);
-      toast({ title: "Yeni Yedek Kod Oluşturuldu", description: "UYARI: Bu kod sadece şimdi görüntülenebilir!", duration: 10000 });
+      return;
     }
+
+    setBackupCode(code);
+    toast({
+      title: "Yeni yedek kod oluşturuldu",
+      description: "UYARI: Bu kod sadece şimdi görüntülenebilir!",
+      duration: 10000,
+    });
   };
 
   const toggle2FA = async (enabled: boolean) => {
     if (!userId) return;
+
     setTwoFALoading(true);
     try {
-      const { data: existing } = await (supabase as any)
+      const { error } = await (supabase as any)
         .from("two_factor_settings")
-        .select("id")
-        .eq("user_id", userId)
-        .maybeSingle();
+        .upsert({ user_id: userId, is_enabled: enabled }, { onConflict: "user_id" });
 
-      if (existing) {
-        await (supabase as any).from("two_factor_settings").update({ is_enabled: enabled }).eq("user_id", userId);
-      } else {
-        await (supabase as any).from("two_factor_settings").insert({ user_id: userId, is_enabled: enabled });
+      if (error) {
+        throw error;
       }
+
       setTwoFAEnabled(enabled);
-      toast({ title: enabled ? "2 Adımlı Doğrulama Aktif" : "2 Adımlı Doğrulama Kapatıldı", description: enabled ? "Giriş yaparken e-posta ile kod doğrulaması istenecektir." : "Artık doğrudan giriş yapabilirsiniz." });
+      toast({
+        title: enabled ? "2 adımlı doğrulama aktif" : "2 adımlı doğrulama kapatıldı",
+        description: enabled
+          ? "Giriş yaparken e-posta ile kod doğrulaması istenecektir."
+          : "Artık doğrudan giriş yapabilirsiniz.",
+      });
     } catch {
       toast({ variant: "destructive", title: "Hata", description: "Ayar güncellenemedi" });
     } finally {
@@ -158,9 +162,14 @@ const AccountPage = () => {
     if (backupCode && !backupCode.includes("*")) {
       navigator.clipboard.writeText(backupCode);
       toast({ title: "Kopyalandı", description: "Yedek kod panoya kopyalandı" });
-    } else {
-      toast({ variant: "destructive", title: "Kopyalanamıyor", description: "Yeni kod oluşturmak için yenile butonuna tıklayın." });
+      return;
     }
+
+    toast({
+      variant: "destructive",
+      title: "Kopyalanamıyor",
+      description: "Yeni kod oluşturmak için yenile butonuna tıklayın.",
+    });
   };
 
   if (loading) {
@@ -183,7 +192,7 @@ const AccountPage = () => {
             <TabsTrigger value="tracking">Sipariş Takibi</TabsTrigger>
             <TabsTrigger value="loyalty">Puanlar & Davet</TabsTrigger>
           </TabsList>
-          
+
           <TabsContent value="tracking">
             <OrderTracking />
           </TabsContent>
@@ -194,9 +203,8 @@ const AccountPage = () => {
                 <CardTitle>Hesap Ayarları</CardTitle>
               </CardHeader>
               <CardContent>
-                {/* Avatar upload */}
                 {userId && (
-                  <div className="flex justify-center mb-6">
+                  <div className="mb-6 flex justify-center">
                     <AvatarUpload
                       userId={userId}
                       currentUrl={profile?.avatar_url}
@@ -205,35 +213,27 @@ const AccountPage = () => {
                     />
                   </div>
                 )}
-                {/* Dark mode toggle */}
-                <div className="flex items-center justify-between mb-6 p-4 rounded-lg border bg-muted/50">
+
+                <div className="mb-6 flex items-center justify-between rounded-lg border bg-muted/50 p-4">
                   <div className="flex items-center gap-3">
                     {theme === "dark" ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
                     <div>
-                      <p className="font-medium text-sm">Koyu Mod</p>
+                      <p className="text-sm font-medium">Koyu Mod</p>
                       <p className="text-xs text-muted-foreground">Arayüzü koyu tema ile kullanın</p>
                     </div>
                   </div>
-                  <Switch
-                    checked={theme === "dark"}
-                    onCheckedChange={(checked) => setTheme(checked ? "dark" : "light")}
-                  />
+                  <Switch checked={theme === "dark"} onCheckedChange={(checked) => setTheme(checked ? "dark" : "light")} />
                 </div>
 
-                {/* 2FA toggle */}
-                <div className="flex items-center justify-between mb-6 p-4 rounded-lg border bg-muted/50">
+                <div className="mb-6 flex items-center justify-between rounded-lg border bg-muted/50 p-4">
                   <div className="flex items-center gap-3">
                     <Shield className="h-5 w-5" />
                     <div>
-                      <p className="font-medium text-sm">2 Adımlı Doğrulama</p>
+                      <p className="text-sm font-medium">2 Adımlı Doğrulama</p>
                       <p className="text-xs text-muted-foreground">Giriş yaparken e-posta ile kod doğrulaması</p>
                     </div>
                   </div>
-                  <Switch
-                    checked={twoFAEnabled}
-                    onCheckedChange={toggle2FA}
-                    disabled={twoFALoading}
-                  />
+                  <Switch checked={twoFAEnabled} onCheckedChange={toggle2FA} disabled={twoFALoading} />
                 </div>
 
                 <form onSubmit={handleUpdate} className="space-y-4">
@@ -277,10 +277,10 @@ const AccountPage = () => {
                   <Button type="submit" className="w-full">Güncelle</Button>
                 </form>
 
-                <div className="mt-8 pt-8 border-t">
-                  <h3 className="text-lg font-semibold mb-2">Hesap Kurtarma Kodu</h3>
-                  <p className="text-sm text-muted-foreground mb-4">Bu kodu güvenli bir yerde saklayın.</p>
-                  <div className="flex gap-2 items-center">
+                <div className="mt-8 border-t pt-8">
+                  <h3 className="mb-2 text-lg font-semibold">Hesap Kurtarma Kodu</h3>
+                  <p className="mb-4 text-sm text-muted-foreground">Bu kodu güvenli bir yerde saklayın.</p>
+                  <div className="flex items-center gap-2">
                     <Input value={regeneratingCode ? "Oluşturuluyor..." : (backupCode || "Yükleniyor...")} disabled className="font-mono text-lg tracking-wider" />
                     <Button type="button" size="icon" variant="outline" onClick={copyToClipboard} disabled={!backupCode || backupCode.includes("*") || regeneratingCode} title="Kodu Kopyala">
                       <Copy className="h-4 w-4" />
@@ -290,16 +290,16 @@ const AccountPage = () => {
                     </Button>
                   </div>
                   {backupCode && !backupCode.includes("*") && (
-                    <p className="text-xs text-primary mt-2 font-medium">✓ Bu kod sadece şimdi görüntülenebilir!</p>
+                    <p className="mt-2 text-xs font-medium text-primary">✓ Bu kod sadece şimdi görüntülenebilir!</p>
                   )}
                   {backupCode && backupCode.includes("*") && (
-                    <p className="text-xs text-muted-foreground mt-2">Mevcut kodunuz şifrelenmiş durumda. Yenile butonuna tıklayın.</p>
+                    <p className="mt-2 text-xs text-muted-foreground">Mevcut kodunuz güvenli biçimde saklanıyor. Yeni kod için yenile butonunu kullanın.</p>
                   )}
-                  <p className="text-xs text-destructive mt-2">⚠️ Eski kod kullanıldıktan sonra otomatik olarak yeni kod oluşturulur</p>
+                  <p className="mt-2 text-xs text-destructive">⚠️ Yedek kod kullanıldıktan sonra hesabınıza giriş yaptıktan sonra yeni bir kod üretin.</p>
                 </div>
 
-                <div className="mt-8 pt-8 border-t">
-                  <h3 className="text-lg font-semibold mb-4">Şifre Değiştir</h3>
+                <div className="mt-8 border-t pt-8">
+                  <h3 className="mb-4 text-lg font-semibold">Şifre Değiştir</h3>
                   <form onSubmit={async (e) => {
                     e.preventDefault();
                     const formData = new FormData(e.currentTarget);
