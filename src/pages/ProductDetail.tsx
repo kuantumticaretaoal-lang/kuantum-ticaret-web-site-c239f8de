@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { addToCart } from "@/lib/cart";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import StockNotificationButton from "@/components/StockNotificationButton";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
