@@ -29,13 +29,26 @@ export const LiveSupportWidget = () => {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [threadId, setThreadId] = useState<string | null>(null);
+  const [disclaimerAccepted, setDisclaimerAccepted] = useState<boolean>(
+    typeof window !== "undefined" && localStorage.getItem("live_support_disclaimer_v1") === "1"
+  );
+  const [contactInfo, setContactInfo] = useState<{ email?: string; phone?: string }>({});
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (isOpen) {
-      loadOrCreateThread();
+      (async () => {
+        const { data } = await supabase.from("site_settings").select("email, phone").maybeSingle();
+        if (data) setContactInfo({ email: (data as any).email, phone: (data as any).phone });
+      })();
+      if (disclaimerAccepted) loadOrCreateThread();
     }
-  }, [isOpen]);
+  }, [isOpen, disclaimerAccepted]);
+
+  const acceptDisclaimer = () => {
+    localStorage.setItem("live_support_disclaimer_v1", "1");
+    setDisclaimerAccepted(true);
+  };
 
   useEffect(() => {
     if (scrollRef.current) {
