@@ -112,7 +112,55 @@ serve(async (req) => {
       }
     }
 
-    // Get product info for context
+    // Notify admins about live support usage (throttled: max once per 30 min per thread)
+    if (threadId && typeof threadId === "string") {
+      try {
+        const { data: thread } = await supabase
+          .from("live_support_threads")
+          .select("id, device_id, user_id, last_admin_notified_at")
+          .eq("id", threadId)
+          .maybeSingle();
+
+        const lastNotified = (thread as any)?.last_admin_notified_at
+          ? new Date((thread as any).last_admin_notified_at).getTime()
+          : 0;
+        const shouldNotify = Date.now() - lastNotified > 30 * 60 * 1000;
+
+        if (thread && shouldNotify) {
+          const { data: admins } = await supabase
+            .from("user_roles")
+            .select("user_id")
+            .eq("role", "admin");
+
+          let userLabel = "Anonim ziyaretçi";
+          if (thread.user_id) {
+            const { data: profile } = await supabase
+              .from("profiles")
+              .select("first_name, last_name, email")
+              .eq("id", thread.user_id)
+              .maybeSingle();
+            if (profile) {
+              userLabel = `${profile.first_name || ""} ${profile.last_name || ""}`.trim() || profile.email || "Kayıtlı kullanıcı";
+            }
+          }
+
+          const preview = sanitizedMessage.slice(0, 80);
+          const notifRows = (admins || []).map((a: any) => ({
+            user_id: a.user_id,
+            message: `💬 Canlı destek: ${userLabel} — "${preview}${sanitizedMessage.length > 80 ? "…" : ""}"`,
+          }));
+          if (notifRows.length > 0) {
+            await supabase.from("notifications").insert(notifRows);
+            await supabase
+              .from("live_support_threads")
+              .update({ last_admin_notified_at: new Date().toISOString() })
+              .eq("id", threadId);
+          }
+        }
+      } catch (e) {
+        console.error("admin notify error", e);
+      }
+    }
     const { data: products } = await supabase
       .from("products")
       .select("title, price, discounted_price, stock_status, description, stock_quantity")
