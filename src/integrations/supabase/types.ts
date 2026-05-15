@@ -805,6 +805,7 @@ export type Database = {
           created_at: string
           device_id: string
           id: string
+          last_admin_notified_at: string | null
           last_message_at: string
           user_id: string | null
         }
@@ -812,6 +813,7 @@ export type Database = {
           created_at?: string
           device_id: string
           id?: string
+          last_admin_notified_at?: string | null
           last_message_at?: string
           user_id?: string | null
         }
@@ -819,6 +821,7 @@ export type Database = {
           created_at?: string
           device_id?: string
           id?: string
+          last_admin_notified_at?: string | null
           last_message_at?: string
           user_id?: string | null
         }

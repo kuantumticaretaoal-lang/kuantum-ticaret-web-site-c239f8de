@@ -112,11 +112,59 @@ serve(async (req) => {
       }
     }
 
-    // Get product info for context
+    // Notify admins about live support usage (throttled: max once per 30 min per thread)
+    if (threadId && typeof threadId === "string") {
+      try {
+        const { data: thread } = await supabase
+          .from("live_support_threads")
+          .select("id, device_id, user_id, last_admin_notified_at")
+          .eq("id", threadId)
+          .maybeSingle();
+
+        const lastNotified = (thread as any)?.last_admin_notified_at
+          ? new Date((thread as any).last_admin_notified_at).getTime()
+          : 0;
+        const shouldNotify = Date.now() - lastNotified > 30 * 60 * 1000;
+
+        if (thread && shouldNotify) {
+          const { data: admins } = await supabase
+            .from("user_roles")
+            .select("user_id")
+            .eq("role", "admin");
+
+          let userLabel = "Anonim ziyaretçi";
+          if (thread.user_id) {
+            const { data: profile } = await supabase
+              .from("profiles")
+              .select("first_name, last_name, email")
+              .eq("id", thread.user_id)
+              .maybeSingle();
+            if (profile) {
+              userLabel = `${profile.first_name || ""} ${profile.last_name || ""}`.trim() || profile.email || "Kayıtlı kullanıcı";
+            }
+          }
+
+          const preview = sanitizedMessage.slice(0, 80);
+          const notifRows = (admins || []).map((a: any) => ({
+            user_id: a.user_id,
+            message: `💬 Canlı destek: ${userLabel} — "${preview}${sanitizedMessage.length > 80 ? "…" : ""}"`,
+          }));
+          if (notifRows.length > 0) {
+            await supabase.from("notifications").insert(notifRows);
+            await supabase
+              .from("live_support_threads")
+              .update({ last_admin_notified_at: new Date().toISOString() })
+              .eq("id", threadId);
+          }
+        }
+      } catch (e) {
+        console.error("admin notify error", e);
+      }
+    }
     const { data: products } = await supabase
       .from("products")
       .select("title, price, discounted_price, stock_status, description, stock_quantity")
-      .limit(20);
+      .limit(40);
 
     const productContext = products
       ? products
@@ -129,35 +177,30 @@ serve(async (req) => {
           .join("\n")
       : "Çeşitli ürünler mevcut.";
 
-    // Get site info
-    const { data: siteSettings } = await supabase
-      .from("site_settings")
-      .select("*")
-      .maybeSingle();
+    // Site, hakkımızda, politikalar, kargo
+    const [{ data: siteSettings }, { data: aboutUs }, { data: policies }, { data: shippingSettings }, { data: categories }, { data: faqItems }, { data: campaigns }, { data: premiumPlans }, { data: premiumBenefits }, { data: shippingCompanies }] = await Promise.all([
+      supabase.from("site_settings").select("*").maybeSingle(),
+      supabase.from("about_us").select("content").maybeSingle(),
+      supabase.from("site_policies").select("policy_type, title").eq("is_active", true),
+      supabase.from("shipping_settings").select("*").eq("is_active", true),
+      supabase.from("categories").select("name, description").limit(40),
+      supabase.from("faq_items").select("question, answer").eq("is_active", true).limit(30),
+      supabase.from("campaign_banners").select("title, description, ends_at").eq("is_active", true).limit(10),
+      supabase.from("premium_plans").select("name, price, duration_days, description").eq("is_active", true),
+      supabase.from("premium_benefits").select("title, description").eq("is_active", true).limit(15),
+      supabase.from("shipping_companies").select("name, tracking_url").eq("is_active", true).limit(10),
+    ]);
 
-    // Get about us info
-    const { data: aboutUs } = await supabase
-      .from("about_us")
-      .select("content")
-      .maybeSingle();
-
-    // Get policies
-    const { data: policies } = await supabase
-      .from("site_policies")
-      .select("policy_type, title")
-      .eq("is_active", true);
-
-    const policyList = policies?.map(p => `• ${p.title}`).join("\n") || "";
-
-    // Get shipping settings
-    const { data: shippingSettings } = await supabase
-      .from("shipping_settings")
-      .select("*")
-      .eq("is_active", true);
-
-    const shippingInfo = shippingSettings?.map(s => 
+    const policyList = policies?.map((p: any) => `• ${p.title}`).join("\n") || "";
+    const shippingInfo = shippingSettings?.map((s: any) =>
       `• ${s.delivery_type === 'home_delivery' ? 'Eve Teslimat' : 'Mağazadan Teslim'}: ${s.base_fee} TL`
     ).join("\n") || "";
+    const categoryList = categories?.map((c: any) => `• ${c.name}${c.description ? ` — ${c.description}` : ""}`).join("\n") || "";
+    const faqList = faqItems?.map((f: any) => `S: ${f.question}\nC: ${f.answer}`).join("\n\n") || "";
+    const campaignList = campaigns?.map((c: any) => `• ${c.title}${c.description ? ` — ${c.description}` : ""}${c.ends_at ? ` (Bitiş: ${new Date(c.ends_at).toLocaleDateString('tr-TR')})` : ""}`).join("\n") || "";
+    const premiumPlanList = premiumPlans?.map((p: any) => `• ${p.name} — ${p.price} TL / ${p.duration_days} gün${p.description ? ` — ${p.description}` : ""}`).join("\n") || "";
+    const premiumBenefitList = premiumBenefits?.map((b: any) => `• ${b.title}${b.description ? `: ${b.description}` : ""}`).join("\n") || "";
+    const carrierList = shippingCompanies?.map((s: any) => `• ${s.name}`).join("\n") || "";
 
     const systemPrompt = `Sen Kuantum Ticaret'in yapay zeka destekli müşteri hizmetleri asistanısın. Profesyonel, samimi ve yardımsever bir Türkçe konuşuyorsun.
 
@@ -173,8 +216,26 @@ ${aboutUs?.content ? aboutUs.content.substring(0, 500) : "Kuantum Ticaret, kalit
 ## MEVCUT ÜRÜNLER
 ${productContext}
 
+## KATEGORİLER
+${categoryList || "Birçok kategori mevcut."}
+
+## SIK SORULAN SORULAR
+${faqList || "SSS bölümümüz /faq sayfasında."}
+
+## AKTİF KAMPANYALAR
+${campaignList || "Şu anda aktif bir kampanya bilgisi yok."}
+
+## PREMIUM ÜYELİK PLANLARI
+${premiumPlanList || "Premium planlarımız /premium sayfasındadır."}
+
+## PREMIUM AVANTAJLARI
+${premiumBenefitList || "Özel indirimler, ücretsiz kargo, erken erişim ve daha fazlası."}
+
 ## KARGO BİLGİLERİ
 ${shippingInfo || "Kargo bilgileri için site üzerinden bilgi alabilirsiniz."}
+
+## ANLAŞMALI KARGO FİRMALARI
+${carrierList || "Çeşitli kargo firmalarıyla çalışıyoruz."}
 
 ## POLİTİKALAR
 ${policyList || "İade, gizlilik ve diğer politikalarımız sitede mevcuttur."}
