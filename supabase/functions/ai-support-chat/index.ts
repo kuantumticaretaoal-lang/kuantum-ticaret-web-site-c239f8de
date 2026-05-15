@@ -168,8 +168,26 @@ ${aboutUs?.content ? aboutUs.content.substring(0, 500) : "Kuantum Ticaret, kalit
 ## MEVCUT ÜRÜNLER
 ${productContext}
 
+## KATEGORİLER
+${categoryList || "Birçok kategori mevcut."}
+
+## SIK SORULAN SORULAR
+${faqList || "SSS bölümümüz /faq sayfasında."}
+
+## AKTİF KAMPANYALAR
+${campaignList || "Şu anda aktif bir kampanya bilgisi yok."}
+
+## PREMIUM ÜYELİK PLANLARI
+${premiumPlanList || "Premium planlarımız /premium sayfasındadır."}
+
+## PREMIUM AVANTAJLARI
+${premiumBenefitList || "Özel indirimler, ücretsiz kargo, erken erişim ve daha fazlası."}
+
 ## KARGO BİLGİLERİ
 ${shippingInfo || "Kargo bilgileri için site üzerinden bilgi alabilirsiniz."}
+
+## ANLAŞMALI KARGO FİRMALARI
+${carrierList || "Çeşitli kargo firmalarıyla çalışıyoruz."}
 
 ## POLİTİKALAR
 ${policyList || "İade, gizlilik ve diğer politikalarımız sitede mevcuttur."}
