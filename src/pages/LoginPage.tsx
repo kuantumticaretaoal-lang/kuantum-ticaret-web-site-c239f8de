@@ -540,6 +540,11 @@ const LoginPage = () => {
                 </Form>
               </TabsContent>
             </Tabs>
+            <div className="relative my-4">
+              <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
+              <div className="relative flex justify-center text-xs uppercase"><span className="bg-card px-2 text-muted-foreground">veya</span></div>
+            </div>
+            <GoogleSignInButton />
             <div className="mt-6 text-center text-sm">
               <span className="text-muted-foreground">Hesabınız yok mu? </span>
               <Link to="/register" className="text-primary hover:underline">Kayıt Ol</Link>
