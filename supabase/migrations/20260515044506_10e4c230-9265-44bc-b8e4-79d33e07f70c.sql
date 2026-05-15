@@ -1,0 +1,1 @@
+ALTER TABLE public.live_support_threads ADD COLUMN IF NOT EXISTS last_admin_notified_at timestamptz;
