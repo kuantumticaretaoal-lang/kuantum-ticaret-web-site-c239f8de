@@ -6,6 +6,8 @@ import { logger } from "@/lib/logger";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import { useTranslations } from "@/hooks/use-translations";
 
+import NewsletterSignup from "@/components/NewsletterSignup";
+
 const Footer = () => {
   const [settings, setSettings] = useState<any>(null);
   const { t } = useTranslations();
