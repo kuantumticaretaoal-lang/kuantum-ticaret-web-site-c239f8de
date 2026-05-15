@@ -673,10 +673,11 @@ const ProductDetail = () => {
             {/* Sepete Ekle Butonu */}
             {product.stock_status === 'out_of_stock' ? (
               <Card className="border-destructive bg-destructive/5">
-                <CardContent className="pt-6">
+                <CardContent className="pt-6 space-y-3">
                   <p className="text-center text-destructive font-medium">
                     Bu ürün şu anda stokta bulunmamaktadır
                   </p>
+                  <StockNotificationButton productId={product.id} stockQuantity={0} />
                 </CardContent>
               </Card>
             ) : (
