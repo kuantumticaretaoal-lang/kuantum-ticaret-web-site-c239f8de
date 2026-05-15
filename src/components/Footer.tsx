@@ -111,6 +111,10 @@ const Footer = () => {
           </div>
         </div>
 
+        <div className="mt-8 mb-6">
+          <NewsletterSignup />
+        </div>
+
         <div className="border-t border-white/20 pt-6 text-center text-white/70">
           <p>© {new Date().getFullYear()} Kuantum Ticaret. {t("footer.rights", "Tüm hakları saklıdır")}.</p>
         </div>
