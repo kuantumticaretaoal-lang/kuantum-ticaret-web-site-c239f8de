@@ -220,58 +220,101 @@ export const LiveSupportWidget = () => {
         </CardTitle>
       </CardHeader>
       <CardContent className="flex-1 flex flex-col p-3 overflow-hidden">
-        <ScrollArea className="flex-1 pr-2" ref={scrollRef}>
-          <div className="space-y-3">
-            {messages.map((msg) => (
-              <div
-                key={msg.id}
-                className={`flex gap-2 ${msg.role === "user" ? "justify-end" : "justify-start"}`}
-              >
-                {msg.role === "assistant" && (
-                  <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <Bot className="h-4 w-4 text-primary" />
-                  </div>
-                )}
-                <div
-                  className={`max-w-[75%] rounded-lg px-3 py-2 text-sm ${
-                    msg.role === "user"
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted"
-                  }`}
-                >
-                  {msg.content}
-                </div>
-                {msg.role === "user" && (
-                  <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
-                    <User className="h-4 w-4 text-primary-foreground" />
-                  </div>
-                )}
+        {!disclaimerAccepted ? (
+          <div className="flex-1 flex flex-col gap-3 overflow-y-auto">
+            <div className="rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-950/40 dark:border-amber-800 p-3 text-sm space-y-2">
+              <div className="flex items-center gap-2 font-semibold text-amber-900 dark:text-amber-200">
+                <AlertTriangle className="h-4 w-4" />
+                Bilgilendirme
               </div>
-            ))}
-            {loading && (
-              <div className="flex gap-2 justify-start">
-                <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <Bot className="h-4 w-4 text-primary" />
-                </div>
-                <div className="bg-muted rounded-lg px-3 py-2 text-sm">
-                  <span className="animate-pulse">Yazıyor...</span>
-                </div>
+              <p className="text-amber-900/90 dark:text-amber-100/90 leading-relaxed">
+                Canlı destek <strong>yapay zeka</strong> tarafından sağlanmaktadır.
+                Her konuda yardımcı olamayabilir ve bazen <strong>hatalı veya
+                eksik bilgi</strong> verebilir. Önemli bilgileri lütfen bizimle
+                doğrulayın.
+              </p>
+              <p className="text-amber-900/90 dark:text-amber-100/90">
+                Daha fazla yardım için bizimle doğrudan iletişime geçebilirsiniz:
+              </p>
+              <div className="space-y-1 text-amber-900 dark:text-amber-100">
+                {contactInfo.email && (
+                  <a href={`mailto:${contactInfo.email}`} className="flex items-center gap-2 hover:underline">
+                    <Mail className="h-4 w-4" /> {contactInfo.email}
+                  </a>
+                )}
+                {contactInfo.phone && (
+                  <a href={`tel:${contactInfo.phone.replace(/\s/g, "")}`} className="flex items-center gap-2 hover:underline">
+                    <Phone className="h-4 w-4" /> {contactInfo.phone}
+                  </a>
+                )}
+                <Link to="/contact" className="flex items-center gap-2 hover:underline" onClick={() => setIsOpen(false)}>
+                  <MessageCircle className="h-4 w-4" /> İletişim Sayfası
+                </Link>
               </div>
-            )}
+            </div>
+            <Button onClick={acceptDisclaimer} className="w-full mt-auto">
+              Anladım, sohbete başla
+            </Button>
           </div>
-        </ScrollArea>
-        <div className="flex gap-2 mt-3 flex-shrink-0">
-          <Input
-            placeholder="Mesajınızı yazın..."
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-            disabled={loading}
-          />
-          <Button size="icon" onClick={sendMessage} disabled={loading || !input.trim()}>
-            <Send className="h-4 w-4" />
-          </Button>
-        </div>
+        ) : (
+          <>
+            <ScrollArea className="flex-1 pr-2" ref={scrollRef}>
+              <div className="space-y-3">
+                {messages.map((msg) => (
+                  <div
+                    key={msg.id}
+                    className={`flex gap-2 ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+                  >
+                    {msg.role === "assistant" && (
+                      <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                        <Bot className="h-4 w-4 text-primary" />
+                      </div>
+                    )}
+                    <div
+                      className={`max-w-[75%] rounded-lg px-3 py-2 text-sm ${
+                        msg.role === "user"
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted"
+                      }`}
+                    >
+                      {msg.content}
+                    </div>
+                    {msg.role === "user" && (
+                      <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
+                        <User className="h-4 w-4 text-primary-foreground" />
+                      </div>
+                    )}
+                  </div>
+                ))}
+                {loading && (
+                  <div className="flex gap-2 justify-start">
+                    <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                      <Bot className="h-4 w-4 text-primary" />
+                    </div>
+                    <div className="bg-muted rounded-lg px-3 py-2 text-sm">
+                      <span className="animate-pulse">Yazıyor...</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </ScrollArea>
+            <div className="flex gap-2 mt-3 flex-shrink-0">
+              <Input
+                placeholder="Mesajınızı yazın..."
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+                disabled={loading}
+              />
+              <Button size="icon" onClick={sendMessage} disabled={loading || !input.trim()}>
+                <Send className="h-4 w-4" />
+              </Button>
+            </div>
+            <p className="text-[10px] text-muted-foreground text-center mt-2">
+              Yapay zeka destekli — bilgiler hatalı olabilir.
+            </p>
+          </>
+        )}
       </CardContent>
     </Card>
   );
