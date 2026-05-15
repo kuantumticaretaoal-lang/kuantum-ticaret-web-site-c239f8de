@@ -17,6 +17,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { useToast } from "@/hooks/use-toast";
 import { Shield } from "lucide-react";
+import GoogleSignInButton from "@/components/GoogleSignInButton";
 
 const formSchema = z.object({
   email: z.string().email({ message: "Geçerli bir e-posta adresi girin" }),
