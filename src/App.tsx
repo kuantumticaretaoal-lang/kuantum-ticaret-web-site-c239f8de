@@ -15,8 +15,10 @@ import Index from "./pages/Index";
 import VisitorTracker from "./components/VisitorTracker";
 import { CookieConsent } from "./components/CookieConsent";
 import { MobileBottomNav } from "./components/MobileBottomNav";
+import ExitIntentPopup from "./components/ExitIntentPopup";
 
 const Products = lazy(() => import("./pages/Products"));
+const FAQPage = lazy(() => import("./pages/FAQPage"));
 const ProductDetail = lazy(() => import("./pages/ProductDetail"));
 const CartPage = lazy(() => import("./pages/CartPage"));
 const ContactPage = lazy(() => import("./pages/ContactPage"));
@@ -58,6 +60,7 @@ const AppContent = () => {
       <LiveSupportWidget />
       <PushNotificationManager />
       <MobileBottomNav />
+      <ExitIntentPopup />
       <Suspense fallback={null}>
         <Routes>
           <Route path="/" element={<Index />} />
@@ -75,6 +78,7 @@ const AppContent = () => {
           <Route path="/admin" element={<AdminPage />} />
           <Route path="/premium" element={<PremiumPage />} />
           <Route path="/order/:orderCode" element={<OrderTrackingPage />} />
+          <Route path="/faq" element={<FAQPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Suspense>
