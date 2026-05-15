@@ -116,7 +116,7 @@ serve(async (req) => {
     const { data: products } = await supabase
       .from("products")
       .select("title, price, discounted_price, stock_status, description, stock_quantity")
-      .limit(20);
+      .limit(40);
 
     const productContext = products
       ? products
@@ -129,35 +129,30 @@ serve(async (req) => {
           .join("\n")
       : "Çeşitli ürünler mevcut.";
 
-    // Get site info
-    const { data: siteSettings } = await supabase
-      .from("site_settings")
-      .select("*")
-      .maybeSingle();
+    // Site, hakkımızda, politikalar, kargo
+    const [{ data: siteSettings }, { data: aboutUs }, { data: policies }, { data: shippingSettings }, { data: categories }, { data: faqItems }, { data: campaigns }, { data: premiumPlans }, { data: premiumBenefits }, { data: shippingCompanies }] = await Promise.all([
+      supabase.from("site_settings").select("*").maybeSingle(),
+      supabase.from("about_us").select("content").maybeSingle(),
+      supabase.from("site_policies").select("policy_type, title").eq("is_active", true),
+      supabase.from("shipping_settings").select("*").eq("is_active", true),
+      supabase.from("categories").select("name, description").limit(40),
+      supabase.from("faq_items").select("question, answer").eq("is_active", true).limit(30),
+      supabase.from("campaign_banners").select("title, description, ends_at").eq("is_active", true).limit(10),
+      supabase.from("premium_plans").select("name, price, duration_days, description").eq("is_active", true),
+      supabase.from("premium_benefits").select("title, description").eq("is_active", true).limit(15),
+      supabase.from("shipping_companies").select("name, tracking_url").eq("is_active", true).limit(10),
+    ]);
 
-    // Get about us info
-    const { data: aboutUs } = await supabase
-      .from("about_us")
-      .select("content")
-      .maybeSingle();
-
-    // Get policies
-    const { data: policies } = await supabase
-      .from("site_policies")
-      .select("policy_type, title")
-      .eq("is_active", true);
-
-    const policyList = policies?.map(p => `• ${p.title}`).join("\n") || "";
-
-    // Get shipping settings
-    const { data: shippingSettings } = await supabase
-      .from("shipping_settings")
-      .select("*")
-      .eq("is_active", true);
-
-    const shippingInfo = shippingSettings?.map(s => 
+    const policyList = policies?.map((p: any) => `• ${p.title}`).join("\n") || "";
+    const shippingInfo = shippingSettings?.map((s: any) =>
       `• ${s.delivery_type === 'home_delivery' ? 'Eve Teslimat' : 'Mağazadan Teslim'}: ${s.base_fee} TL`
     ).join("\n") || "";
+    const categoryList = categories?.map((c: any) => `• ${c.name}${c.description ? ` — ${c.description}` : ""}`).join("\n") || "";
+    const faqList = faqItems?.map((f: any) => `S: ${f.question}\nC: ${f.answer}`).join("\n\n") || "";
+    const campaignList = campaigns?.map((c: any) => `• ${c.title}${c.description ? ` — ${c.description}` : ""}${c.ends_at ? ` (Bitiş: ${new Date(c.ends_at).toLocaleDateString('tr-TR')})` : ""}`).join("\n") || "";
+    const premiumPlanList = premiumPlans?.map((p: any) => `• ${p.name} — ${p.price} TL / ${p.duration_days} gün${p.description ? ` — ${p.description}` : ""}`).join("\n") || "";
+    const premiumBenefitList = premiumBenefits?.map((b: any) => `• ${b.title}${b.description ? `: ${b.description}` : ""}`).join("\n") || "";
+    const carrierList = shippingCompanies?.map((s: any) => `• ${s.name}`).join("\n") || "";
 
     const systemPrompt = `Sen Kuantum Ticaret'in yapay zeka destekli müşteri hizmetleri asistanısın. Profesyonel, samimi ve yardımsever bir Türkçe konuşuyorsun.
 
