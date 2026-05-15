@@ -59,6 +59,36 @@ export type Database = {
         }
         Relationships: []
       }
+      active_sessions: {
+        Row: {
+          created_at: string | null
+          device_id: string | null
+          id: string
+          ip_address: string | null
+          last_active_at: string | null
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          device_id?: string | null
+          id?: string
+          ip_address?: string | null
+          last_active_at?: string | null
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          device_id?: string | null
+          id?: string
+          ip_address?: string | null
+          last_active_at?: string | null
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       admin_action_verifications: {
         Row: {
           action_type: string
@@ -566,6 +596,54 @@ export type Database = {
         }
         Relationships: []
       }
+      exit_intent_popups: {
+        Row: {
+          cooldown_hours: number | null
+          coupon_code: string | null
+          created_at: string | null
+          cta_text: string | null
+          cta_url: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean | null
+          message: string | null
+          show_delay_ms: number | null
+          show_on_exit: boolean | null
+          show_on_load: boolean | null
+          title: string
+        }
+        Insert: {
+          cooldown_hours?: number | null
+          coupon_code?: string | null
+          created_at?: string | null
+          cta_text?: string | null
+          cta_url?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          message?: string | null
+          show_delay_ms?: number | null
+          show_on_exit?: boolean | null
+          show_on_load?: boolean | null
+          title: string
+        }
+        Update: {
+          cooldown_hours?: number | null
+          coupon_code?: string | null
+          created_at?: string | null
+          cta_text?: string | null
+          cta_url?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          message?: string | null
+          show_delay_ms?: number | null
+          show_on_exit?: boolean | null
+          show_on_load?: boolean | null
+          title?: string
+        }
+        Relationships: []
+      }
       expenses: {
         Row: {
           amount: number
@@ -659,6 +737,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      feature_flags: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          is_enabled: boolean | null
+          key: string
+          rollout_percentage: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_enabled?: boolean | null
+          key: string
+          rollout_percentage?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_enabled?: boolean | null
+          key?: string
+          rollout_percentage?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       live_support_messages: {
         Row: {
@@ -780,6 +888,63 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      newsletter_campaigns: {
+        Row: {
+          body_html: string
+          created_at: string | null
+          created_by: string | null
+          id: string
+          recipient_count: number | null
+          sent_at: string | null
+          subject: string
+        }
+        Insert: {
+          body_html: string
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          recipient_count?: number | null
+          sent_at?: string | null
+          subject: string
+        }
+        Update: {
+          body_html?: string
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          recipient_count?: number | null
+          sent_at?: string | null
+          subject?: string
+        }
+        Relationships: []
+      }
+      newsletters: {
+        Row: {
+          email: string
+          id: string
+          is_active: boolean | null
+          subscribed_at: string | null
+          unsubscribed_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          email: string
+          id?: string
+          is_active?: boolean | null
+          subscribed_at?: string | null
+          unsubscribed_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          email?: string
+          id?: string
+          is_active?: boolean | null
+          subscribed_at?: string | null
+          unsubscribed_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
       }
       notifications: {
         Row: {
@@ -1342,6 +1507,8 @@ export type Database = {
       }
       product_reviews: {
         Row: {
+          admin_reply: string | null
+          admin_reply_at: string | null
           comment: string | null
           created_at: string | null
           id: string
@@ -1350,6 +1517,8 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          admin_reply?: string | null
+          admin_reply_at?: string | null
           comment?: string | null
           created_at?: string | null
           id?: string
@@ -1358,6 +1527,8 @@ export type Database = {
           user_id: string
         }
         Update: {
+          admin_reply?: string | null
+          admin_reply_at?: string | null
           comment?: string | null
           created_at?: string | null
           id?: string
@@ -1413,6 +1584,39 @@ export type Database = {
           },
         ]
       }
+      product_variants: {
+        Row: {
+          created_at: string | null
+          id: string
+          price_diff: number | null
+          product_id: string
+          sku: string | null
+          stock_quantity: number | null
+          variant_name: string
+          variant_value: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          price_diff?: number | null
+          product_id: string
+          sku?: string | null
+          stock_quantity?: number | null
+          variant_name: string
+          variant_value: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          price_diff?: number | null
+          product_id?: string
+          sku?: string | null
+          stock_quantity?: number | null
+          variant_name?: string
+          variant_value?: string
+        }
+        Relationships: []
+      }
       products: {
         Row: {
           allowed_file_types: string[] | null
@@ -1426,7 +1630,9 @@ export type Database = {
           is_name_customizable: boolean | null
           made_to_order: boolean | null
           price: number
+          product_badge: string | null
           promotion_badges: string[] | null
+          sales_count: number | null
           stock_quantity: number | null
           stock_status: string | null
           tags: string[] | null
@@ -1446,7 +1652,9 @@ export type Database = {
           is_name_customizable?: boolean | null
           made_to_order?: boolean | null
           price: number
+          product_badge?: string | null
           promotion_badges?: string[] | null
+          sales_count?: number | null
           stock_quantity?: number | null
           stock_status?: string | null
           tags?: string[] | null
@@ -1466,7 +1674,9 @@ export type Database = {
           is_name_customizable?: boolean | null
           made_to_order?: boolean | null
           price?: number
+          product_badge?: string | null
           promotion_badges?: string[] | null
+          sales_count?: number | null
           stock_quantity?: number | null
           stock_status?: string | null
           tags?: string[] | null
@@ -1884,6 +2094,80 @@ export type Database = {
           },
         ]
       }
+      support_ticket_messages: {
+        Row: {
+          attachments: Json | null
+          created_at: string | null
+          id: string
+          is_admin: boolean | null
+          message: string
+          sender_id: string
+          ticket_id: string
+        }
+        Insert: {
+          attachments?: Json | null
+          created_at?: string | null
+          id?: string
+          is_admin?: boolean | null
+          message: string
+          sender_id: string
+          ticket_id: string
+        }
+        Update: {
+          attachments?: Json | null
+          created_at?: string | null
+          id?: string
+          is_admin?: boolean | null
+          message?: string
+          sender_id?: string
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_ticket_messages_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "support_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      support_tickets: {
+        Row: {
+          assigned_admin: string | null
+          category: string | null
+          created_at: string | null
+          id: string
+          priority: string | null
+          status: string
+          subject: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          assigned_admin?: string | null
+          category?: string | null
+          created_at?: string | null
+          id?: string
+          priority?: string | null
+          status?: string
+          subject: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          assigned_admin?: string | null
+          category?: string | null
+          created_at?: string | null
+          id?: string
+          priority?: string | null
+          status?: string
+          subject?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       supported_languages: {
         Row: {
           code: string
@@ -2052,6 +2336,74 @@ export type Database = {
           page_path?: string
           user_id?: string | null
           visited_at?: string | null
+        }
+        Relationships: []
+      }
+      webhook_logs: {
+        Row: {
+          created_at: string | null
+          event_type: string
+          id: string
+          payload: Json | null
+          response_body: string | null
+          response_status: number | null
+          webhook_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          event_type: string
+          id?: string
+          payload?: Json | null
+          response_body?: string | null
+          response_status?: number | null
+          webhook_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          event_type?: string
+          id?: string
+          payload?: Json | null
+          response_body?: string | null
+          response_status?: number | null
+          webhook_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "webhook_logs_webhook_id_fkey"
+            columns: ["webhook_id"]
+            isOneToOne: false
+            referencedRelation: "webhooks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      webhooks: {
+        Row: {
+          created_at: string | null
+          event_types: string[]
+          id: string
+          is_active: boolean | null
+          name: string
+          secret: string | null
+          url: string
+        }
+        Insert: {
+          created_at?: string | null
+          event_types?: string[]
+          id?: string
+          is_active?: boolean | null
+          name: string
+          secret?: string | null
+          url: string
+        }
+        Update: {
+          created_at?: string | null
+          event_types?: string[]
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          secret?: string | null
+          url?: string
         }
         Relationships: []
       }
