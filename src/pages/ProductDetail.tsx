@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { addToCart } from "@/lib/cart";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import StockNotificationButton from "@/components/StockNotificationButton";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -673,10 +674,11 @@ const ProductDetail = () => {
             {/* Sepete Ekle Butonu */}
             {product.stock_status === 'out_of_stock' ? (
               <Card className="border-destructive bg-destructive/5">
-                <CardContent className="pt-6">
+                <CardContent className="pt-6 space-y-3">
                   <p className="text-center text-destructive font-medium">
                     Bu ürün şu anda stokta bulunmamaktadır
                   </p>
+                  <StockNotificationButton productId={product.id} stockQuantity={0} />
                 </CardContent>
               </Card>
             ) : (

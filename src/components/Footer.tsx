@@ -6,6 +6,8 @@ import { logger } from "@/lib/logger";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import { useTranslations } from "@/hooks/use-translations";
 
+import NewsletterSignup from "@/components/NewsletterSignup";
+
 const Footer = () => {
   const [settings, setSettings] = useState<any>(null);
   const { t } = useTranslations();
@@ -63,6 +65,11 @@ const Footer = () => {
                   {t("nav.contact", "İletişim")}
                 </Link>
               </li>
+              <li>
+                <Link to="/faq" className="text-white/80 hover:text-white transition-colors">
+                  {t("nav.faq", "Sıkça Sorulan Sorular")}
+                </Link>
+              </li>
             </ul>
           </div>
 
@@ -109,6 +116,10 @@ const Footer = () => {
               <LanguageSelector variant="footer" />
             </div>
           </div>
+        </div>
+
+        <div className="mt-8 mb-6">
+          <NewsletterSignup />
         </div>
 
         <div className="border-t border-white/20 pt-6 text-center text-white/70">
