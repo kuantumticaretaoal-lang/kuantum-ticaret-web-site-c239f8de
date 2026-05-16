@@ -1,5 +1,4 @@
-export const generateInvoicePDF = (order: any, profile: any): void => {
-  // Build invoice content as HTML string, then use browser print
+export const buildInvoiceHTML = (order: any, profile: any): string => {
   const items = order.order_items || [];
   const itemRows = items.map((item: any, i: number) => `
     <tr>
