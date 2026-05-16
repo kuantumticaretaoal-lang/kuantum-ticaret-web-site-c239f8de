@@ -85,7 +85,8 @@ type AdminTabKey =
   | "blog"
   | "scheduled-discounts"
   | "customer-detail"
-  | "newsletter";
+  | "newsletter"
+  | "faq";
 
 interface TabConfig {
   key: AdminTabKey;
