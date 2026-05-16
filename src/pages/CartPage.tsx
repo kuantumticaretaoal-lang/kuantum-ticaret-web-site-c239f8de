@@ -17,6 +17,8 @@ import { Minus, Plus, Trash2, Tag, X, Check } from "lucide-react";
 import { logger } from "@/lib/logger";
 import { Badge } from "@/components/ui/badge";
 import { ReturnRequestForm } from "@/components/ReturnRequestForm";
+import { generateInvoicePDF } from "@/lib/invoice-pdf";
+import { FileText } from "lucide-react";
 
 interface AppliedCoupon {
   id: string;
