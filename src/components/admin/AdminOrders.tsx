@@ -303,6 +303,12 @@ export const AdminOrders = () => {
         description: "Sipariş güncellenemedi",
       });
     } else {
+      // Auto-send invoice when order transitions from pending → confirmed (or any status forward from pending)
+      if (currentOrder?.status === "pending" && status !== "pending" && status !== "rejected") {
+        supabase.functions.invoke("send-order-invoice", { body: { orderId } }).catch((err) => {
+          console.warn("Invoice send failed:", err);
+        });
+      }
       // If changing from delivered to rejected, restore stock
       if (currentOrder?.status === "delivered" && status === "rejected") {
         try {
