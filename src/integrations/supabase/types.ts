@@ -1070,10 +1070,12 @@ export type Database = {
           extra_fee_reason: string | null
           extra_fee_requested_at: string | null
           id: string
+          invoice_sent_at: string | null
           order_code: string
           preparation_time: number | null
           preparation_unit: string | null
           rejection_reason: string | null
+          returned_at: string | null
           shipping_fee: number | null
           status: Database["public"]["Enums"]["order_status"]
           subtotal_amount: number
@@ -1095,10 +1097,12 @@ export type Database = {
           extra_fee_reason?: string | null
           extra_fee_requested_at?: string | null
           id?: string
+          invoice_sent_at?: string | null
           order_code?: string
           preparation_time?: number | null
           preparation_unit?: string | null
           rejection_reason?: string | null
+          returned_at?: string | null
           shipping_fee?: number | null
           status?: Database["public"]["Enums"]["order_status"]
           subtotal_amount?: number
@@ -1120,10 +1124,12 @@ export type Database = {
           extra_fee_reason?: string | null
           extra_fee_requested_at?: string | null
           id?: string
+          invoice_sent_at?: string | null
           order_code?: string
           preparation_time?: number | null
           preparation_unit?: string | null
           rejection_reason?: string | null
+          returned_at?: string | null
           shipping_fee?: number | null
           status?: Database["public"]["Enums"]["order_status"]
           subtotal_amount?: number
