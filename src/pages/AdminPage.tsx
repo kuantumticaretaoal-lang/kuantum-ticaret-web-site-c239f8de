@@ -134,6 +134,7 @@ const ADMIN_TABS: TabConfig[] = [
   { key: "blog", label: "Blog", Component: AdminBlog },
   { key: "scheduled-discounts", label: "Zamanlı İndirimler", Component: AdminScheduledDiscounts },
   { key: "newsletter", label: "Bülten", Component: AdminNewsletter },
+  { key: "faq", label: "Sıkça Sorulan Sorular", Component: AdminFAQ },
 ];
 
 const AdminPage = () => {
