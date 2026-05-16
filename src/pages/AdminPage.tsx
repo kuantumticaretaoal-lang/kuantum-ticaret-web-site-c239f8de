@@ -45,6 +45,7 @@ import { AdminBlog } from "@/components/admin/AdminBlog";
 import { AdminScheduledDiscounts } from "@/components/admin/AdminScheduledDiscounts";
 import { AdminCustomerDetail } from "@/components/admin/AdminCustomerDetail";
 import { AdminNewsletter } from "@/components/admin/AdminNewsletter";
+import { AdminFAQ } from "@/components/admin/AdminFAQ";
 
 type AdminTabKey =
   | "dashboard"
