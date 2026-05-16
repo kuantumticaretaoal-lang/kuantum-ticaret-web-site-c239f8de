@@ -17,6 +17,8 @@ import { Minus, Plus, Trash2, Tag, X, Check } from "lucide-react";
 import { logger } from "@/lib/logger";
 import { Badge } from "@/components/ui/badge";
 import { ReturnRequestForm } from "@/components/ReturnRequestForm";
+import { generateInvoicePDF } from "@/lib/invoice-pdf";
+import { FileText } from "lucide-react";
 
 interface AppliedCoupon {
   id: string;
@@ -788,12 +790,30 @@ const CartPage = () => {
                               {formatPrice(calculateOrderTotal(order))}
                             </TableCell>
                             <TableCell>
-                              {order.status === "delivered" && (
-                                <ReturnRequestForm
-                                  orderId={order.id}
-                                  orderCode={order.order_code || order.id.slice(0, 8)}
-                                />
-                              )}
+                              <div className="flex flex-col gap-1">
+                                {!["pending", "rejected"].includes(order.status) && !order.trashed && (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={async () => {
+                                      const { data: { user } } = await supabase.auth.getUser();
+                                      if (!user) return;
+                                      const { data: profile } = await (supabase as any)
+                                        .from("profiles").select("*").eq("id", user.id).maybeSingle();
+                                      generateInvoicePDF(order, profile);
+                                    }}
+                                  >
+                                    <FileText className="h-3 w-3 mr-1" />
+                                    Fatura
+                                  </Button>
+                                )}
+                                {order.status === "delivered" && (
+                                  <ReturnRequestForm
+                                    orderId={order.id}
+                                    orderCode={order.order_code || order.id.slice(0, 8)}
+                                  />
+                                )}
+                              </div>
                             </TableCell>
                           </TableRow>
                         ))}

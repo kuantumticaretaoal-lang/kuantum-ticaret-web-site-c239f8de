@@ -1,5 +1,4 @@
-export const generateInvoicePDF = (order: any, profile: any): void => {
-  // Build invoice content as HTML string, then use browser print
+export const buildInvoiceHTML = (order: any, profile: any): string => {
   const items = order.order_items || [];
   const itemRows = items.map((item: any, i: number) => `
     <tr>
@@ -54,6 +53,12 @@ export const generateInvoicePDF = (order: any, profile: any): void => {
       </style>
     </head>
     <body>
+      ${order.returned_at ? `
+        <div style="background:#fef2f2;border:2px solid #dc2626;border-radius:8px;padding:16px;margin-bottom:24px;color:#991b1b">
+          <div style="font-weight:bold;font-size:16px;margin-bottom:4px">⚠ İADE EDİLEN SİPARİŞ</div>
+          <div style="font-size:13px">Bu sipariş ${new Date(order.returned_at).toLocaleString('tr-TR')} tarihinde başarıyla iade edilmiştir.</div>
+        </div>
+      ` : ''}
       <div class="header">
         <div>
           <div class="company-name">KUANTUM TİCARET</div>
@@ -127,7 +132,11 @@ export const generateInvoicePDF = (order: any, profile: any): void => {
     </body>
     </html>
   `;
+  return html;
+};
 
+export const generateInvoicePDF = (order: any, profile: any): void => {
+  const html = buildInvoiceHTML(order, profile);
   const printWindow = window.open('', '_blank');
   if (printWindow) {
     printWindow.document.write(html);

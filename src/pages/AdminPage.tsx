@@ -45,6 +45,7 @@ import { AdminBlog } from "@/components/admin/AdminBlog";
 import { AdminScheduledDiscounts } from "@/components/admin/AdminScheduledDiscounts";
 import { AdminCustomerDetail } from "@/components/admin/AdminCustomerDetail";
 import { AdminNewsletter } from "@/components/admin/AdminNewsletter";
+import { AdminFAQ } from "@/components/admin/AdminFAQ";
 
 type AdminTabKey =
   | "dashboard"
@@ -84,7 +85,8 @@ type AdminTabKey =
   | "blog"
   | "scheduled-discounts"
   | "customer-detail"
-  | "newsletter";
+  | "newsletter"
+  | "faq";
 
 interface TabConfig {
   key: AdminTabKey;
@@ -132,6 +134,7 @@ const ADMIN_TABS: TabConfig[] = [
   { key: "blog", label: "Blog", Component: AdminBlog },
   { key: "scheduled-discounts", label: "Zamanlı İndirimler", Component: AdminScheduledDiscounts },
   { key: "newsletter", label: "Bülten", Component: AdminNewsletter },
+  { key: "faq", label: "Sıkça Sorulan Sorular", Component: AdminFAQ },
 ];
 
 const AdminPage = () => {
