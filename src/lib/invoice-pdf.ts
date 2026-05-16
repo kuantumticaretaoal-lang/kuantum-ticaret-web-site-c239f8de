@@ -132,7 +132,11 @@ export const buildInvoiceHTML = (order: any, profile: any): string => {
     </body>
     </html>
   `;
+  return html;
+};
 
+export const generateInvoicePDF = (order: any, profile: any): void => {
+  const html = buildInvoiceHTML(order, profile);
   const printWindow = window.open('', '_blank');
   if (printWindow) {
     printWindow.document.write(html);
