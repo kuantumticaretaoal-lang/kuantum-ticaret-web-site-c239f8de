@@ -19,6 +19,11 @@ export const AdminReturnRequests = () => {
 
   useEffect(() => {
     loadRequests();
+    const channel = supabase
+      .channel("admin-return-requests")
+      .on("postgres_changes", { event: "*", schema: "public", table: "return_requests" }, () => loadRequests())
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
   }, []);
 
   const loadRequests = async () => {
