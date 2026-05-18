@@ -79,6 +79,10 @@ export const CookieConsent = () => {
     checkConsent();
   }, []);
 
+  const persistLocal = () => {
+    try { localStorage.setItem('cookie_consent_v1', new Date().toISOString()); } catch {}
+  };
+
   const handleAcceptAll = async () => {
     const deviceId = getDeviceId();
     const { data: { user } } = await supabase.auth.getUser();
@@ -89,6 +93,7 @@ export const CookieConsent = () => {
       accepted: true,
     }));
     await supabase.from('cookie_consents').insert(consents);
+    persistLocal();
     setIsOpen(false);
   };
 
@@ -102,6 +107,7 @@ export const CookieConsent = () => {
       accepted: cat.is_required,
     }));
     await supabase.from('cookie_consents').insert(consents);
+    persistLocal();
     setIsOpen(false);
   };
 
@@ -115,6 +121,7 @@ export const CookieConsent = () => {
       accepted: selectedCategories.has(cat.id),
     }));
     await supabase.from('cookie_consents').insert(consents);
+    persistLocal();
     setIsOpen(false);
   };
 
