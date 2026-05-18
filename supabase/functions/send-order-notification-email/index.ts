@@ -137,7 +137,7 @@ serve(async (req) => {
              </div>
              <div class="content">
                <h2>Merhaba ${profile.first_name} ${profile.last_name},</h2>
-               <p>${message}</p>
+               <p>${safeMessage}</p>
                ${order ? `
                  <p><strong>Sipariş Kodu:</strong> ${order.order_code}</p>
                  <p><strong>Durum:</strong> <span class="status">${statusText[order.status] || order.status}</span></p>
