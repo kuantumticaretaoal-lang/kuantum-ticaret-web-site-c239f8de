@@ -98,28 +98,25 @@ export const CampaignBanner = ({ currentPage }: CampaignBannerProps) => {
 
   const loadBanner = useCallback(async () => {
     const deviceId = getDeviceId();
+    const dismissedBannerIds = new Set<string>();
 
-    // NOTE: user_id is UUID; never query with "user_id.eq.null" (causes 22P02 invalid uuid)
-    let dismissalsQuery = supabase
-      .from("banner_dismissals")
-      .select("banner_id, dismissed_at");
+    // Local fast-path covers anonymous visitors (RLS no longer exposes device-scoped reads)
+    try {
+      const local = JSON.parse(localStorage.getItem('dismissed_banners_v1') || '[]') as string[];
+      local.forEach((id) => dismissedBannerIds.add(id));
+    } catch {}
 
     if (user?.id) {
-      dismissalsQuery = dismissalsQuery.or(`user_id.eq.${user.id},device_id.eq.${deviceId}`);
-    } else {
-      // Anonymous users: dismissals are tracked by device_id
-      dismissalsQuery = dismissalsQuery.eq("device_id", deviceId);
+      const { data: dismissals, error: dismissalsError } = await supabase
+        .from("banner_dismissals")
+        .select("banner_id, dismissed_at")
+        .eq("user_id", user.id);
+      if (dismissalsError) {
+        console.warn("banner_dismissals load failed", dismissalsError);
+      }
+      dismissals?.forEach(d => dismissedBannerIds.add(d.banner_id));
     }
-
-    const { data: dismissals, error: dismissalsError } = await dismissalsQuery;
-    if (dismissalsError) {
-      // Don't block the UI if dismissals can't be loaded
-      console.warn("banner_dismissals load failed", dismissalsError);
-    }
-    const dismissedBannerIds = new Set<string>();
-    dismissals?.forEach(d => {
-      dismissedBannerIds.add(d.banner_id);
-    });
+    void deviceId;
 
     const { data: banners } = await supabase
       .from('campaign_banners')
