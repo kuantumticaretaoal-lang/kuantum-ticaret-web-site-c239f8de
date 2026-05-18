@@ -2447,6 +2447,7 @@ export type Database = {
         Returns: undefined
       }
       is_premium_user: { Args: { p_user_id: string }; Returns: boolean }
+      lookup_referral_owner: { Args: { p_code: string }; Returns: string }
       validate_coupon: {
         Args: { p_code: string; p_order_total: number; p_user_id: string }
         Returns: {
