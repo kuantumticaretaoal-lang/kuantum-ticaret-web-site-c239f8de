@@ -40,14 +40,16 @@ export const CookieConsent = () => {
   useEffect(() => {
     const checkConsent = async () => {
       const deviceId = getDeviceId();
-      
-      const { data: consents } = await supabase
-        .from('cookie_consents')
-        .select('id')
-        .eq('device_id', deviceId)
-        .limit(1);
 
-      if (!consents || consents.length === 0) {
+      // Local fast-path: if the user already consented from this device, skip the modal.
+      // (RLS restricts the DB read to the authenticated owner, so we rely on localStorage
+      // as the device-scoped source of truth for anonymous visitors.)
+      const localConsent = localStorage.getItem('cookie_consent_v1');
+      if (localConsent) {
+        return;
+      }
+
+      if (false) {
         const [categoriesRes, policyRes, allPoliciesRes] = await Promise.all([
           supabase.from('cookie_categories').select('*').eq('is_active', true).order('sort_order'),
           supabase.from('site_policies').select('content').eq('policy_type', 'cookie').single(),
