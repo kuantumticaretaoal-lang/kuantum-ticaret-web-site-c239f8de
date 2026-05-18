@@ -212,9 +212,16 @@ export const CampaignBanner = ({ currentPage }: CampaignBannerProps) => {
 
   const handleDismiss = async () => {
     if (!banner || !banner.is_dismissible) return;
-    
+
     const deviceId = getDeviceId();
-    
+
+    // Persist locally so anonymous visitors stay dismissed across reloads
+    try {
+      const local = JSON.parse(localStorage.getItem('dismissed_banners_v1') || '[]') as Array<{ banner_id: string; dismissed_at: string }>;
+      local.push({ banner_id: banner.id, dismissed_at: new Date().toISOString() });
+      localStorage.setItem('dismissed_banners_v1', JSON.stringify(local));
+    } catch {}
+
     await supabase.from('banner_dismissals').insert({
       banner_id: banner.id,
       user_id: user?.id || null,
