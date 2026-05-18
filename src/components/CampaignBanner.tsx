@@ -99,22 +99,29 @@ export const CampaignBanner = ({ currentPage }: CampaignBannerProps) => {
   const loadBanner = useCallback(async () => {
     const deviceId = getDeviceId();
     const dismissedBannerIds = new Set<string>();
+    const dismissals: { banner_id: string; dismissed_at: string }[] = [];
 
     // Local fast-path covers anonymous visitors (RLS no longer exposes device-scoped reads)
     try {
-      const local = JSON.parse(localStorage.getItem('dismissed_banners_v1') || '[]') as string[];
-      local.forEach((id) => dismissedBannerIds.add(id));
+      const local = JSON.parse(localStorage.getItem('dismissed_banners_v1') || '[]') as Array<{ banner_id: string; dismissed_at: string }>;
+      local.forEach((d) => {
+        dismissedBannerIds.add(d.banner_id);
+        dismissals.push(d);
+      });
     } catch {}
 
     if (user?.id) {
-      const { data: dismissals, error: dismissalsError } = await supabase
+      const { data: dbDismissals, error: dismissalsError } = await supabase
         .from("banner_dismissals")
         .select("banner_id, dismissed_at")
         .eq("user_id", user.id);
       if (dismissalsError) {
         console.warn("banner_dismissals load failed", dismissalsError);
       }
-      dismissals?.forEach(d => dismissedBannerIds.add(d.banner_id));
+      dbDismissals?.forEach(d => {
+        dismissedBannerIds.add(d.banner_id);
+        dismissals.push(d);
+      });
     }
     void deviceId;
 
