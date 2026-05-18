@@ -98,28 +98,32 @@ export const CampaignBanner = ({ currentPage }: CampaignBannerProps) => {
 
   const loadBanner = useCallback(async () => {
     const deviceId = getDeviceId();
+    const dismissedBannerIds = new Set<string>();
+    const dismissals: { banner_id: string; dismissed_at: string }[] = [];
 
-    // NOTE: user_id is UUID; never query with "user_id.eq.null" (causes 22P02 invalid uuid)
-    let dismissalsQuery = supabase
-      .from("banner_dismissals")
-      .select("banner_id, dismissed_at");
+    // Local fast-path covers anonymous visitors (RLS no longer exposes device-scoped reads)
+    try {
+      const local = JSON.parse(localStorage.getItem('dismissed_banners_v1') || '[]') as Array<{ banner_id: string; dismissed_at: string }>;
+      local.forEach((d) => {
+        dismissedBannerIds.add(d.banner_id);
+        dismissals.push(d);
+      });
+    } catch {}
 
     if (user?.id) {
-      dismissalsQuery = dismissalsQuery.or(`user_id.eq.${user.id},device_id.eq.${deviceId}`);
-    } else {
-      // Anonymous users: dismissals are tracked by device_id
-      dismissalsQuery = dismissalsQuery.eq("device_id", deviceId);
+      const { data: dbDismissals, error: dismissalsError } = await supabase
+        .from("banner_dismissals")
+        .select("banner_id, dismissed_at")
+        .eq("user_id", user.id);
+      if (dismissalsError) {
+        console.warn("banner_dismissals load failed", dismissalsError);
+      }
+      dbDismissals?.forEach(d => {
+        dismissedBannerIds.add(d.banner_id);
+        dismissals.push(d);
+      });
     }
-
-    const { data: dismissals, error: dismissalsError } = await dismissalsQuery;
-    if (dismissalsError) {
-      // Don't block the UI if dismissals can't be loaded
-      console.warn("banner_dismissals load failed", dismissalsError);
-    }
-    const dismissedBannerIds = new Set<string>();
-    dismissals?.forEach(d => {
-      dismissedBannerIds.add(d.banner_id);
-    });
+    void deviceId;
 
     const { data: banners } = await supabase
       .from('campaign_banners')
@@ -208,9 +212,16 @@ export const CampaignBanner = ({ currentPage }: CampaignBannerProps) => {
 
   const handleDismiss = async () => {
     if (!banner || !banner.is_dismissible) return;
-    
+
     const deviceId = getDeviceId();
-    
+
+    // Persist locally so anonymous visitors stay dismissed across reloads
+    try {
+      const local = JSON.parse(localStorage.getItem('dismissed_banners_v1') || '[]') as Array<{ banner_id: string; dismissed_at: string }>;
+      local.push({ banner_id: banner.id, dismissed_at: new Date().toISOString() });
+      localStorage.setItem('dismissed_banners_v1', JSON.stringify(local));
+    } catch {}
+
     await supabase.from('banner_dismissals').insert({
       banner_id: banner.id,
       user_id: user?.id || null,

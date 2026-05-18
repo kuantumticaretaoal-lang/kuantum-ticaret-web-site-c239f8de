@@ -40,42 +40,48 @@ export const CookieConsent = () => {
   useEffect(() => {
     const checkConsent = async () => {
       const deviceId = getDeviceId();
-      
-      const { data: consents } = await supabase
-        .from('cookie_consents')
-        .select('id')
-        .eq('device_id', deviceId)
-        .limit(1);
 
-      if (!consents || consents.length === 0) {
-        const [categoriesRes, policyRes, allPoliciesRes] = await Promise.all([
-          supabase.from('cookie_categories').select('*').eq('is_active', true).order('sort_order'),
-          supabase.from('site_policies').select('content').eq('policy_type', 'cookie').single(),
-          supabase.from('site_policies').select('id, title, policy_type, content').eq('is_active', true)
-        ]);
-
-        if (categoriesRes.data) {
-          setCategories(categoriesRes.data);
-          const required = new Set(
-            categoriesRes.data.filter(c => c.is_required).map(c => c.id)
-          );
-          setSelectedCategories(required);
-        }
-
-        if (policyRes.data) {
-          setCookiePolicy(policyRes.data.content || '');
-        }
-
-        if (allPoliciesRes.data) {
-          setPolicies(allPoliciesRes.data as SitePolicy[]);
-        }
-
-        setIsOpen(true);
+      // Local fast-path: if the user already consented from this device, skip the modal.
+      // (RLS restricts the DB read to the authenticated owner, so we rely on localStorage
+      // as the device-scoped source of truth for anonymous visitors.)
+      const localConsent = localStorage.getItem('cookie_consent_v1');
+      if (localConsent) {
+        return;
       }
+
+      const [categoriesRes, policyRes, allPoliciesRes] = await Promise.all([
+        supabase.from('cookie_categories').select('*').eq('is_active', true).order('sort_order'),
+        supabase.from('site_policies').select('content').eq('policy_type', 'cookie').single(),
+        supabase.from('site_policies').select('id, title, policy_type, content').eq('is_active', true)
+      ]);
+
+      if (categoriesRes.data) {
+        setCategories(categoriesRes.data);
+        const required = new Set(
+          categoriesRes.data.filter(c => c.is_required).map(c => c.id)
+        );
+        setSelectedCategories(required);
+      }
+
+      if (policyRes.data) {
+        setCookiePolicy(policyRes.data.content || '');
+      }
+
+      if (allPoliciesRes.data) {
+        setPolicies(allPoliciesRes.data as SitePolicy[]);
+      }
+
+      setIsOpen(true);
+      // also reference deviceId so linter is happy
+      void deviceId;
     };
 
     checkConsent();
   }, []);
+
+  const persistLocal = () => {
+    try { localStorage.setItem('cookie_consent_v1', new Date().toISOString()); } catch {}
+  };
 
   const handleAcceptAll = async () => {
     const deviceId = getDeviceId();
@@ -87,6 +93,7 @@ export const CookieConsent = () => {
       accepted: true,
     }));
     await supabase.from('cookie_consents').insert(consents);
+    persistLocal();
     setIsOpen(false);
   };
 
@@ -100,6 +107,7 @@ export const CookieConsent = () => {
       accepted: cat.is_required,
     }));
     await supabase.from('cookie_consents').insert(consents);
+    persistLocal();
     setIsOpen(false);
   };
 
@@ -113,6 +121,7 @@ export const CookieConsent = () => {
       accepted: selectedCategories.has(cat.id),
     }));
     await supabase.from('cookie_consents').insert(consents);
+    persistLocal();
     setIsOpen(false);
   };
 
