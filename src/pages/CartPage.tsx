@@ -17,7 +17,7 @@ import { Minus, Plus, Trash2, Tag, X, Check } from "lucide-react";
 import { logger } from "@/lib/logger";
 import { Badge } from "@/components/ui/badge";
 import { ReturnRequestForm } from "@/components/ReturnRequestForm";
-import { generateInvoicePDF } from "@/lib/invoice-pdf";
+import { viewInvoice, downloadInvoicePDF } from "@/lib/invoice-pdf";
 import { FileText } from "lucide-react";
 
 interface AppliedCoupon {
@@ -791,21 +791,36 @@ const CartPage = () => {
                             </TableCell>
                             <TableCell>
                               <div className="flex flex-col gap-1">
-                                {!["pending", "rejected"].includes(order.status) && !order.trashed && (
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={async () => {
-                                      const { data: { user } } = await supabase.auth.getUser();
-                                      if (!user) return;
-                                      const { data: profile } = await (supabase as any)
-                                        .from("profiles").select("*").eq("id", user.id).maybeSingle();
-                                      generateInvoicePDF(order, profile);
-                                    }}
-                                  >
-                                    <FileText className="h-3 w-3 mr-1" />
-                                    Fatura
-                                  </Button>
+                                {["confirmed","preparing","ready","in_delivery","delivered"].includes(order.status) && !order.trashed && (
+                                  <div className="flex gap-1">
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={async () => {
+                                        const { data: { user } } = await supabase.auth.getUser();
+                                        if (!user) return;
+                                        const { data: profile } = await (supabase as any)
+                                          .from("profiles").select("*").eq("id", user.id).maybeSingle();
+                                        viewInvoice(order, profile);
+                                      }}
+                                    >
+                                      <FileText className="h-3 w-3 mr-1" />
+                                      Faturayı Görüntüle
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      onClick={async () => {
+                                        const { data: { user } } = await supabase.auth.getUser();
+                                        if (!user) return;
+                                        const { data: profile } = await (supabase as any)
+                                          .from("profiles").select("*").eq("id", user.id).maybeSingle();
+                                        await downloadInvoicePDF(order, profile);
+                                      }}
+                                    >
+                                      <FileText className="h-3 w-3 mr-1" />
+                                      PDF İndir
+                                    </Button>
+                                  </div>
                                 )}
                                 {order.status === "delivered" && (
                                   <ReturnRequestForm
