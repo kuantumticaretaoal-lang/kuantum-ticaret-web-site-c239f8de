@@ -791,21 +791,36 @@ const CartPage = () => {
                             </TableCell>
                             <TableCell>
                               <div className="flex flex-col gap-1">
-                                {!["pending", "rejected"].includes(order.status) && !order.trashed && (
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={async () => {
-                                      const { data: { user } } = await supabase.auth.getUser();
-                                      if (!user) return;
-                                      const { data: profile } = await (supabase as any)
-                                        .from("profiles").select("*").eq("id", user.id).maybeSingle();
-                                      generateInvoicePDF(order, profile);
-                                    }}
-                                  >
-                                    <FileText className="h-3 w-3 mr-1" />
-                                    Fatura
-                                  </Button>
+                                {["confirmed","preparing","ready","in_delivery","delivered"].includes(order.status) && !order.trashed && (
+                                  <div className="flex gap-1">
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={async () => {
+                                        const { data: { user } } = await supabase.auth.getUser();
+                                        if (!user) return;
+                                        const { data: profile } = await (supabase as any)
+                                          .from("profiles").select("*").eq("id", user.id).maybeSingle();
+                                        viewInvoice(order, profile);
+                                      }}
+                                    >
+                                      <FileText className="h-3 w-3 mr-1" />
+                                      Faturayı Görüntüle
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      onClick={async () => {
+                                        const { data: { user } } = await supabase.auth.getUser();
+                                        if (!user) return;
+                                        const { data: profile } = await (supabase as any)
+                                          .from("profiles").select("*").eq("id", user.id).maybeSingle();
+                                        await downloadInvoicePDF(order, profile);
+                                      }}
+                                    >
+                                      <FileText className="h-3 w-3 mr-1" />
+                                      PDF İndir
+                                    </Button>
+                                  </div>
                                 )}
                                 {order.status === "delivered" && (
                                   <ReturnRequestForm
