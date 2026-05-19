@@ -19,6 +19,7 @@ import ExitIntentPopup from "./components/ExitIntentPopup";
 
 const Products = lazy(() => import("./pages/Products"));
 const FAQPage = lazy(() => import("./pages/FAQPage"));
+const PoliciesPage = lazy(() => import("./pages/PoliciesPage"));
 const ProductDetail = lazy(() => import("./pages/ProductDetail"));
 const CartPage = lazy(() => import("./pages/CartPage"));
 const ContactPage = lazy(() => import("./pages/ContactPage"));
@@ -79,6 +80,8 @@ const AppContent = () => {
           <Route path="/premium" element={<PremiumPage />} />
           <Route path="/order/:orderCode" element={<OrderTrackingPage />} />
           <Route path="/faq" element={<FAQPage />} />
+          <Route path="/politikalar" element={<PoliciesPage />} />
+          <Route path="/policies" element={<PoliciesPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Suspense>
