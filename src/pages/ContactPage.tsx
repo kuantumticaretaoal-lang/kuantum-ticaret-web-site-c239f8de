@@ -16,9 +16,15 @@ const ContactPage = () => {
   const [settings, setSettings] = useState<any>(null);
   const [formData, setFormData] = useState({ name: "", email: "", phone: "", message: "" });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isAuthed, setIsAuthed] = useState(false);
 
   useEffect(() => {
     loadSettings();
+    loadProfile();
+
+    const { data: authSub } = supabase.auth.onAuthStateChange((_evt, _session) => {
+      loadProfile();
+    });
 
     const channel = supabase
       .channel("contact-settings-changes")
@@ -29,8 +35,29 @@ const ContactPage = () => {
 
     return () => {
       supabase.removeChannel(channel);
+      authSub.subscription.unsubscribe();
     };
   }, []);
+
+  const loadProfile = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      setIsAuthed(false);
+      return;
+    }
+    const { data: profile } = await (supabase as any)
+      .from("profiles")
+      .select("first_name, last_name, email, phone")
+      .eq("id", user.id)
+      .maybeSingle();
+    setIsAuthed(true);
+    setFormData((prev) => ({
+      ...prev,
+      name: `${profile?.first_name ?? ""} ${profile?.last_name ?? ""}`.trim() || prev.name,
+      email: profile?.email || user.email || prev.email,
+      phone: profile?.phone || prev.phone,
+    }));
+  };
 
   const contactSchema = z.object({
     name: z.string()
@@ -175,31 +202,43 @@ const ContactPage = () => {
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <label className="text-sm font-medium mb-2 block">Adınız</label>
-                  <Input 
+                  <label className="text-sm font-medium mb-2 block">
+                    Adınız{isAuthed && <span className="ml-2 text-xs text-muted-foreground">(hesabınızdan)</span>}
+                  </label>
+                  <Input
                     placeholder="Adınızı girin"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     required
+                    readOnly={isAuthed}
+                    disabled={isAuthed}
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium mb-2 block">E-posta</label>
-                  <Input 
-                    type="email" 
+                  <label className="text-sm font-medium mb-2 block">
+                    E-posta{isAuthed && <span className="ml-2 text-xs text-muted-foreground">(hesabınızdan)</span>}
+                  </label>
+                  <Input
+                    type="email"
                     placeholder="E-posta adresiniz"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     required
+                    readOnly={isAuthed}
+                    disabled={isAuthed}
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium mb-2 block">Telefon (İsteğe bağlı)</label>
-                  <Input 
-                    type="tel" 
+                  <label className="text-sm font-medium mb-2 block">
+                    Telefon{isAuthed ? <span className="ml-2 text-xs text-muted-foreground">(hesabınızdan)</span> : " (İsteğe bağlı)"}
+                  </label>
+                  <Input
+                    type="tel"
                     placeholder="Telefon numaranız"
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    readOnly={isAuthed}
+                    disabled={isAuthed}
                   />
                 </div>
                 <div>

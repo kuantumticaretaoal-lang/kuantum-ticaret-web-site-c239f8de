@@ -46,7 +46,14 @@ const NewsletterSignup = () => {
       </div>
       <p className="text-sm text-muted-foreground mb-3">Yeni ürünler ve özel kampanyalardan ilk siz haberdar olun.</p>
       <form onSubmit={subscribe} className="flex gap-2">
-        <Input type="email" required placeholder="E-posta adresiniz" value={email} onChange={(e) => setEmail(e.target.value)} />
+        <Input
+          type="email"
+          required
+          placeholder="E-posta adresiniz"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="bg-background text-foreground placeholder:text-muted-foreground"
+        />
         <Button type="submit" disabled={loading}>{loading ? "..." : "Abone Ol"}</Button>
       </form>
     </div>
