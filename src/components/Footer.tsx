@@ -70,6 +70,11 @@ const Footer = () => {
                   {t("nav.faq", "Sıkça Sorulan Sorular")}
                 </Link>
               </li>
+              <li>
+                <Link to="/politikalar" className="text-white/80 hover:text-white transition-colors">
+                  {t("nav.policies", "Politikalar & Sözleşmeler")}
+                </Link>
+              </li>
             </ul>
           </div>
 
