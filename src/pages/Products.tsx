@@ -442,10 +442,9 @@ const Products = () => {
               >
                 {product.product_images?.[0] && (
                   <div className="w-full h-48 overflow-hidden relative">
-                    <img
-                      src={product.product_images[0].image_url}
+                    <ProductCardImage
+                      images={product.product_images}
                       alt={product.title}
-                      className="w-full h-full object-cover"
                     />
                     <div className="absolute top-2 right-2 flex gap-1">
                       <FavoriteButton
