@@ -257,6 +257,7 @@ export const AdminProducts = () => {
         allows_custom_photo: false,
         allowed_file_types: [],
        made_to_order: false,
+        video_url: "",
         category_ids: []
       });
       setUploadingImages([]);
