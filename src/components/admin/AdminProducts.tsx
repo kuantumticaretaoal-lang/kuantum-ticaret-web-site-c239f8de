@@ -858,6 +858,15 @@ export const AdminProducts = () => {
                   placeholder="Ürün açıklaması"
                 />
               </div>
+
+              <div>
+                <Label>Video URL (YouTube, Vimeo veya .mp4)</Label>
+                <Input
+                  value={editProduct.video_url || ""}
+                  onChange={(e) => setEditProduct({ ...editProduct, video_url: e.target.value })}
+                  placeholder="https://www.youtube.com/watch?v=..."
+                />
+              </div>
               
               <div className="grid grid-cols-2 gap-4">
                 <div>
