@@ -20,6 +20,7 @@ import { logger } from "@/lib/logger";
 import { ProductSkeleton } from "@/components/ProductSkeleton";
 import { useFavorites } from "@/hooks/use-favorites";
 import FavoriteButton from "@/components/FavoriteButton";
+import { ProductCardImage } from "@/components/ProductCardImage";
 import { useTranslations } from "@/hooks/use-translations";
 import * as LucideIcons from "lucide-react";
 
