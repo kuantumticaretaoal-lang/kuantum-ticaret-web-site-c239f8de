@@ -36,6 +36,7 @@ export const AdminProducts = () => {
     allows_custom_photo: false,
     allowed_file_types: [] as string[],
    made_to_order: false,
+    video_url: "",
     category_ids: [] as string[]
   });
   const [editProduct, setEditProduct] = useState<any>(null);
@@ -216,6 +217,7 @@ export const AdminProducts = () => {
         allows_custom_photo: newProduct.allows_custom_photo,
        allowed_file_types: newProduct.allowed_file_types,
        made_to_order: newProduct.made_to_order,
+       video_url: newProduct.video_url || null,
       })
       .select()
       .single();
@@ -299,6 +301,7 @@ export const AdminProducts = () => {
         allows_custom_photo: editProduct.allows_custom_photo || false,
        allowed_file_types: editProduct.allowed_file_types || [],
        made_to_order: editProduct.made_to_order || false,
+       video_url: editProduct.video_url || null,
       })
       .eq("id", editProduct.id);
 
@@ -542,6 +545,14 @@ export const AdminProducts = () => {
                   value={newProduct.description}
                   onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })}
                   placeholder="Ürün açıklaması"
+                />
+              </div>
+              <div>
+                <Label>Video URL (YouTube, Vimeo veya .mp4)</Label>
+                <Input
+                  value={newProduct.video_url}
+                  onChange={(e) => setNewProduct({ ...newProduct, video_url: e.target.value })}
+                  placeholder="https://www.youtube.com/watch?v=..."
                 />
               </div>
               <div>
