@@ -15,6 +15,7 @@ import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { Star, ShoppingCart, Package, AlertCircle, Upload, User, Heart } from "lucide-react";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
+import { ProductGallery } from "@/components/ProductGallery";
 import { ProductDetailSkeleton } from "@/components/ProductSkeleton";
 import { useFavorites } from "@/hooks/use-favorites";
 import { useRateLimit } from "@/hooks/use-rate-limit";
@@ -442,33 +443,11 @@ const ProductDetail = () => {
         <div className="grid lg:grid-cols-2 gap-8 lg:gap-12">
           {/* Resim Galerisi */}
           <div className="space-y-4">
-            {product.product_images && product.product_images.length > 0 ? (
-              <Carousel className="w-full">
-                <CarouselContent>
-                  {product.product_images.map((image: any) => (
-                    <CarouselItem key={image.id}>
-                      <div className="relative aspect-square rounded-xl overflow-hidden bg-muted">
-                        <img
-                          src={image.image_url}
-                          alt={product.title}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                    </CarouselItem>
-                  ))}
-                </CarouselContent>
-                {product.product_images.length > 1 && (
-                  <>
-                    <CarouselPrevious className="left-4" />
-                    <CarouselNext className="right-4" />
-                  </>
-                )}
-              </Carousel>
-            ) : (
-              <div className="w-full aspect-square bg-muted rounded-xl flex items-center justify-center">
-                <p className="text-muted-foreground">Resim yok</p>
-              </div>
-            )}
+            <ProductGallery
+              images={product.product_images || []}
+              videoUrl={product.video_url}
+              title={product.title}
+            />
             
             {/* Promosyon Rozetleri */}
             {product.promotion_badges && product.promotion_badges.length > 0 && (
