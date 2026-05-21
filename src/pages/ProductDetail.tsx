@@ -29,6 +29,7 @@ import { UrgencyIndicators } from "@/components/UrgencyIndicators";
 import { CampaignBanner } from "@/components/CampaignBanner";
 import { useTranslations } from "@/hooks/use-translations";
 import { ProductBreadcrumb } from "@/components/ProductBreadcrumb";
+import { HalfStarRating, maskLastName } from "@/components/HalfStarRating";
 
 const ProductDetail = () => {
   const { id } = useParams();
