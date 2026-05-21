@@ -43,6 +43,7 @@ const ProductDetail = () => {
   const [questions, setQuestions] = useState<any[]>([]);
   const [user, setUser] = useState<any>(null);
   const [rating, setRating] = useState(0);
+  const [hideLastName, setHideLastName] = useState(true);
   const [comment, setComment] = useState("");
   const [question, setQuestion] = useState("");
   const [quantity, setQuantity] = useState(1);
@@ -697,31 +698,17 @@ const ProductDetail = () => {
           </TabsList>
 
           <TabsContent value="reviews" className="mt-6 space-y-6">
-            {user && (
+            {user ? (
               <Card>
                 <CardHeader>
                   <CardTitle>Değerlendirme Yap</CardTitle>
-                  <CardDescription>Ürün hakkındaki düşüncelerinizi paylaşın</CardDescription>
+                  <CardDescription>Sadece teslim aldığınız ürünleri değerlendirebilirsiniz</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
-                    <p className="text-sm font-medium">Puan <span className="text-destructive">*</span></p>
-                    <div className="flex gap-1">
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <button
-                          key={star}
-                          type="button"
-                          onClick={() => setRating(star)}
-                          className="hover:scale-110 transition-transform"
-                        >
-                          <Star
-                            className={`h-8 w-8 ${
-                              star <= rating ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground"
-                            }`}
-                          />
-                        </button>
-                      ))}
-                    </div>
+                    <p className="text-sm font-medium">Puan <span className="text-destructive">*</span> (yarım yıldız da verebilirsiniz)</p>
+                    <HalfStarRating value={rating} onChange={setRating} size={32} />
+                    {rating > 0 && <p className="text-xs text-muted-foreground">Seçili: {rating} yıldız</p>}
                   </div>
                   <div className="space-y-2">
                     <p className="text-sm font-medium">Yorum</p>
@@ -732,9 +719,24 @@ const ProductDetail = () => {
                       rows={4}
                     />
                   </div>
+                  <label className="flex items-center gap-2 text-sm cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={hideLastName}
+                      onChange={(e) => setHideLastName(e.target.checked)}
+                      className="rounded"
+                    />
+                    Soyadımı gizle (örn: Ahmet K***)
+                  </label>
                   <Button onClick={submitReview} className="w-full">
                     Değerlendirmeyi Gönder
                   </Button>
+                </CardContent>
+              </Card>
+            ) : (
+              <Card>
+                <CardContent className="py-6 text-center text-sm text-muted-foreground">
+                  Değerlendirme yapmak için <a href="/login" className="text-primary underline">giriş yapın</a>.
                 </CardContent>
               </Card>
             )}
@@ -753,22 +755,13 @@ const ProductDetail = () => {
                       <div className="flex items-start justify-between mb-3">
                         <div>
                           <p className="font-medium">
-                            {review.profiles?.first_name} {review.profiles?.last_name}
+                            {maskLastName(review.profiles?.first_name, review.profiles?.last_name, review.hide_lastname)}
                           </p>
                           <p className="text-sm text-muted-foreground">
                             {new Date(review.created_at).toLocaleDateString('tr-TR')}
                           </p>
                         </div>
-                        <div className="flex">
-                          {[1, 2, 3, 4, 5].map((star) => (
-                            <Star
-                              key={star}
-                              className={`h-4 w-4 ${
-                                star <= review.rating ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground"
-                              }`}
-                            />
-                          ))}
-                        </div>
+                        <HalfStarRating value={Number(review.rating)} readonly size={16} />
                       </div>
                       {review.comment && <p className="text-muted-foreground">{review.comment}</p>}
                     </CardContent>
