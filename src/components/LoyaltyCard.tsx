@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Star, Copy, Gift, Users } from "lucide-react";
+import { Star, Copy, Gift, Users, RefreshCw, Ticket } from "lucide-react";
 
 export const LoyaltyCard = ({ userId }: { userId: string }) => {
   const { toast } = useToast();
@@ -13,13 +13,15 @@ export const LoyaltyCard = ({ userId }: { userId: string }) => {
   const [history, setHistory] = useState<any[]>([]);
   const [referralCode, setReferralCode] = useState<string | null>(null);
   const [referralCount, setReferralCount] = useState(0);
+  const [redeemInput, setRedeemInput] = useState("");
+  const [redeeming, setRedeeming] = useState(false);
+  const [hasRedeemed, setHasRedeemed] = useState(false);
 
   useEffect(() => {
     loadData();
   }, [userId]);
 
   const loadData = async () => {
-    // Load loyalty points
     const { data: points } = await (supabase as any)
       .from("loyalty_points")
       .select("*")
@@ -32,7 +34,6 @@ export const LoyaltyCard = ({ userId }: { userId: string }) => {
       setTotalPoints(points.reduce((s: number, p: any) => s + p.points, 0));
     }
 
-    // Load referral code
     const { data: ref } = await (supabase as any)
       .from("referral_codes")
       .select("*")
@@ -42,7 +43,17 @@ export const LoyaltyCard = ({ userId }: { userId: string }) => {
     if (ref) {
       setReferralCode(ref.code);
       setReferralCount(ref.used_by_count || 0);
+    } else {
+      setReferralCode(null);
+      setReferralCount(0);
     }
+
+    const { data: usage } = await (supabase as any)
+      .from("referral_usages")
+      .select("id")
+      .eq("referred_id", userId)
+      .maybeSingle();
+    setHasRedeemed(!!usage);
   };
 
   const generateReferralCode = async () => {
@@ -55,8 +66,42 @@ export const LoyaltyCard = ({ userId }: { userId: string }) => {
       toast({ variant: "destructive", title: "Hata", description: "Kod oluşturulamadı" });
     } else {
       setReferralCode(code);
-      toast({ title: "Referans kodunuz oluşturuldu!", description: code });
+      toast({ title: "Davet kodunuz oluşturuldu", description: code });
     }
+  };
+
+  const regenerateCode = async () => {
+    if (referralCount > 0) {
+      toast({ variant: "destructive", title: "Yenilenemez", description: "Kullanılmış kod yenilenemez." });
+      return;
+    }
+    const { error } = await (supabase as any).from("referral_codes").delete().eq("user_id", userId);
+    if (error) {
+      toast({ variant: "destructive", title: "Hata", description: error.message });
+      return;
+    }
+    setReferralCode(null);
+    await generateReferralCode();
+  };
+
+  const redeemCode = async () => {
+    const code = redeemInput.trim().toUpperCase();
+    if (!code) return;
+    if (code === referralCode) {
+      toast({ variant: "destructive", title: "Hata", description: "Kendi kodunuzu kullanamazsınız" });
+      return;
+    }
+    setRedeeming(true);
+    const { data, error } = await (supabase as any).rpc("redeem_referral_code", { p_code: code });
+    setRedeeming(false);
+    if (error || !data?.ok) {
+      toast({ variant: "destructive", title: "Hata", description: data?.error || error?.message || "Geçersiz kod" });
+      return;
+    }
+    toast({ title: "Başarılı", description: "Davet kodu uygulandı ve bonus puanlar verildi!" });
+    setRedeemInput("");
+    setHasRedeemed(true);
+    loadData();
   };
 
   const copyCode = () => {
@@ -68,7 +113,6 @@ export const LoyaltyCard = ({ userId }: { userId: string }) => {
 
   return (
     <div className="space-y-4">
-      {/* Points card */}
       <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
         <CardHeader className="pb-2">
           <CardTitle className="flex items-center gap-2 text-lg">
@@ -78,7 +122,7 @@ export const LoyaltyCard = ({ userId }: { userId: string }) => {
         </CardHeader>
         <CardContent>
           <div className="text-3xl font-bold text-primary mb-1">{totalPoints} Puan</div>
-          <p className="text-xs text-muted-foreground">Her 10₺ alışverişte 1 puan kazanın</p>
+          <p className="text-xs text-muted-foreground">Her 10 birim alışverişte 1 puan kazanın (1 puan = 1 birim).</p>
 
           {history.length > 0 && (
             <div className="mt-4 space-y-2 max-h-40 overflow-y-auto">
@@ -93,12 +137,11 @@ export const LoyaltyCard = ({ userId }: { userId: string }) => {
         </CardContent>
       </Card>
 
-      {/* Referral card */}
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="flex items-center gap-2 text-lg">
             <Users className="h-5 w-5 text-primary" />
-            Arkadaşını Getir
+            Davet Kodum
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -106,8 +149,17 @@ export const LoyaltyCard = ({ userId }: { userId: string }) => {
             <div className="space-y-3">
               <div className="flex gap-2">
                 <Input value={referralCode} readOnly className="font-mono text-center" />
-                <Button size="icon" variant="outline" onClick={copyCode}>
+                <Button size="icon" variant="outline" onClick={copyCode} title="Kopyala">
                   <Copy className="h-4 w-4" />
+                </Button>
+                <Button
+                  size="icon"
+                  variant="outline"
+                  onClick={regenerateCode}
+                  disabled={referralCount > 0}
+                  title={referralCount > 0 ? "Kullanılmış — yenilenemez" : "Yenile"}
+                >
+                  <RefreshCw className="h-4 w-4" />
                 </Button>
               </div>
               <div className="flex items-center gap-2 text-sm">
@@ -115,15 +167,46 @@ export const LoyaltyCard = ({ userId }: { userId: string }) => {
                 <span>{referralCount} kişi davet kodunuzu kullandı</span>
               </div>
               <p className="text-xs text-muted-foreground">
-                Arkadaşlarınız bu kodla kayıt olduğunda her ikiniz de bonus puan kazanırsınız!
+                Arkadaşlarınız bu kodla bonus puan kazanır, siz de her kullanım için +100 puan alırsınız.
               </p>
             </div>
           ) : (
             <div className="text-center py-4">
-              <p className="text-sm text-muted-foreground mb-3">Referans kodunuzu oluşturun ve paylaşın</p>
+              <p className="text-sm text-muted-foreground mb-3">Davet kodunuzu oluşturun ve paylaşın</p>
               <Button onClick={generateReferralCode} className="gap-2">
                 <Gift className="h-4 w-4" /> Kod Oluştur
               </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Ticket className="h-5 w-5 text-primary" />
+            Davet Kodu Kullan
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {hasRedeemed ? (
+            <p className="text-sm text-muted-foreground">Daha önce bir davet kodu kullandınız. Teşekkürler!</p>
+          ) : (
+            <div className="space-y-2">
+              <p className="text-xs text-muted-foreground">
+                Bir arkadaşınızdan aldığınız davet kodunu girin ve +50 puan kazanın.
+              </p>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="REF-XXXXXX"
+                  value={redeemInput}
+                  onChange={(e) => setRedeemInput(e.target.value.toUpperCase())}
+                  className="font-mono"
+                />
+                <Button onClick={redeemCode} disabled={redeeming || !redeemInput.trim()}>
+                  {redeeming ? "..." : "Kullan"}
+                </Button>
+              </div>
             </div>
           )}
         </CardContent>

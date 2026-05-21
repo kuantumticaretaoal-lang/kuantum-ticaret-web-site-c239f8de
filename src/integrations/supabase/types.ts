@@ -1520,6 +1520,7 @@ export type Database = {
           admin_reply_at: string | null
           comment: string | null
           created_at: string | null
+          hide_lastname: boolean
           id: string
           product_id: string
           rating: number
@@ -1530,6 +1531,7 @@ export type Database = {
           admin_reply_at?: string | null
           comment?: string | null
           created_at?: string | null
+          hide_lastname?: boolean
           id?: string
           product_id: string
           rating: number
@@ -1540,6 +1542,7 @@ export type Database = {
           admin_reply_at?: string | null
           comment?: string | null
           created_at?: string | null
+          hide_lastname?: boolean
           id?: string
           product_id?: string
           rating?: number
@@ -2448,6 +2451,7 @@ export type Database = {
       }
       is_premium_user: { Args: { p_user_id: string }; Returns: boolean }
       lookup_referral_owner: { Args: { p_code: string }; Returns: string }
+      redeem_referral_code: { Args: { p_code: string }; Returns: Json }
       validate_coupon: {
         Args: { p_code: string; p_order_total: number; p_user_id: string }
         Returns: {
