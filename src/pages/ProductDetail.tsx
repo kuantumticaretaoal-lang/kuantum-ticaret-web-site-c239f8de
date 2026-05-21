@@ -180,11 +180,11 @@ const ProductDetail = () => {
       return;
     }
 
-    if (rating === 0) {
+    if (rating < 0.5) {
       toast({
         variant: "destructive",
         title: "Hata",
-        description: "Lütfen yıldız verin",
+        description: "Lütfen en az yarım yıldız verin",
       });
       return;
     }
@@ -207,13 +207,17 @@ const ProductDetail = () => {
       user_id: user.id,
       rating,
       comment: sanitizedComment || null,
+      hide_lastname: hideLastName,
     });
 
     if (error) {
+      const msg = (error.message || "").includes("satın")
+        ? "Bu ürünü satın almadan değerlendirme yapamazsınız."
+        : "Yorum eklenemedi";
       toast({
         variant: "destructive",
         title: "Hata",
-        description: "Yorum eklenemedi",
+        description: msg,
       });
     } else {
       toast({
