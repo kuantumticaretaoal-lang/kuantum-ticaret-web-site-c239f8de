@@ -226,17 +226,18 @@ const CartPage = () => {
     0
   );
 
+  // Both coupon and premium discounts apply to the ORIGINAL subtotal (parallel, not compounded)
   const couponDiscount = appliedCoupon
     ? appliedCoupon.discount_type === "percentage"
       ? (subtotal * appliedCoupon.discount_value) / 100
       : Math.min(appliedCoupon.discount_value, subtotal)
     : 0;
 
-  const premiumDiscount = premiumBenefits.isPremium 
-    ? ((subtotal - couponDiscount) * premiumBenefits.discountPercent) / 100 
+  const premiumDiscount = premiumBenefits.isPremium
+    ? (subtotal * premiumBenefits.discountPercent) / 100
     : 0;
 
-  const totalDiscount = couponDiscount + premiumDiscount;
+  const totalDiscount = Math.min(subtotal, couponDiscount + premiumDiscount);
 
   // Kargo ücreti hesaplama
   const getShippingCost = (): number => {
