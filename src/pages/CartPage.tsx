@@ -221,8 +221,14 @@ const CartPage = () => {
     return item.products.discounted_price && parseFloat(item.products.discounted_price) < parseFloat(item.products.price);
   };
 
+  // Sum extra price coming from selected ornaments (charms)
+  const getOrnamentTotal = (item: any) => {
+    const orns = Array.isArray(item.selected_ornaments) ? item.selected_ornaments : [];
+    return orns.reduce((s: number, o: any) => s + (Number(o.extra_price) || 0) * (Number(o.quantity) || 0), 0);
+  };
+
   const subtotal = cartItems.reduce(
-    (sum, item) => sum + getItemPrice(item) * item.quantity,
+    (sum, item) => sum + (getItemPrice(item) + getOrnamentTotal(item)) * item.quantity,
     0
   );
 
@@ -382,10 +388,11 @@ const CartPage = () => {
         order_id: order.id,
         product_id: item.product_id,
         quantity: item.quantity,
-        price: getItemPrice(item), // Use the already calculated discounted price
+        price: getItemPrice(item) + getOrnamentTotal(item), // include ornament extras in saved unit price
         custom_name: item.custom_name || null,
         selected_size: item.selected_size || null,
         custom_photo_url: item.custom_photo_url || null,
+        selected_ornaments: Array.isArray(item.selected_ornaments) ? item.selected_ornaments : [],
       }));
 
       const { error: itemsError } = await (supabase as any)
@@ -534,6 +541,15 @@ const CartPage = () => {
                               <p className="text-sm text-muted-foreground mb-1">
                                 <span className="font-medium">{t("cart.custom_photo", "Özel fotoğraf yüklendi")} ✓</span>
                               </p>
+                            )}
+                            {Array.isArray(item.selected_ornaments) && item.selected_ornaments.length > 0 && (
+                              <div className="mb-2 text-xs text-muted-foreground">
+                                <span className="font-medium text-foreground">Süsler:</span>{" "}
+                                {item.selected_ornaments.map((o: any) => `${o.name} x${o.quantity}`).join(", ")}
+                                <span className="text-primary font-semibold ml-2">
+                                  (+{formatPrice(getOrnamentTotal(item))})
+                                </span>
+                              </div>
                             )}
                             <div className="mb-4">
                               {hasDiscount(item) ? (

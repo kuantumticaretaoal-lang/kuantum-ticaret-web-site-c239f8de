@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { addToCart } from "@/lib/cart";
+import { OrnamentPicker, SelectedOrnament } from "@/components/OrnamentPicker";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import StockNotificationButton from "@/components/StockNotificationButton";
@@ -48,6 +49,7 @@ const ProductDetail = () => {
   const [comment, setComment] = useState("");
   const [question, setQuestion] = useState("");
   const [quantity, setQuantity] = useState(1);
+  const [selectedOrnaments, setSelectedOrnaments] = useState<SelectedOrnament[]>([]);
   const [customName, setCustomName] = useState("");
   const [selectedSize, setSelectedSize] = useState("");
   const [customPhotoFile, setCustomPhotoFile] = useState<File | null>(null);
@@ -390,7 +392,8 @@ const ProductDetail = () => {
       quantity,
       customName || undefined,
       selectedSize || undefined,
-      finalPhotoUrl || undefined
+      finalPhotoUrl || undefined,
+      selectedOrnaments.length > 0 ? selectedOrnaments : undefined
     );
     if (error) {
       toast({
@@ -407,6 +410,7 @@ const ProductDetail = () => {
       setSelectedSize("");
       setCustomPhotoFile(null);
       setCustomFile(null);
+      setSelectedOrnaments([]);
     }
   };
 
@@ -556,6 +560,15 @@ const ProductDetail = () => {
                       </div>
                     </div>
                   )}
+
+                  {product.allows_ornaments && (
+                    <OrnamentPicker
+                      productId={product.id}
+                      value={selectedOrnaments}
+                      onChange={setSelectedOrnaments}
+                    />
+                  )}
+
 
                   {product.allows_custom_photo && (
                     <div className="space-y-2">

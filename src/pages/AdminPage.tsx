@@ -43,6 +43,7 @@ import { AdminAbandonedCarts } from "@/components/admin/AdminAbandonedCarts";
 import { AdminProductPerformance } from "@/components/admin/AdminProductPerformance";
 import { AdminBlog } from "@/components/admin/AdminBlog";
 import { AdminScheduledDiscounts } from "@/components/admin/AdminScheduledDiscounts";
+import { AdminProductOrnaments } from "@/components/admin/AdminProductOrnaments";
 import { AdminCustomerDetail } from "@/components/admin/AdminCustomerDetail";
 import { AdminNewsletter } from "@/components/admin/AdminNewsletter";
 import { AdminFAQ } from "@/components/admin/AdminFAQ";
@@ -84,6 +85,7 @@ type AdminTabKey =
   | "product-performance"
   | "blog"
   | "scheduled-discounts"
+  | "product-ornaments"
   | "customer-detail"
   | "newsletter"
   | "faq";
@@ -133,6 +135,7 @@ const ADMIN_TABS: TabConfig[] = [
   { key: "product-performance", label: "Ürün Performansı", Component: AdminProductPerformance },
   { key: "blog", label: "Blog", Component: AdminBlog },
   { key: "scheduled-discounts", label: "Zamanlı İndirimler", Component: AdminScheduledDiscounts },
+  { key: "product-ornaments", label: "Ürün Süsleri", Component: AdminProductOrnaments },
   { key: "newsletter", label: "Bülten", Component: AdminNewsletter },
   { key: "faq", label: "Sıkça Sorulan Sorular", Component: AdminFAQ },
 ];
