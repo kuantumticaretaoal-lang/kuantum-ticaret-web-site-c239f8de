@@ -561,6 +561,15 @@ const ProductDetail = () => {
                     </div>
                   )}
 
+                  {product.allows_ornaments && (
+                    <OrnamentPicker
+                      productId={product.id}
+                      value={selectedOrnaments}
+                      onChange={setSelectedOrnaments}
+                    />
+                  )}
+
+
                   {product.allows_custom_photo && (
                     <div className="space-y-2">
                       <label className="text-sm font-medium flex items-center gap-2">
