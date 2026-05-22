@@ -85,6 +85,7 @@ type AdminTabKey =
   | "product-performance"
   | "blog"
   | "scheduled-discounts"
+  | "product-ornaments"
   | "customer-detail"
   | "newsletter"
   | "faq";
