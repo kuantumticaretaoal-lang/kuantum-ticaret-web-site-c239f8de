@@ -410,6 +410,7 @@ const ProductDetail = () => {
       setSelectedSize("");
       setCustomPhotoFile(null);
       setCustomFile(null);
+      setSelectedOrnaments([]);
     }
   };
 
