@@ -96,6 +96,7 @@ export const addToCart = async (
         custom_name: customName || null,
         selected_size: selectedSize || null,
         custom_photo_url: customPhotoUrl || null,
+        selected_ornaments: selectedOrnaments && selectedOrnaments.length > 0 ? selectedOrnaments : [],
       });
     return { error };
   }
