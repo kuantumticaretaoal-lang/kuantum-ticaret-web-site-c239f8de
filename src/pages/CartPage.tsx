@@ -542,6 +542,15 @@ const CartPage = () => {
                                 <span className="font-medium">{t("cart.custom_photo", "Özel fotoğraf yüklendi")} ✓</span>
                               </p>
                             )}
+                            {Array.isArray(item.selected_ornaments) && item.selected_ornaments.length > 0 && (
+                              <div className="mb-2 text-xs text-muted-foreground">
+                                <span className="font-medium text-foreground">Süsler:</span>{" "}
+                                {item.selected_ornaments.map((o: any) => `${o.name} x${o.quantity}`).join(", ")}
+                                <span className="text-primary font-semibold ml-2">
+                                  (+{formatPrice(getOrnamentTotal(item))})
+                                </span>
+                              </div>
+                            )}
                             <div className="mb-4">
                               {hasDiscount(item) ? (
                                 <div className="flex items-center gap-2">
