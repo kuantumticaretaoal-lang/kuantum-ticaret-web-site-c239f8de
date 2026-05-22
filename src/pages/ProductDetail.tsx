@@ -392,7 +392,8 @@ const ProductDetail = () => {
       quantity,
       customName || undefined,
       selectedSize || undefined,
-      finalPhotoUrl || undefined
+      finalPhotoUrl || undefined,
+      selectedOrnaments.length > 0 ? selectedOrnaments : undefined
     );
     if (error) {
       toast({
