@@ -3,16 +3,22 @@ import html2canvas from "html2canvas";
 
 export const buildInvoiceHTML = (order: any, profile: any): string => {
   const items = order.order_items || [];
-  const itemRows = items.map((item: any, i: number) => `
+  const itemRows = items.map((item: any, i: number) => {
+    const orns = Array.isArray(item.selected_ornaments) ? item.selected_ornaments : [];
+    const ornText = orns.length > 0
+      ? `<div style="font-size:11px;color:#6b7280;margin-top:4px">Süsler: ${orns.map((o: any) => `${o.name} x${o.quantity} (+₺${Number(o.extra_price).toFixed(2)})`).join(', ')}</div>`
+      : '';
+    return `
     <tr>
       <td style="border:1px solid #ddd;padding:8px;text-align:center">${i + 1}</td>
-      <td style="border:1px solid #ddd;padding:8px">${item.products?.title || item.custom_name || '-'}</td>
+      <td style="border:1px solid #ddd;padding:8px">${item.products?.title || item.custom_name || '-'}${ornText}</td>
       <td style="border:1px solid #ddd;padding:8px;text-align:center">${item.selected_size || '-'}</td>
       <td style="border:1px solid #ddd;padding:8px;text-align:center">${item.quantity}</td>
       <td style="border:1px solid #ddd;padding:8px;text-align:right">₺${Number(item.price).toLocaleString('tr-TR', { minimumFractionDigits: 2 })}</td>
       <td style="border:1px solid #ddd;padding:8px;text-align:right">₺${(Number(item.price) * item.quantity).toLocaleString('tr-TR', { minimumFractionDigits: 2 })}</td>
     </tr>
-  `).join('');
+  `;
+  }).join('');
 
   const subtotal = Number(order.subtotal_amount) || items.reduce((s: number, it: any) => s + Number(it.price) * it.quantity, 0);
   const discount = Number(order.discount_amount) || 0;
