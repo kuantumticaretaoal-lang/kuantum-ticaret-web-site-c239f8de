@@ -324,6 +324,7 @@ export type Database = {
           id: string
           product_id: string
           quantity: number
+          selected_ornaments: Json | null
           selected_size: string | null
           session_id: string | null
           updated_at: string
@@ -336,6 +337,7 @@ export type Database = {
           id?: string
           product_id: string
           quantity?: number
+          selected_ornaments?: Json | null
           selected_size?: string | null
           session_id?: string | null
           updated_at?: string
@@ -348,6 +350,7 @@ export type Database = {
           id?: string
           product_id?: string
           quantity?: number
+          selected_ornaments?: Json | null
           selected_size?: string | null
           session_id?: string | null
           updated_at?: string
@@ -983,6 +986,7 @@ export type Database = {
           price: number
           product_id: string
           quantity: number
+          selected_ornaments: Json | null
           selected_size: string | null
         }
         Insert: {
@@ -994,6 +998,7 @@ export type Database = {
           price: number
           product_id: string
           quantity: number
+          selected_ornaments?: Json | null
           selected_size?: string | null
         }
         Update: {
@@ -1005,6 +1010,7 @@ export type Database = {
           price?: number
           product_id?: string
           quantity?: number
+          selected_ornaments?: Json | null
           selected_size?: string | null
         }
         Relationships: [
@@ -1437,6 +1443,53 @@ export type Database = {
           },
         ]
       }
+      product_ornaments: {
+        Row: {
+          created_at: string | null
+          extra_price: number
+          id: string
+          image_url: string | null
+          is_active: boolean | null
+          max_per_product: number | null
+          name: string
+          product_id: string
+          sort_order: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          extra_price?: number
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          max_per_product?: number | null
+          name: string
+          product_id: string
+          sort_order?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          extra_price?: number
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          max_per_product?: number | null
+          name?: string
+          product_id?: string
+          sort_order?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_ornaments_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_purchase_pairs: {
         Row: {
           id: string
@@ -1633,6 +1686,7 @@ export type Database = {
         Row: {
           allowed_file_types: string[] | null
           allows_custom_photo: boolean | null
+          allows_ornaments: boolean | null
           available_sizes: string[] | null
           category_id: string | null
           created_at: string | null
@@ -1655,6 +1709,7 @@ export type Database = {
         Insert: {
           allowed_file_types?: string[] | null
           allows_custom_photo?: boolean | null
+          allows_ornaments?: boolean | null
           available_sizes?: string[] | null
           category_id?: string | null
           created_at?: string | null
@@ -1677,6 +1732,7 @@ export type Database = {
         Update: {
           allowed_file_types?: string[] | null
           allows_custom_photo?: boolean | null
+          allows_ornaments?: boolean | null
           available_sizes?: string[] | null
           category_id?: string | null
           created_at?: string | null
