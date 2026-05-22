@@ -221,8 +221,14 @@ const CartPage = () => {
     return item.products.discounted_price && parseFloat(item.products.discounted_price) < parseFloat(item.products.price);
   };
 
+  // Sum extra price coming from selected ornaments (charms)
+  const getOrnamentTotal = (item: any) => {
+    const orns = Array.isArray(item.selected_ornaments) ? item.selected_ornaments : [];
+    return orns.reduce((s: number, o: any) => s + (Number(o.extra_price) || 0) * (Number(o.quantity) || 0), 0);
+  };
+
   const subtotal = cartItems.reduce(
-    (sum, item) => sum + getItemPrice(item) * item.quantity,
+    (sum, item) => sum + (getItemPrice(item) + getOrnamentTotal(item)) * item.quantity,
     0
   );
 
