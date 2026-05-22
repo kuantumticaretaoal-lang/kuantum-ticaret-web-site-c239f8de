@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { addToCart } from "@/lib/cart";
+import { OrnamentPicker, SelectedOrnament } from "@/components/OrnamentPicker";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import StockNotificationButton from "@/components/StockNotificationButton";
