@@ -388,10 +388,11 @@ const CartPage = () => {
         order_id: order.id,
         product_id: item.product_id,
         quantity: item.quantity,
-        price: getItemPrice(item), // Use the already calculated discounted price
+        price: getItemPrice(item) + getOrnamentTotal(item), // include ornament extras in saved unit price
         custom_name: item.custom_name || null,
         selected_size: item.selected_size || null,
         custom_photo_url: item.custom_photo_url || null,
+        selected_ornaments: Array.isArray(item.selected_ornaments) ? item.selected_ornaments : [],
       }));
 
       const { error: itemsError } = await (supabase as any)
