@@ -43,6 +43,7 @@ import { AdminAbandonedCarts } from "@/components/admin/AdminAbandonedCarts";
 import { AdminProductPerformance } from "@/components/admin/AdminProductPerformance";
 import { AdminBlog } from "@/components/admin/AdminBlog";
 import { AdminScheduledDiscounts } from "@/components/admin/AdminScheduledDiscounts";
+import { AdminProductOrnaments } from "@/components/admin/AdminProductOrnaments";
 import { AdminCustomerDetail } from "@/components/admin/AdminCustomerDetail";
 import { AdminNewsletter } from "@/components/admin/AdminNewsletter";
 import { AdminFAQ } from "@/components/admin/AdminFAQ";
