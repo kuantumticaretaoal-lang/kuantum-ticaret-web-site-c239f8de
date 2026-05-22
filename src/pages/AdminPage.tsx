@@ -134,6 +134,7 @@ const ADMIN_TABS: TabConfig[] = [
   { key: "product-performance", label: "Ürün Performansı", Component: AdminProductPerformance },
   { key: "blog", label: "Blog", Component: AdminBlog },
   { key: "scheduled-discounts", label: "Zamanlı İndirimler", Component: AdminScheduledDiscounts },
+  { key: "product-ornaments", label: "Ürün Süsleri", Component: AdminProductOrnaments },
   { key: "newsletter", label: "Bülten", Component: AdminNewsletter },
   { key: "faq", label: "Sıkça Sorulan Sorular", Component: AdminFAQ },
 ];
