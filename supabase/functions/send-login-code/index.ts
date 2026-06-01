@@ -177,6 +177,18 @@ serve(async (req) => {
         return json({ ok: false, error: "Şifre gerekli" }, 400);
       }
 
+      // Detect OAuth-only accounts (e.g. Google) that never set a password
+      try {
+        const { data: hasPwd } = await admin.rpc("email_has_password", { p_email: normalizedEmail });
+        if (hasPwd === false) {
+          return json({
+            ok: false,
+            oauth_only: true,
+            error: "Bu hesap Google ile oluşturulmuş. Google ile giriş yapın ya da 'Şifremi unuttum' ile bir şifre belirleyin.",
+          });
+        }
+      } catch (_) { /* best-effort */ }
+
       const { data: settings } = await admin
         .from("two_factor_settings")
         .select("is_enabled")

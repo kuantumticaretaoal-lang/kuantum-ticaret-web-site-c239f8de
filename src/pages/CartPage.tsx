@@ -39,11 +39,24 @@ interface ShippingSetting {
   is_active: boolean;
 }
 
+interface IbanSetting {
+  id: string;
+  bank_name: string;
+  account_holder: string;
+  iban: string;
+  swift_code: string | null;
+  notes: string | null;
+}
+
 const CartPage = () => {
   const [cartItems, setCartItems] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [deliveryType, setDeliveryType] = useState<"home_delivery" | "pickup">("home_delivery");
+  const [paymentMethod, setPaymentMethod] = useState<"cash" | "iban">("cash");
+  const [ibanSettings, setIbanSettings] = useState<IbanSetting[]>([]);
+  const [loyaltyBalance, setLoyaltyBalance] = useState(0);
+  const [loyaltyPointsToUse, setLoyaltyPointsToUse] = useState(0);
   const [couponCode, setCouponCode] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
   const [couponLoading, setCouponLoading] = useState(false);
@@ -62,6 +75,8 @@ const CartPage = () => {
     loadOrders();
     loadPremiumStatus();
     loadShippingSettings();
+    loadIbanSettings();
+    loadLoyaltyBalance();
 
     const channel = supabase
       .channel("cart-changes")
@@ -94,6 +109,22 @@ const CartPage = () => {
       .select("*")
       .eq("is_active", true);
     if (data) setShippingSettings(data);
+  };
+
+  const loadIbanSettings = async () => {
+    const { data } = await (supabase as any)
+      .from("iban_settings")
+      .select("*")
+      .eq("is_active", true)
+      .order("sort_order", { ascending: true });
+    if (data) setIbanSettings(data);
+  };
+
+  const loadLoyaltyBalance = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const { data } = await (supabase as any).rpc("get_loyalty_balance", { p_user_id: user.id });
+    setLoyaltyBalance(Number(data) || 0);
   };
 
   const loadCart = async () => {
@@ -256,7 +287,12 @@ const CartPage = () => {
   };
 
   const shippingCost = getShippingCost();
-  const total = Math.max(0, subtotal - totalDiscount + shippingCost);
+  // 1 point = 1 TRY. Cap: can't exceed balance and can't make total negative (no credit).
+  const beforeLoyalty = Math.max(0, subtotal - totalDiscount + shippingCost);
+  const maxLoyaltyUsable = Math.min(loyaltyBalance, Math.floor(beforeLoyalty));
+  const effectiveLoyaltyPoints = Math.max(0, Math.min(loyaltyPointsToUse, maxLoyaltyUsable));
+  const loyaltyDiscount = effectiveLoyaltyPoints;
+  const total = Math.max(0, beforeLoyalty - loyaltyDiscount);
 
   const applyCoupon = async () => {
     if (!couponCode.trim()) {
@@ -378,11 +414,26 @@ const CartPage = () => {
           total_amount: finalTotal,
           applied_coupon_code: appliedCoupon?.code || null,
           currency_code: currencyCode,
+          payment_method: paymentMethod,
+          payment_status: paymentMethod === "iban" ? "awaiting_transfer" : "pending",
+          loyalty_points_used: effectiveLoyaltyPoints,
+          loyalty_discount_amount: loyaltyDiscount,
         })
         .select()
         .single();
 
       if (orderError) throw orderError;
+
+      // Server-validated loyalty redemption (RPC prevents overspend / negative balance)
+      if (effectiveLoyaltyPoints > 0) {
+        const { data: redeemResult } = await (supabase as any).rpc("redeem_loyalty_points", {
+          p_points: effectiveLoyaltyPoints,
+          p_order_id: order.id,
+        });
+        if (!redeemResult?.ok) {
+          throw new Error(redeemResult?.error || "Puan kullanılamadı");
+        }
+      }
 
       const orderItems = cartItems.map((item) => ({
         order_id: order.id,
@@ -421,12 +472,23 @@ const CartPage = () => {
       if (clearError) throw clearError;
 
       setAppliedCoupon(null);
+      setLoyaltyPointsToUse(0);
+      loadLoyaltyBalance();
 
-      toast({
-        title: t("cart.order_created", "Sipariş Oluşturuldu"),
-        description: t("cart.order_success", "Siparişiniz başarıyla oluşturuldu. Hesabım sayfasından takip edebilirsiniz."),
-      });
-      
+      if (paymentMethod === "iban" && ibanSettings[0]) {
+        const iban = ibanSettings[0];
+        toast({
+          title: "Havale Bekleniyor",
+          description: `Sipariş kodu: ${order.order_code}. IBAN: ${iban.iban} (${iban.account_holder}). Açıklamaya sipariş kodunu yazınız.`,
+          duration: 15000,
+        });
+      } else {
+        toast({
+          title: t("cart.order_created", "Sipariş Oluşturuldu"),
+          description: t("cart.order_success", "Siparişiniz başarıyla oluşturuldu. Hesabım sayfasından takip edebilirsiniz."),
+        });
+      }
+
       navigate("/account");
     } catch (error) {
       logger.error("Sipariş oluşturma hatası", error);
@@ -677,11 +739,74 @@ const CartPage = () => {
                         )}
                       </div>
 
+                      {/* Loyalty Points Redemption */}
+                      {loyaltyBalance > 0 && (
+                        <div className="space-y-2 p-3 rounded-md border border-amber-300 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-800">
+                          <Label className="flex items-center justify-between">
+                            <span>🎁 Puan Kullan ({loyaltyBalance} puan mevcut)</span>
+                            <span className="text-xs text-muted-foreground">1 puan = 1 ₺</span>
+                          </Label>
+                          <div className="flex gap-2 items-center">
+                            <Input
+                              type="number"
+                              min={0}
+                              max={maxLoyaltyUsable}
+                              value={loyaltyPointsToUse}
+                              onChange={(e) => {
+                                const v = parseInt(e.target.value || "0", 10);
+                                setLoyaltyPointsToUse(isNaN(v) ? 0 : Math.max(0, Math.min(v, maxLoyaltyUsable)));
+                              }}
+                              placeholder="0"
+                            />
+                            <Button type="button" variant="outline" size="sm" onClick={() => setLoyaltyPointsToUse(maxLoyaltyUsable)}>
+                              Maks
+                            </Button>
+                            <Button type="button" variant="ghost" size="sm" onClick={() => setLoyaltyPointsToUse(0)}>
+                              Sıfırla
+                            </Button>
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            En fazla {maxLoyaltyUsable} puan kullanılabilir. Borca düşülemez.
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Payment Method */}
+                      <div className="space-y-2">
+                        <Label>💳 Ödeme Yöntemi</Label>
+                        <Select value={paymentMethod} onValueChange={(v: any) => setPaymentMethod(v)}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="cash">Kapıda Ödeme / Elden</SelectItem>
+                            <SelectItem value="iban" disabled={ibanSettings.length === 0}>
+                              IBAN ile Havale/EFT
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                        {paymentMethod === "iban" && ibanSettings[0] && (
+                          <div className="p-3 rounded-md border bg-muted text-xs space-y-1">
+                            <p><strong>Banka:</strong> {ibanSettings[0].bank_name}</p>
+                            <p><strong>Hesap Sahibi:</strong> {ibanSettings[0].account_holder}</p>
+                            <p className="font-mono break-all"><strong>IBAN:</strong> {ibanSettings[0].iban}</p>
+                            {ibanSettings[0].swift_code && <p><strong>SWIFT:</strong> {ibanSettings[0].swift_code}</p>}
+                            <p className="text-amber-700 dark:text-amber-300 pt-1">
+                              ⚠️ Açıklama kısmına sipariş kodunuzu yazmayı unutmayın.
+                            </p>
+                          </div>
+                        )}
+                      </div>
+
                       <div className="space-y-2 pt-2 border-t">
                         <div className="flex justify-between text-sm">
                           <span>{t("cart.subtotal", "Ara Toplam")}:</span>
                           <span>{formatPrice(subtotal)}</span>
                         </div>
+                        {effectiveLoyaltyPoints > 0 && (
+                          <div className="flex justify-between text-sm text-amber-700 dark:text-amber-400">
+                            <span>Puan İndirimi ({effectiveLoyaltyPoints} puan):</span>
+                            <span>-{formatPrice(loyaltyDiscount)}</span>
+                          </div>
+                        )}
                         {appliedCoupon && (
                           <div className="flex justify-between text-sm text-green-600">
                             <span>{t("cart.coupon_discount", "Kupon İndirimi")} ({appliedCoupon.code}):</span>
