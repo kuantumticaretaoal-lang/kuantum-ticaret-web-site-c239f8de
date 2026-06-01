@@ -739,7 +739,63 @@ const CartPage = () => {
                         )}
                       </div>
 
-                      <div className="space-y-2 pt-2 border-t">
+                      {/* Loyalty Points Redemption */}
+                      {loyaltyBalance > 0 && (
+                        <div className="space-y-2 p-3 rounded-md border border-amber-300 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-800">
+                          <Label className="flex items-center justify-between">
+                            <span>🎁 Puan Kullan ({loyaltyBalance} puan mevcut)</span>
+                            <span className="text-xs text-muted-foreground">1 puan = 1 ₺</span>
+                          </Label>
+                          <div className="flex gap-2 items-center">
+                            <Input
+                              type="number"
+                              min={0}
+                              max={maxLoyaltyUsable}
+                              value={loyaltyPointsToUse}
+                              onChange={(e) => {
+                                const v = parseInt(e.target.value || "0", 10);
+                                setLoyaltyPointsToUse(isNaN(v) ? 0 : Math.max(0, Math.min(v, maxLoyaltyUsable)));
+                              }}
+                              placeholder="0"
+                            />
+                            <Button type="button" variant="outline" size="sm" onClick={() => setLoyaltyPointsToUse(maxLoyaltyUsable)}>
+                              Maks
+                            </Button>
+                            <Button type="button" variant="ghost" size="sm" onClick={() => setLoyaltyPointsToUse(0)}>
+                              Sıfırla
+                            </Button>
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            En fazla {maxLoyaltyUsable} puan kullanılabilir. Borca düşülemez.
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Payment Method */}
+                      <div className="space-y-2">
+                        <Label>💳 Ödeme Yöntemi</Label>
+                        <Select value={paymentMethod} onValueChange={(v: any) => setPaymentMethod(v)}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="cash">Kapıda Ödeme / Elden</SelectItem>
+                            <SelectItem value="iban" disabled={ibanSettings.length === 0}>
+                              IBAN ile Havale/EFT
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                        {paymentMethod === "iban" && ibanSettings[0] && (
+                          <div className="p-3 rounded-md border bg-muted text-xs space-y-1">
+                            <p><strong>Banka:</strong> {ibanSettings[0].bank_name}</p>
+                            <p><strong>Hesap Sahibi:</strong> {ibanSettings[0].account_holder}</p>
+                            <p className="font-mono break-all"><strong>IBAN:</strong> {ibanSettings[0].iban}</p>
+                            {ibanSettings[0].swift_code && <p><strong>SWIFT:</strong> {ibanSettings[0].swift_code}</p>}
+                            <p className="text-amber-700 dark:text-amber-300 pt-1">
+                              ⚠️ Açıklama kısmına sipariş kodunuzu yazmayı unutmayın.
+                            </p>
+                          </div>
+                        )}
+                      </div>
+
                         <div className="flex justify-between text-sm">
                           <span>{t("cart.subtotal", "Ara Toplam")}:</span>
                           <span>{formatPrice(subtotal)}</span>
