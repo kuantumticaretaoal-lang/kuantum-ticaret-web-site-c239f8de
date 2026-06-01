@@ -39,11 +39,24 @@ interface ShippingSetting {
   is_active: boolean;
 }
 
+interface IbanSetting {
+  id: string;
+  bank_name: string;
+  account_holder: string;
+  iban: string;
+  swift_code: string | null;
+  notes: string | null;
+}
+
 const CartPage = () => {
   const [cartItems, setCartItems] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [deliveryType, setDeliveryType] = useState<"home_delivery" | "pickup">("home_delivery");
+  const [paymentMethod, setPaymentMethod] = useState<"cash" | "iban">("cash");
+  const [ibanSettings, setIbanSettings] = useState<IbanSetting[]>([]);
+  const [loyaltyBalance, setLoyaltyBalance] = useState(0);
+  const [loyaltyPointsToUse, setLoyaltyPointsToUse] = useState(0);
   const [couponCode, setCouponCode] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
   const [couponLoading, setCouponLoading] = useState(false);
