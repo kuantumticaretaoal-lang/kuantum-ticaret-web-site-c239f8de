@@ -111,6 +111,22 @@ const CartPage = () => {
     if (data) setShippingSettings(data);
   };
 
+  const loadIbanSettings = async () => {
+    const { data } = await (supabase as any)
+      .from("iban_settings")
+      .select("*")
+      .eq("is_active", true)
+      .order("sort_order", { ascending: true });
+    if (data) setIbanSettings(data);
+  };
+
+  const loadLoyaltyBalance = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const { data } = await (supabase as any).rpc("get_loyalty_balance", { p_user_id: user.id });
+    setLoyaltyBalance(Number(data) || 0);
+  };
+
   const loadCart = async () => {
     setLoading(true);
     const items = await getCartItems();
