@@ -287,7 +287,12 @@ const CartPage = () => {
   };
 
   const shippingCost = getShippingCost();
-  const total = Math.max(0, subtotal - totalDiscount + shippingCost);
+  // 1 point = 1 TRY. Cap: can't exceed balance and can't make total negative (no credit).
+  const beforeLoyalty = Math.max(0, subtotal - totalDiscount + shippingCost);
+  const maxLoyaltyUsable = Math.min(loyaltyBalance, Math.floor(beforeLoyalty));
+  const effectiveLoyaltyPoints = Math.max(0, Math.min(loyaltyPointsToUse, maxLoyaltyUsable));
+  const loyaltyDiscount = effectiveLoyaltyPoints;
+  const total = Math.max(0, beforeLoyalty - loyaltyDiscount);
 
   const applyCoupon = async () => {
     if (!couponCode.trim()) {
