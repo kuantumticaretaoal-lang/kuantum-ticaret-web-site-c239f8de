@@ -193,6 +193,15 @@ const LoginPage = () => {
       }
 
       if (!prepareData?.ok) {
+        if (prepareData?.oauth_only) {
+          toast({
+            variant: "destructive",
+            title: "Google ile oluşturulmuş hesap",
+            description: prepareData.error || "Lütfen 'Google ile devam et' butonunu kullanın veya 'Şifremi unuttum' ile şifre belirleyin.",
+            duration: 10000,
+          });
+          return;
+        }
         handleFailedLogin(values.email, rateLimitData);
         return;
       }
