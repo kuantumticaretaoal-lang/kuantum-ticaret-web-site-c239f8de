@@ -771,6 +771,45 @@ export type Database = {
         }
         Relationships: []
       }
+      iban_settings: {
+        Row: {
+          account_holder: string
+          bank_name: string
+          created_at: string
+          iban: string
+          id: string
+          is_active: boolean
+          notes: string | null
+          sort_order: number
+          swift_code: string | null
+          updated_at: string
+        }
+        Insert: {
+          account_holder: string
+          bank_name: string
+          created_at?: string
+          iban: string
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          sort_order?: number
+          swift_code?: string | null
+          updated_at?: string
+        }
+        Update: {
+          account_holder?: string
+          bank_name?: string
+          created_at?: string
+          iban?: string
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          sort_order?: number
+          swift_code?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       live_support_messages: {
         Row: {
           content: string
@@ -1075,9 +1114,14 @@ export type Database = {
           extra_fee_paid: boolean | null
           extra_fee_reason: string | null
           extra_fee_requested_at: string | null
+          iban_reference: string | null
           id: string
           invoice_sent_at: string | null
+          loyalty_discount_amount: number
+          loyalty_points_used: number
           order_code: string
+          payment_method: string
+          payment_status: string
           preparation_time: number | null
           preparation_unit: string | null
           rejection_reason: string | null
@@ -1102,9 +1146,14 @@ export type Database = {
           extra_fee_paid?: boolean | null
           extra_fee_reason?: string | null
           extra_fee_requested_at?: string | null
+          iban_reference?: string | null
           id?: string
           invoice_sent_at?: string | null
+          loyalty_discount_amount?: number
+          loyalty_points_used?: number
           order_code?: string
+          payment_method?: string
+          payment_status?: string
           preparation_time?: number | null
           preparation_unit?: string | null
           rejection_reason?: string | null
@@ -1129,9 +1178,14 @@ export type Database = {
           extra_fee_paid?: boolean | null
           extra_fee_reason?: string | null
           extra_fee_requested_at?: string | null
+          iban_reference?: string | null
           id?: string
           invoice_sent_at?: string | null
+          loyalty_discount_amount?: number
+          loyalty_points_used?: number
           order_code?: string
+          payment_method?: string
+          payment_status?: string
           preparation_time?: number | null
           preparation_unit?: string | null
           rejection_reason?: string | null
@@ -2480,6 +2534,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      email_has_password: { Args: { p_email: string }; Returns: boolean }
       generate_hashed_backup_code: {
         Args: { user_id_param: string }
         Returns: string
@@ -2489,6 +2544,7 @@ export type Database = {
         Args: { p_table_name: string; p_user_id: string }
         Returns: number
       }
+      get_loyalty_balance: { Args: { p_user_id: string }; Returns: number }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -2507,6 +2563,10 @@ export type Database = {
       }
       is_premium_user: { Args: { p_user_id: string }; Returns: boolean }
       lookup_referral_owner: { Args: { p_code: string }; Returns: string }
+      redeem_loyalty_points: {
+        Args: { p_order_id: string; p_points: number }
+        Returns: Json
+      }
       redeem_referral_code: { Args: { p_code: string }; Returns: Json }
       validate_coupon: {
         Args: { p_code: string; p_order_total: number; p_user_id: string }
