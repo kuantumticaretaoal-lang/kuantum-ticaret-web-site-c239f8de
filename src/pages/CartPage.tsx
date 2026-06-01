@@ -414,11 +414,26 @@ const CartPage = () => {
           total_amount: finalTotal,
           applied_coupon_code: appliedCoupon?.code || null,
           currency_code: currencyCode,
+          payment_method: paymentMethod,
+          payment_status: paymentMethod === "iban" ? "awaiting_transfer" : "pending",
+          loyalty_points_used: effectiveLoyaltyPoints,
+          loyalty_discount_amount: loyaltyDiscount,
         })
         .select()
         .single();
 
       if (orderError) throw orderError;
+
+      // Server-validated loyalty redemption (RPC prevents overspend / negative balance)
+      if (effectiveLoyaltyPoints > 0) {
+        const { data: redeemResult } = await (supabase as any).rpc("redeem_loyalty_points", {
+          p_points: effectiveLoyaltyPoints,
+          p_order_id: order.id,
+        });
+        if (!redeemResult?.ok) {
+          throw new Error(redeemResult?.error || "Puan kullanılamadı");
+        }
+      }
 
       const orderItems = cartItems.map((item) => ({
         order_id: order.id,
