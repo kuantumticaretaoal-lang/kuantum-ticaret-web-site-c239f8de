@@ -796,10 +796,17 @@ const CartPage = () => {
                         )}
                       </div>
 
+                      <div className="space-y-2 pt-2 border-t">
                         <div className="flex justify-between text-sm">
                           <span>{t("cart.subtotal", "Ara Toplam")}:</span>
                           <span>{formatPrice(subtotal)}</span>
                         </div>
+                        {effectiveLoyaltyPoints > 0 && (
+                          <div className="flex justify-between text-sm text-amber-700 dark:text-amber-400">
+                            <span>Puan İndirimi ({effectiveLoyaltyPoints} puan):</span>
+                            <span>-{formatPrice(loyaltyDiscount)}</span>
+                          </div>
+                        )}
                         {appliedCoupon && (
                           <div className="flex justify-between text-sm text-green-600">
                             <span>{t("cart.coupon_discount", "Kupon İndirimi")} ({appliedCoupon.code}):</span>
