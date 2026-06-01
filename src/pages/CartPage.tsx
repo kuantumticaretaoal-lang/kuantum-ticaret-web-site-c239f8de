@@ -75,6 +75,8 @@ const CartPage = () => {
     loadOrders();
     loadPremiumStatus();
     loadShippingSettings();
+    loadIbanSettings();
+    loadLoyaltyBalance();
 
     const channel = supabase
       .channel("cart-changes")
