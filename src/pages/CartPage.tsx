@@ -472,12 +472,23 @@ const CartPage = () => {
       if (clearError) throw clearError;
 
       setAppliedCoupon(null);
+      setLoyaltyPointsToUse(0);
+      loadLoyaltyBalance();
 
-      toast({
-        title: t("cart.order_created", "Sipariş Oluşturuldu"),
-        description: t("cart.order_success", "Siparişiniz başarıyla oluşturuldu. Hesabım sayfasından takip edebilirsiniz."),
-      });
-      
+      if (paymentMethod === "iban" && ibanSettings[0]) {
+        const iban = ibanSettings[0];
+        toast({
+          title: "Havale Bekleniyor",
+          description: `Sipariş kodu: ${order.order_code}. IBAN: ${iban.iban} (${iban.account_holder}). Açıklamaya sipariş kodunu yazınız.`,
+          duration: 15000,
+        });
+      } else {
+        toast({
+          title: t("cart.order_created", "Sipariş Oluşturuldu"),
+          description: t("cart.order_success", "Siparişiniz başarıyla oluşturuldu. Hesabım sayfasından takip edebilirsiniz."),
+        });
+      }
+
       navigate("/account");
     } catch (error) {
       logger.error("Sipariş oluşturma hatası", error);
