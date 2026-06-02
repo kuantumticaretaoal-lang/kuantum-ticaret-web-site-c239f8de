@@ -165,10 +165,10 @@ const Navbar = () => {
           <div className="flex items-center gap-2 lg:gap-4">
             <NavbarDesktopLinks t={t} />
             <ThemeToggle />
-            <Button variant="ghost" size="icon" className="relative text-white hover:text-white hover:bg-white/20" onClick={() => navigate("/favorites")}>
+            <Button variant="ghost" size="icon" aria-label={t("nav.favorites", "Favorilerim")} className="relative text-white hover:text-white hover:bg-white/20" onClick={() => navigate("/favorites")}>
               <Heart className="h-5 w-5" />
             </Button>
-            <Button variant="ghost" size="icon" className="relative text-white hover:text-white hover:bg-white/20" onClick={() => navigate("/cart")}>
+            <Button variant="ghost" size="icon" aria-label={t("nav.cart", "Sepet")} className="relative text-white hover:text-white hover:bg-white/20" onClick={() => navigate("/cart")}>
               <ShoppingCart className="h-5 w-5" />
               {cartCount > 0 && (
                 <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs bg-secondary">
@@ -176,7 +176,7 @@ const Navbar = () => {
                 </Badge>
               )}
             </Button>
-            <Button variant="ghost" size="icon" className="relative text-white hover:text-white hover:bg-white/20" onClick={() => navigate("/notifications")}>
+            <Button variant="ghost" size="icon" aria-label={t("nav.notifications", "Bildirimler")} className="relative text-white hover:text-white hover:bg-white/20" onClick={() => navigate("/notifications")}>
               <Bell className="h-5 w-5" />
               {unreadCount > 0 && (
                 <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs bg-secondary">
