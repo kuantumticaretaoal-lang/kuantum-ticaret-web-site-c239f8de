@@ -1,0 +1,14 @@
+# Kuantum Ticaret
+
+> Türkiye merkezli e-ticaret mağazası: kaliteli ürünler, güvenilir hizmet. Kişiselleştirilebilir ürünler, hızlı kargo ve müşteri desteği.
+
+## Pages
+
+- [Ana Sayfa](/): Mağaza tanıtımı, öne çıkan ürünler ve kampanyalar.
+- [Ürünler](/products): Tüm ürün kataloğu, filtreleme ve arama.
+- [İletişim](/contact): İletişim bilgileri ve mesaj formu.
+- [Sponsorlarımız](/sponsors): İş ortaklarımız ve kargo firmalarımız.
+- [Bizi Takip Edin](/follow): Sosyal medya kanallarımız.
+- [Premium](/premium): Premium üyelik planları ve avantajları.
+- [SSS](/faq): Sıkça sorulan sorular.
+- [Politikalar](/politikalar): Gizlilik, KVKK, satış sözleşmeleri.
