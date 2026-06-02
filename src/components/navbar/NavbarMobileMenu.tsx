@@ -32,7 +32,7 @@ const NavbarMobileMenu = ({
   return (
     <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
       <SheetTrigger asChild>
-        <Button variant="ghost" size="icon" className="lg:hidden text-white hover:text-white hover:bg-white/20">
+        <Button variant="ghost" size="icon" aria-label={t("nav.menu", "Menü")} className="lg:hidden text-white hover:text-white hover:bg-white/20">
           <Menu className="h-6 w-6" />
         </Button>
       </SheetTrigger>
