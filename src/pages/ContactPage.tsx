@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import SEO from "@/components/SEO";
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -137,6 +138,12 @@ const ContactPage = () => {
   };
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title="İletişim - Bize Ulaşın"
+        description="Sorularınız ve önerileriniz için Kuantum Ticaret'e ulaşın. Telefon, e-posta ve mesaj formuyla 7/24 destek."
+        path="/contact"
+        jsonLd={{ "@type": "ContactPage", name: "İletişim - Kuantum Ticaret" }}
+      />
       <Navbar />
       <div className="container mx-auto px-4 py-16">
         <h1 className="text-4xl md:text-5xl font-bold text-center mb-12">İletişim</h1>

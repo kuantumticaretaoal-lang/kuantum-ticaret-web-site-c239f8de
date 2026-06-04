@@ -4,6 +4,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { HelpCircle } from "lucide-react";
+import SEO from "@/components/SEO";
 
 const FAQPage = () => {
   const [items, setItems] = useState<any[]>([]);
@@ -18,6 +19,19 @@ const FAQPage = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title="Sıkça Sorulan Sorular (SSS)"
+        description="Kuantum Ticaret hakkında en çok sorulan sorular: kargo, iade, ödeme, özelleştirme ve daha fazlası."
+        path="/faq"
+        jsonLd={items.length > 0 ? {
+          "@type": "FAQPage",
+          mainEntity: items.map((it: any) => ({
+            "@type": "Question",
+            name: it.question,
+            acceptedAnswer: { "@type": "Answer", text: it.answer },
+          })),
+        } : undefined}
+      />
       <Navbar />
       <main className="container mx-auto px-4 py-12 max-w-3xl">
         <div className="flex items-center gap-3 mb-8">

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import SEO from "@/components/SEO";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
@@ -184,6 +185,7 @@ const AccountPage = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO title="Hesabım" description="Hesap ayarlarınızı yönetin, siparişlerinizi takip edin ve sadakat puanlarınızı görüntüleyin." path="/account" noindex />
       <Navbar />
       <div className="container mx-auto px-4 py-16">
         <Tabs defaultValue="settings" className="max-w-2xl mx-auto">

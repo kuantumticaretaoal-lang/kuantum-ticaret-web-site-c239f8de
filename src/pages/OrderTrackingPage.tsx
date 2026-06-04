@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import SEO from "@/components/SEO";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
@@ -150,6 +151,7 @@ const OrderTrackingPage = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO title="Sipariş Takibi" description="Siparişinizin durumunu gerçek zamanlı takip edin." path={`/order`} noindex />
       <Navbar />
       <div className="container mx-auto px-4 py-8">
         <Button variant="ghost" onClick={() => navigate("/account")} className="mb-6">

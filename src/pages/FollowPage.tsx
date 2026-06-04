@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import SEO from "@/components/SEO";
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -122,6 +123,11 @@ const FollowPage = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title="Bizi Takip Edin - Sosyal Medya"
+        description="Kuantum Ticaret'in sosyal medya kanallarını takip ederek kampanyalardan ve yeni ürünlerden ilk siz haberdar olun."
+        path="/follow"
+      />
       <Navbar />
       <div className="container mx-auto px-4 py-16">
         <h1 className="text-4xl md:text-5xl font-bold text-center mb-12">Bizi Takip Edin!</h1>
