@@ -28,6 +28,7 @@ import { AlsoBoughtProducts } from "@/components/AlsoBoughtProducts";
 import { ShareButtons } from "@/components/ShareButtons";
 import { UrgencyIndicators } from "@/components/UrgencyIndicators";
 import { CampaignBanner } from "@/components/CampaignBanner";
+import SEO from "@/components/SEO";
 import { useTranslations } from "@/hooks/use-translations";
 import { ProductBreadcrumb } from "@/components/ProductBreadcrumb";
 import { HalfStarRating, maskLastName } from "@/components/HalfStarRating";
@@ -440,6 +441,29 @@ const ProductDetail = () => {
 
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">
+      <SEO
+        title={product.title}
+        description={(product.description || product.short_description || `${product.title} - Kuantum Ticaret'te kaliteli ürünler, güvenilir hizmet.`).slice(0, 160)}
+        path={`/products/${product.id}`}
+        type="product"
+        image={product.product_images?.[0]?.image_url}
+        jsonLd={{
+          "@type": "Product",
+          name: product.title,
+          description: product.description || product.short_description || product.title,
+          image: product.product_images?.map((i: any) => i.image_url) || [],
+          sku: product.id,
+          offers: {
+            "@type": "Offer",
+            priceCurrency: "TRY",
+            price: product.price,
+            availability: product.stock_status === "out_of_stock"
+              ? "https://schema.org/OutOfStock"
+              : "https://schema.org/InStock",
+            url: `https://kuantum-ticaret-web-site.lovable.app/products/${product.id}`,
+          },
+        }}
+      />
       <CampaignBanner currentPage="products" />
       <Navbar />
       <div className="container mx-auto px-4 py-8 lg:py-12">
