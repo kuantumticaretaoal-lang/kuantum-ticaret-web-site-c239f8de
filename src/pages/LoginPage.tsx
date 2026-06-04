@@ -465,6 +465,7 @@ const LoginPage = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO title="Giriş Yap" description="Kuantum Ticaret hesabınıza güvenli giriş yapın." path="/login" noindex />
       <Navbar />
       <div className="container mx-auto px-4 py-16 flex items-center justify-center">
         <Card className="w-full max-w-md">

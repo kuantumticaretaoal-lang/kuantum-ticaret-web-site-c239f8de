@@ -162,6 +162,11 @@ const PremiumPage = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title="Premium Üyelik - Özel Avantajlar"
+        description="Premium üyelikle özel indirimler, ücretsiz kargo ve erken erişim avantajlarından yararlanın. 7 günlük ücretsiz deneme."
+        path="/premium"
+      />
       <Navbar />
       <div className="container mx-auto px-4 py-12">
         {/* Header */}

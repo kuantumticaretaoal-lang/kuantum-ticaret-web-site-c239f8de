@@ -19,6 +19,7 @@ import { Badge } from "@/components/ui/badge";
 import { ReturnRequestForm } from "@/components/ReturnRequestForm";
 import { viewInvoice, downloadInvoicePDF } from "@/lib/invoice-pdf";
 import { FileText } from "lucide-react";
+import SEO from "@/components/SEO";
 
 interface AppliedCoupon {
   id: string;
@@ -547,6 +548,12 @@ const CartPage = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title="Sepetim"
+        description="Sepetinizdeki ürünleri görüntüleyin, miktarları güncelleyin ve siparişinizi tamamlayın. Kuantum Ticaret güvenli ödeme."
+        path="/cart"
+        noindex
+      />
       <Navbar />
       <div className="container mx-auto px-4 py-16">
         <h1 className="text-4xl font-bold mb-8">{t("cart.title", "Sepetim")}</h1>

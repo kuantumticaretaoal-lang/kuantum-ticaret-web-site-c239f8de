@@ -24,6 +24,11 @@ const PoliciesPage = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title="Politikalar ve Sözleşmeler"
+        description="Kuantum Ticaret gizlilik politikası, KVKK aydınlatma metni, çerez politikası ve satış sözleşmeleri."
+        path="/politikalar"
+      />
       <Navbar />
       <main className="container mx-auto px-4 py-12 max-w-4xl">
         <div className="flex items-center gap-3 mb-6">

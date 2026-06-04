@@ -10,6 +10,7 @@ import { Heart, ShoppingCart, Trash2 } from "lucide-react";
 import { useFavorites } from "@/hooks/use-favorites";
 import { addToCart } from "@/lib/cart";
 import { useToast } from "@/hooks/use-toast";
+import SEO from "@/components/SEO";
 
 const FavoritesPage = () => {
   const navigate = useNavigate();
@@ -72,6 +73,12 @@ const FavoritesPage = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title="Favorilerim"
+        description="Beğendiğiniz ürünleri favorilerinize ekleyin ve istediğiniz zaman kolayca ulaşın."
+        path="/favorites"
+        noindex
+      />
       <Navbar />
       <div className="container mx-auto px-4 py-16">
         <div className="flex items-center gap-3 mb-8">

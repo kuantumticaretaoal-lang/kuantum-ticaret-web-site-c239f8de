@@ -23,6 +23,7 @@ import FavoriteButton from "@/components/FavoriteButton";
 import { ProductCardImage } from "@/components/ProductCardImage";
 import { useTranslations } from "@/hooks/use-translations";
 import * as LucideIcons from "lucide-react";
+import SEO from "@/components/SEO";
 
 interface Category {
   id: string;
@@ -255,6 +256,12 @@ const Products = () => {
 
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">
+      <SEO
+        title="Ürünlerimiz - Tüm Katalog"
+        description="Kuantum Ticaret ürün kataloğu: kaliteli, kişiselleştirilebilir ürünleri filtreleyin, karşılaştırın ve hızlıca sipariş verin."
+        path="/products"
+        jsonLd={{ "@type": "CollectionPage", name: "Ürünlerimiz" }}
+      />
       <CampaignBanner currentPage="products" />
       <Navbar />
       <div className="container mx-auto px-4 py-16">

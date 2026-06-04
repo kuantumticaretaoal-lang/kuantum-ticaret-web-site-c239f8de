@@ -102,6 +102,7 @@ const RegisterPage = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO title="Kayıt Ol" description="Yeni bir Kuantum Ticaret hesabı oluşturun ve avantajlardan yararlanmaya başlayın." path="/register" noindex />
       <Navbar />
       <div className="container mx-auto px-4 py-16 flex items-center justify-center">
         <Card className="w-full max-w-2xl">
