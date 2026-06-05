@@ -318,6 +318,7 @@ export type Database = {
       }
       cart: {
         Row: {
+          bracelet_cord_color: string | null
           created_at: string
           custom_name: string | null
           custom_photo_url: string | null
@@ -331,6 +332,7 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          bracelet_cord_color?: string | null
           created_at?: string
           custom_name?: string | null
           custom_photo_url?: string | null
@@ -344,6 +346,7 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          bracelet_cord_color?: string | null
           created_at?: string
           custom_name?: string | null
           custom_photo_url?: string | null
@@ -1017,6 +1020,7 @@ export type Database = {
       }
       order_items: {
         Row: {
+          bracelet_cord_color: string | null
           created_at: string | null
           custom_name: string | null
           custom_photo_url: string | null
@@ -1029,6 +1033,7 @@ export type Database = {
           selected_size: string | null
         }
         Insert: {
+          bracelet_cord_color?: string | null
           created_at?: string | null
           custom_name?: string | null
           custom_photo_url?: string | null
@@ -1041,6 +1046,7 @@ export type Database = {
           selected_size?: string | null
         }
         Update: {
+          bracelet_cord_color?: string | null
           created_at?: string | null
           custom_name?: string | null
           custom_photo_url?: string | null
@@ -1970,6 +1976,54 @@ export type Database = {
           results_count?: number | null
           search_query?: string
           session_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      security_advisor_logs: {
+        Row: {
+          created_at: string
+          error_code: string | null
+          id: string
+          ip_address: string | null
+          latency_ms: number | null
+          message_count: number | null
+          model: string | null
+          prompt: string
+          response: string | null
+          status_code: number | null
+          user_agent: string | null
+          user_email: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          error_code?: string | null
+          id?: string
+          ip_address?: string | null
+          latency_ms?: number | null
+          message_count?: number | null
+          model?: string | null
+          prompt: string
+          response?: string | null
+          status_code?: number | null
+          user_agent?: string | null
+          user_email?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          error_code?: string | null
+          id?: string
+          ip_address?: string | null
+          latency_ms?: number | null
+          message_count?: number | null
+          model?: string | null
+          prompt?: string
+          response?: string | null
+          status_code?: number | null
+          user_agent?: string | null
+          user_email?: string | null
           user_id?: string | null
         }
         Relationships: []
