@@ -15,7 +15,8 @@ export const addToCart = async (
   customName?: string, 
   selectedSize?: string, 
   customPhotoUrl?: string,
-  selectedOrnaments?: Array<{ id: string; name: string; extra_price: number; quantity: number }>
+  selectedOrnaments?: Array<{ id: string; name: string; extra_price: number; quantity: number }>,
+  braceletCordColor?: string
 ) => {
   // Validate quantity is safe integer
   if (!Number.isInteger(quantity) || quantity < 1 || quantity > 999) {
