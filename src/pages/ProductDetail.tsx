@@ -551,9 +551,13 @@ const ProductDetail = () => {
               <BraceletSimulator3D
                 customName={customName}
                 ornaments={selectedOrnaments}
+                cordColor={braceletCordColor}
+                onCordColorChange={setBraceletCordColor}
+                exportFileName={`bileklik-${(customName || "tasarim").toLowerCase().replace(/\s+/g, "-")}`}
                 title="3D Bileklik Önizlemesi — Canlı"
               />
             )}
+
 
             {/* Özelleştirme Seçenekleri */}
             {product.stock_status !== 'out_of_stock' && (
