@@ -47,6 +47,7 @@ import { AdminProductOrnaments } from "@/components/admin/AdminProductOrnaments"
 import { AdminCustomerDetail } from "@/components/admin/AdminCustomerDetail";
 import { AdminNewsletter } from "@/components/admin/AdminNewsletter";
 import { AdminFAQ } from "@/components/admin/AdminFAQ";
+import { AdminBraceletStudio } from "@/components/admin/AdminBraceletStudio";
 
 type AdminTabKey =
   | "dashboard"
