@@ -396,7 +396,8 @@ const ProductDetail = () => {
       customName || undefined,
       selectedSize || undefined,
       finalPhotoUrl || undefined,
-      selectedOrnaments.length > 0 ? selectedOrnaments : undefined
+      selectedOrnaments.length > 0 ? selectedOrnaments : undefined,
+      product.is_name_customizable || product.allows_ornaments ? braceletCordColor : undefined
     );
     if (error) {
       toast({
