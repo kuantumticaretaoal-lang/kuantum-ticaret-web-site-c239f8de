@@ -545,6 +545,14 @@ const ProductDetail = () => {
 
             <Separator />
 
+            {(product.is_name_customizable || product.allows_ornaments) && (
+              <BraceletSimulator3D
+                customName={customName}
+                ornaments={selectedOrnaments}
+                title="3D Bileklik Önizlemesi — Canlı"
+              />
+            )}
+
             {/* Özelleştirme Seçenekleri */}
             {product.stock_status !== 'out_of_stock' && (
               <Card>
