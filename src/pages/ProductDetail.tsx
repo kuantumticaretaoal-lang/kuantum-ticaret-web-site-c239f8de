@@ -52,6 +52,7 @@ const ProductDetail = () => {
   const [question, setQuestion] = useState("");
   const [quantity, setQuantity] = useState(1);
   const [selectedOrnaments, setSelectedOrnaments] = useState<SelectedOrnament[]>([]);
+  const [braceletCordColor, setBraceletCordColor] = useState<string>("#7a4a25");
   const [customName, setCustomName] = useState("");
   const [selectedSize, setSelectedSize] = useState("");
   const [customPhotoFile, setCustomPhotoFile] = useState<File | null>(null);
