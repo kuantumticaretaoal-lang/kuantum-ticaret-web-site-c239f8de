@@ -89,7 +89,8 @@ type AdminTabKey =
   | "product-ornaments"
   | "customer-detail"
   | "newsletter"
-  | "faq";
+  | "faq"
+  | "bracelet-studio";
 
 interface TabConfig {
   key: AdminTabKey;
