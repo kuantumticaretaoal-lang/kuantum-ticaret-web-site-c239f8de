@@ -940,6 +940,19 @@ const CartPage = () => {
                                 {order.order_items?.map((item: any, idx: number) => (
                                   <div key={idx} className="text-sm">
                                     {item.products?.title} x{item.quantity}
+                                    {item.custom_name && <span className="text-muted-foreground"> · {item.custom_name}</span>}
+                                    {item.bracelet_cord_color && (
+                                      <span
+                                        className="inline-block ml-1 h-3 w-3 rounded-full border align-middle"
+                                        style={{ background: item.bracelet_cord_color }}
+                                        title={`İp rengi: ${item.bracelet_cord_color}`}
+                                      />
+                                    )}
+                                    {Array.isArray(item.selected_ornaments) && item.selected_ornaments.length > 0 && (
+                                      <div className="text-xs text-muted-foreground pl-2">
+                                        Süsler: {item.selected_ornaments.map((o: any) => `${o.name} x${o.quantity}`).join(", ")}
+                                      </div>
+                                    )}
                                   </div>
                                 ))}
                               </div>
