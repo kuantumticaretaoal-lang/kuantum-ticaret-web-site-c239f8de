@@ -1,5 +1,5 @@
 import { Suspense, useEffect, useMemo, useRef, useState, lazy } from "react";
-import * as THREE from "three";
+import type * as THREE from "three";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
