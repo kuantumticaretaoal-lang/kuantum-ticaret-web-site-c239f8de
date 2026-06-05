@@ -98,6 +98,7 @@ export const addToCart = async (
         selected_size: selectedSize || null,
         custom_photo_url: customPhotoUrl || null,
         selected_ornaments: selectedOrnaments && selectedOrnaments.length > 0 ? selectedOrnaments : [],
+        bracelet_cord_color: braceletCordColor || null,
       });
     return { error };
   }
