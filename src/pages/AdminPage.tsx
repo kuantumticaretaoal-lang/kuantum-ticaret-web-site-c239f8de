@@ -47,6 +47,7 @@ import { AdminProductOrnaments } from "@/components/admin/AdminProductOrnaments"
 import { AdminCustomerDetail } from "@/components/admin/AdminCustomerDetail";
 import { AdminNewsletter } from "@/components/admin/AdminNewsletter";
 import { AdminFAQ } from "@/components/admin/AdminFAQ";
+import { AdminBraceletStudio } from "@/components/admin/AdminBraceletStudio";
 
 type AdminTabKey =
   | "dashboard"
@@ -88,7 +89,8 @@ type AdminTabKey =
   | "product-ornaments"
   | "customer-detail"
   | "newsletter"
-  | "faq";
+  | "faq"
+  | "bracelet-studio";
 
 interface TabConfig {
   key: AdminTabKey;
@@ -138,6 +140,7 @@ const ADMIN_TABS: TabConfig[] = [
   { key: "product-ornaments", label: "Ürün Süsleri", Component: AdminProductOrnaments },
   { key: "newsletter", label: "Bülten", Component: AdminNewsletter },
   { key: "faq", label: "Sıkça Sorulan Sorular", Component: AdminFAQ },
+  { key: "bracelet-studio", label: "3D Stüdyo & AI Danışman", Component: AdminBraceletStudio },
 ];
 
 const AdminPage = () => {
