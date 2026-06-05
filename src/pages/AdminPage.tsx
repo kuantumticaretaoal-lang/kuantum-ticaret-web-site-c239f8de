@@ -48,6 +48,7 @@ import { AdminCustomerDetail } from "@/components/admin/AdminCustomerDetail";
 import { AdminNewsletter } from "@/components/admin/AdminNewsletter";
 import { AdminFAQ } from "@/components/admin/AdminFAQ";
 import { AdminBraceletStudio } from "@/components/admin/AdminBraceletStudio";
+import { AdminAdvisorAuditLog } from "@/components/admin/AdminAdvisorAuditLog";
 
 type AdminTabKey =
   | "dashboard"
