@@ -140,6 +140,7 @@ const ADMIN_TABS: TabConfig[] = [
   { key: "product-ornaments", label: "Ürün Süsleri", Component: AdminProductOrnaments },
   { key: "newsletter", label: "Bülten", Component: AdminNewsletter },
   { key: "faq", label: "Sıkça Sorulan Sorular", Component: AdminFAQ },
+  { key: "bracelet-studio", label: "3D Stüdyo & AI Danışman", Component: AdminBraceletStudio },
 ];
 
 const AdminPage = () => {
