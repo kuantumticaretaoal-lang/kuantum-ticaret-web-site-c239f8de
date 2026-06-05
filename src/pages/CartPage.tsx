@@ -445,6 +445,7 @@ const CartPage = () => {
         selected_size: item.selected_size || null,
         custom_photo_url: item.custom_photo_url || null,
         selected_ornaments: Array.isArray(item.selected_ornaments) ? item.selected_ornaments : [],
+        bracelet_cord_color: item.bracelet_cord_color || null,
       }));
 
       const { error: itemsError } = await (supabase as any)
@@ -618,6 +619,17 @@ const CartPage = () => {
                                 <span className="text-primary font-semibold ml-2">
                                   (+{formatPrice(getOrnamentTotal(item))})
                                 </span>
+                              </div>
+                            )}
+                            {item.bracelet_cord_color && (
+                              <div className="mb-2 text-xs text-muted-foreground flex items-center gap-2">
+                                <span className="font-medium text-foreground">İp rengi:</span>
+                                <span
+                                  className="inline-block h-4 w-4 rounded-full border"
+                                  style={{ background: item.bracelet_cord_color }}
+                                  aria-label={`İp rengi ${item.bracelet_cord_color}`}
+                                />
+                                <span className="font-mono">{item.bracelet_cord_color}</span>
                               </div>
                             )}
                             <div className="mb-4">
@@ -928,6 +940,19 @@ const CartPage = () => {
                                 {order.order_items?.map((item: any, idx: number) => (
                                   <div key={idx} className="text-sm">
                                     {item.products?.title} x{item.quantity}
+                                    {item.custom_name && <span className="text-muted-foreground"> · {item.custom_name}</span>}
+                                    {item.bracelet_cord_color && (
+                                      <span
+                                        className="inline-block ml-1 h-3 w-3 rounded-full border align-middle"
+                                        style={{ background: item.bracelet_cord_color }}
+                                        title={`İp rengi: ${item.bracelet_cord_color}`}
+                                      />
+                                    )}
+                                    {Array.isArray(item.selected_ornaments) && item.selected_ornaments.length > 0 && (
+                                      <div className="text-xs text-muted-foreground pl-2">
+                                        Süsler: {item.selected_ornaments.map((o: any) => `${o.name} x${o.quantity}`).join(", ")}
+                                      </div>
+                                    )}
                                   </div>
                                 ))}
                               </div>

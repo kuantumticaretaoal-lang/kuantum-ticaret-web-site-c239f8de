@@ -29,6 +29,7 @@ export const AdminBraceletStudio = () => {
     { id: "c1", name: "Kalp", extra_price: 0, quantity: 1 },
     { id: "c2", name: "Yıldız", extra_price: 0, quantity: 1 },
   ]);
+  const [cordColor, setCordColor] = useState("#7a4a25");
 
   const addCharm = () => {
     const labels = ["Ay", "Güneş", "Çiçek", "Anahtar", "Kuş", "Sonsuzluk", "Şimşek"];
@@ -57,11 +58,14 @@ export const AdminBraceletStudio = () => {
     abortRef.current = controller;
 
     try {
+      const { data: sess } = await (await import("@/integrations/supabase/client")).supabase.auth.getSession();
+      const token = sess.session?.access_token || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
       const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/security-advisor`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          Authorization: `Bearer ${token}`,
+          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
         },
         body: JSON.stringify({ messages: next }),
         signal: controller.signal,
@@ -168,7 +172,15 @@ export const AdminBraceletStudio = () => {
             </div>
           </div>
 
-          <BraceletSimulator3D customName={name} ornaments={charms} height={380} title="Yönetici Önizlemesi" />
+          <BraceletSimulator3D
+            customName={name}
+            ornaments={charms}
+            cordColor={cordColor}
+            onCordColorChange={setCordColor}
+            exportFileName={`yonetici-bileklik-${name.toLowerCase()}`}
+            height={380}
+            title="Yönetici Önizlemesi"
+          />
         </CardContent>
       </Card>
 

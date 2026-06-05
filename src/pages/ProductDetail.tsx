@@ -52,6 +52,7 @@ const ProductDetail = () => {
   const [question, setQuestion] = useState("");
   const [quantity, setQuantity] = useState(1);
   const [selectedOrnaments, setSelectedOrnaments] = useState<SelectedOrnament[]>([]);
+  const [braceletCordColor, setBraceletCordColor] = useState<string>("#7a4a25");
   const [customName, setCustomName] = useState("");
   const [selectedSize, setSelectedSize] = useState("");
   const [customPhotoFile, setCustomPhotoFile] = useState<File | null>(null);
@@ -395,7 +396,8 @@ const ProductDetail = () => {
       customName || undefined,
       selectedSize || undefined,
       finalPhotoUrl || undefined,
-      selectedOrnaments.length > 0 ? selectedOrnaments : undefined
+      selectedOrnaments.length > 0 ? selectedOrnaments : undefined,
+      product.is_name_customizable || product.allows_ornaments ? braceletCordColor : undefined
     );
     if (error) {
       toast({
@@ -549,9 +551,13 @@ const ProductDetail = () => {
               <BraceletSimulator3D
                 customName={customName}
                 ornaments={selectedOrnaments}
+                cordColor={braceletCordColor}
+                onCordColorChange={setBraceletCordColor}
+                exportFileName={`bileklik-${(customName || "tasarim").toLowerCase().replace(/\s+/g, "-")}`}
                 title="3D Bileklik Önizlemesi — Canlı"
               />
             )}
+
 
             {/* Özelleştirme Seçenekleri */}
             {product.stock_status !== 'out_of_stock' && (
