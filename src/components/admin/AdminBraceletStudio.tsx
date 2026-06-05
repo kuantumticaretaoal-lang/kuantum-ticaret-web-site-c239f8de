@@ -169,7 +169,15 @@ export const AdminBraceletStudio = () => {
             </div>
           </div>
 
-          <BraceletSimulator3D customName={name} ornaments={charms} height={380} title="Yönetici Önizlemesi" />
+          <BraceletSimulator3D
+            customName={name}
+            ornaments={charms}
+            cordColor={cordColor}
+            onCordColorChange={setCordColor}
+            exportFileName={`yonetici-bileklik-${name.toLowerCase()}`}
+            height={380}
+            title="Yönetici Önizlemesi"
+          />
         </CardContent>
       </Card>
 
