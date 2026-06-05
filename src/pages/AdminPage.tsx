@@ -142,6 +142,7 @@ const ADMIN_TABS: TabConfig[] = [
   { key: "newsletter", label: "Bülten", Component: AdminNewsletter },
   { key: "faq", label: "Sıkça Sorulan Sorular", Component: AdminFAQ },
   { key: "bracelet-studio", label: "3D Stüdyo & AI Danışman", Component: AdminBraceletStudio },
+  { key: "advisor-audit", label: "AI Denetim Günlüğü", Component: AdminAdvisorAuditLog },
 ];
 
 const AdminPage = () => {
