@@ -29,6 +29,7 @@ export const AdminBraceletStudio = () => {
     { id: "c1", name: "Kalp", extra_price: 0, quantity: 1 },
     { id: "c2", name: "Yıldız", extra_price: 0, quantity: 1 },
   ]);
+  const [cordColor, setCordColor] = useState("#7a4a25");
 
   const addCharm = () => {
     const labels = ["Ay", "Güneş", "Çiçek", "Anahtar", "Kuş", "Sonsuzluk", "Şimşek"];
