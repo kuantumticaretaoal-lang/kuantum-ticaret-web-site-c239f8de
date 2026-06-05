@@ -32,6 +32,7 @@ import SEO from "@/components/SEO";
 import { useTranslations } from "@/hooks/use-translations";
 import { ProductBreadcrumb } from "@/components/ProductBreadcrumb";
 import { HalfStarRating, maskLastName } from "@/components/HalfStarRating";
+import BraceletSimulator3D from "@/components/BraceletSimulator3D";
 
 const ProductDetail = () => {
   const { id } = useParams();
