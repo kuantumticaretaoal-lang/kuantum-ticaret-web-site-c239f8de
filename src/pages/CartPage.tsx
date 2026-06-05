@@ -445,6 +445,7 @@ const CartPage = () => {
         selected_size: item.selected_size || null,
         custom_photo_url: item.custom_photo_url || null,
         selected_ornaments: Array.isArray(item.selected_ornaments) ? item.selected_ornaments : [],
+        bracelet_cord_color: item.bracelet_cord_color || null,
       }));
 
       const { error: itemsError } = await (supabase as any)
