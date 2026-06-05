@@ -621,6 +621,17 @@ const CartPage = () => {
                                 </span>
                               </div>
                             )}
+                            {item.bracelet_cord_color && (
+                              <div className="mb-2 text-xs text-muted-foreground flex items-center gap-2">
+                                <span className="font-medium text-foreground">İp rengi:</span>
+                                <span
+                                  className="inline-block h-4 w-4 rounded-full border"
+                                  style={{ background: item.bracelet_cord_color }}
+                                  aria-label={`İp rengi ${item.bracelet_cord_color}`}
+                                />
+                                <span className="font-mono">{item.bracelet_cord_color}</span>
+                              </div>
+                            )}
                             <div className="mb-4">
                               {hasDiscount(item) ? (
                                 <div className="flex items-center gap-2">
