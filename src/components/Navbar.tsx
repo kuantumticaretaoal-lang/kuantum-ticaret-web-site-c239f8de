@@ -22,6 +22,7 @@ const Navbar = () => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
   const { t } = useTranslations();
@@ -83,6 +84,13 @@ const Navbar = () => {
       supabase.removeChannel(cartChannel);
       supabase.removeChannel(notificationsChannel);
     };
+  }, []);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
   const checkAdminStatus = async (userId: string) => {
