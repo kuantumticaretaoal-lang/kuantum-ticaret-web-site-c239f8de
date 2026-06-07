@@ -29,6 +29,7 @@ const Index = () => {
       <Navbar />
       <HeroSection />
       <Suspense fallback={null}>
+        <TrustStrip />
         <Sponsors showTitle={true} />
         <ShippingInfo />
         <Features />
