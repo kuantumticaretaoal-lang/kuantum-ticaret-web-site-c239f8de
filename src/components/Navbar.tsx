@@ -131,7 +131,7 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="bg-gradient-to-r from-primary via-primary-glow to-secondary text-white py-4 sticky top-0 z-50 shadow-lg">
+    <nav className={`bg-gradient-to-r from-primary via-primary-glow to-secondary text-white sticky top-0 z-50 transition-all duration-300 ${scrolled ? "py-2 shadow-2xl backdrop-blur supports-[backdrop-filter]:bg-primary/85" : "py-4 shadow-lg"}`}>
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between gap-4">
           <NavbarMobileMenu
