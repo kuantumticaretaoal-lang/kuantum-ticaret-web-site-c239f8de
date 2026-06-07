@@ -7,6 +7,7 @@ import { useTranslations } from "@/hooks/use-translations";
 import { BackToTop } from "@/components/BackToTop";
 
 const CampaignBanner = lazy(() => import("@/components/CampaignBanner").then(m => ({ default: m.CampaignBanner })));
+const TrustStrip = lazy(() => import("@/components/TrustStrip"));
 const Sponsors = lazy(() => import("@/components/Sponsors"));
 const ShippingInfo = lazy(() => import("@/components/ShippingInfo"));
 const Features = lazy(() => import("@/components/Features"));

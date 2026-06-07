@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { ShoppingBag, MessageSquare } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
+import HeroStats from "@/components/HeroStats";
 
 const HeroSection = () => {
   return (
@@ -34,21 +35,22 @@ const HeroSection = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.4 }}
             >
-              <Button 
+              <Button
                 asChild
                 size="lg"
-                className="bg-secondary hover:bg-secondary/90 text-white text-lg px-8"
+                className="relative overflow-hidden bg-secondary hover:bg-secondary/90 text-white text-lg px-8 group shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5"
               >
                 <Link to="/products">
-                  <ShoppingBag className="mr-2 h-5 w-5" />
-                  Ürünleri İncele
+                  <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/30 to-transparent" />
+                  <ShoppingBag className="mr-2 h-5 w-5 relative" />
+                  <span className="relative">Ürünleri İncele</span>
                 </Link>
               </Button>
-              <Button 
+              <Button
                 asChild
                 size="lg"
                 variant="outline"
-                className="bg-white/10 text-white border-2 border-white/50 hover:bg-white/20 text-lg px-8"
+                className="bg-white/10 text-white border-2 border-white/50 hover:bg-white/20 text-lg px-8 transition-all hover:-translate-y-0.5"
               >
                 <Link to="/contact">
                   <MessageSquare className="mr-2 h-5 w-5" />
@@ -56,6 +58,7 @@ const HeroSection = () => {
                 </Link>
               </Button>
             </motion.div>
+            <HeroStats />
           </motion.div>
           
           <motion.div 
