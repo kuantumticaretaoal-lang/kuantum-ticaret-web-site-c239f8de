@@ -296,8 +296,8 @@ const Products = () => {
           </div>
         )}
 
-        {/* Arama ve Filtreler */}
-        <div className="space-y-4 mb-8">
+        {/* Arama ve Filtreler — sticky */}
+        <div className="space-y-4 mb-8 sticky top-[68px] z-30 -mx-4 px-4 py-3 bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70 border-b border-border/60">
           {/* Arama ve Sıralama */}
           <div className="flex flex-col sm:flex-row gap-2 max-w-3xl mx-auto">
             <div className="relative flex-1">
@@ -338,6 +338,56 @@ const Products = () => {
               )}
             </Button>
           </div>
+
+          {/* Aktif filtre çipleri */}
+          {hasActiveFilters && (
+            <div className="flex flex-wrap items-center gap-2 max-w-4xl mx-auto animate-fade-in">
+              <span className="text-xs text-muted-foreground">Aktif filtreler:</span>
+              {searchQuery && (
+                <Badge variant="secondary" className="gap-1 pr-1">
+                  Arama: "{searchQuery}"
+                  <button onClick={() => setSearchQuery("")} className="hover:bg-muted-foreground/20 rounded p-0.5" aria-label="Aramayı temizle">
+                    <X className="h-3 w-3" />
+                  </button>
+                </Badge>
+              )}
+              {filterCategory !== "all" && (
+                <Badge variant="secondary" className="gap-1 pr-1">
+                  Kategori: {categories.find(c => c.id === filterCategory)?.name || ""}
+                  <button onClick={() => setFilterCategory("all")} className="hover:bg-muted-foreground/20 rounded p-0.5" aria-label="Kategori temizle">
+                    <X className="h-3 w-3" />
+                  </button>
+                </Badge>
+              )}
+              {filterPromotion !== "all" && (
+                <Badge variant="secondary" className="gap-1 pr-1">
+                  Etiket: {filterPromotion}
+                  <button onClick={() => setFilterPromotion("all")} className="hover:bg-muted-foreground/20 rounded p-0.5" aria-label="Etiket temizle">
+                    <X className="h-3 w-3" />
+                  </button>
+                </Badge>
+              )}
+              {showOnlyInStock && (
+                <Badge variant="secondary" className="gap-1 pr-1">
+                  Sadece stokta
+                  <button onClick={() => setShowOnlyInStock(false)} className="hover:bg-muted-foreground/20 rounded p-0.5" aria-label="Stok filtresini temizle">
+                    <X className="h-3 w-3" />
+                  </button>
+                </Badge>
+              )}
+              {(priceRange.min || priceRange.max) && (
+                <Badge variant="secondary" className="gap-1 pr-1">
+                  Fiyat: {priceRange.min || 0} – {priceRange.max || "∞"}
+                  <button onClick={() => { setPriceRange({ min: "", max: "" }); setPriceSlider([0, maxProductPrice]); }} className="hover:bg-muted-foreground/20 rounded p-0.5" aria-label="Fiyat temizle">
+                    <X className="h-3 w-3" />
+                  </button>
+                </Badge>
+              )}
+              <Button variant="ghost" size="sm" onClick={clearFilters} className="h-7 text-xs text-destructive hover:text-destructive">
+                Tümünü temizle
+              </Button>
+            </div>
+          )}
 
           {/* Gelişmiş Filtreler */}
           {showFilters && (
