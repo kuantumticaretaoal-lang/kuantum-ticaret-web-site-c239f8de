@@ -13,6 +13,7 @@ import { useTranslations } from "@/hooks/use-translations";
 import NavbarMobileMenu from "@/components/navbar/NavbarMobileMenu";
 import NavbarDesktopLinks from "@/components/navbar/NavbarDesktopLinks";
 import NavbarUserMenu from "@/components/navbar/NavbarUserMenu";
+import CartDrawer from "@/components/CartDrawer";
 
 const Navbar = () => {
   const [user, setUser] = useState<any>(null);
@@ -20,6 +21,7 @@ const Navbar = () => {
   const [cartCount, setCartCount] = useState(0);
   const [unreadCount, setUnreadCount] = useState(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [cartOpen, setCartOpen] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
   const { t } = useTranslations();
@@ -168,10 +170,10 @@ const Navbar = () => {
             <Button variant="ghost" size="icon" aria-label={t("nav.favorites", "Favorilerim")} className="relative text-white hover:text-white hover:bg-white/20" onClick={() => navigate("/favorites")}>
               <Heart className="h-5 w-5" />
             </Button>
-            <Button variant="ghost" size="icon" aria-label={t("nav.cart", "Sepet")} className="relative text-white hover:text-white hover:bg-white/20" onClick={() => navigate("/cart")}>
+            <Button variant="ghost" size="icon" aria-label={t("nav.cart", "Sepet")} className="relative text-white hover:text-white hover:bg-white/20 transition-transform hover:scale-110" onClick={() => setCartOpen(true)}>
               <ShoppingCart className="h-5 w-5" />
               {cartCount > 0 && (
-                <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs bg-secondary">
+                <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs bg-secondary animate-scale-in">
                   {cartCount}
                 </Badge>
               )}
@@ -188,6 +190,7 @@ const Navbar = () => {
           </div>
         </div>
       </div>
+      <CartDrawer open={cartOpen} onOpenChange={setCartOpen} />
     </nav>
   );
 };
