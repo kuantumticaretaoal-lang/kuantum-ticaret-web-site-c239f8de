@@ -493,7 +493,8 @@ const Products = () => {
 
           {/* Gelişmiş Filtreler */}
           {showFilters && (
-            <Card className="max-w-4xl mx-auto">
+            <Card className="max-w-4xl mx-auto motion-safe:animate-fade-in" id="advanced-filters-panel">
+
               <CardContent className="pt-6">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {/* Promosyon Filtresi */}
