@@ -231,6 +231,27 @@ const Products = () => {
     setPriceRange({ min: "", max: "" });
     setPriceSlider([0, maxProductPrice]);
     setSearchQuery("");
+    trackFilterEvent("clear", "all");
+  };
+
+  const handleSetCategory = (id: string) => {
+    setFilterCategory(id);
+    trackFilterEvent("apply", "category", id);
+  };
+  const handleSetPromotion = (v: string) => {
+    setFilterPromotion(v);
+    trackFilterEvent("apply", "promotion", v);
+  };
+  const handleSetSort = (v: string) => {
+    setSortBy(v);
+    trackFilterEvent("apply", "sort", v);
+  };
+  const handleToggleStock = (v: boolean) => {
+    setShowOnlyInStock(v);
+    trackFilterEvent("apply", "in_stock", v ? "true" : "false");
+  };
+  const handleChipRemove = (key: string) => {
+    trackFilterEvent("chip_remove", key);
   };
 
   const hasActiveFilters = filterPromotion !== "all" || filterCategory !== "all" || showOnlyInStock || priceRange.min || priceRange.max || searchQuery;
