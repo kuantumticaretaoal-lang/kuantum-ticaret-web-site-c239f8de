@@ -16,6 +16,7 @@ export interface SelectedOrnament {
   name: string;
   extra_price: number;
   quantity: number;
+  image_url?: string | null;
 }
 
 interface Props {
