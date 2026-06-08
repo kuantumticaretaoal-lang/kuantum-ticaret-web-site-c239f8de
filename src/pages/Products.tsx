@@ -327,11 +327,13 @@ const Products = () => {
         
         {/* Kategoriler */}
         {categories.length > 0 && (
-          <div className="flex flex-wrap gap-2 justify-center mb-6">
+          <div className="flex flex-wrap gap-2 justify-center mb-6" role="group" aria-label="Kategori filtreleri">
             <Button
               variant={filterCategory === "all" ? "default" : "outline"}
               size="sm"
-              onClick={() => setFilterCategory("all")}
+              onClick={() => handleSetCategory("all")}
+              aria-pressed={filterCategory === "all"}
+              className="focus-visible:ring-2 focus-visible:ring-primary"
             >
               Tümü
             </Button>
@@ -340,8 +342,9 @@ const Products = () => {
                 key={cat.id}
                 variant={filterCategory === cat.id ? "default" : "outline"}
                 size="sm"
-                onClick={() => setFilterCategory(cat.id)}
-                className="flex items-center gap-1"
+                onClick={() => handleSetCategory(cat.id)}
+                aria-pressed={filterCategory === cat.id}
+                className="flex items-center gap-1 focus-visible:ring-2 focus-visible:ring-primary"
               >
                 {getIconComponent(cat.icon)}
                 {cat.name}
@@ -349,6 +352,7 @@ const Products = () => {
             ))}
           </div>
         )}
+
 
         {/* Arama ve Filtreler — sticky */}
         <div className="space-y-4 mb-8 sticky top-[68px] z-30 -mx-4 px-4 py-3 bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70 border-b border-border/60">
