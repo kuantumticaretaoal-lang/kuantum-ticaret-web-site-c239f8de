@@ -103,6 +103,16 @@ const Products = () => {
     setSearchQuery(urlQuery);
   }, [location.search]);
 
+  // Persist filter selections to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem(FILTER_STORAGE_KEY, JSON.stringify({
+        sortBy, filterPromotion, filterCategory, showOnlyInStock,
+        priceMin: priceRange.min, priceMax: priceRange.max, priceSlider,
+      }));
+    } catch {}
+  }, [sortBy, filterPromotion, filterCategory, showOnlyInStock, priceRange, priceSlider]);
+
   const loadProducts = async () => {
     try {
       setLoading(true);
