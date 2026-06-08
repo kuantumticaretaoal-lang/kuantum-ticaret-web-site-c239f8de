@@ -297,6 +297,17 @@ const Products = () => {
     }
   });
 
+  // Track result count after filters settle
+  useEffect(() => {
+    if (loading) return;
+    if (!hasActiveFilters && sortedProducts.length === products.length) return;
+    if (lastResultCountRef.current === sortedProducts.length) return;
+    lastResultCountRef.current = sortedProducts.length;
+    const tid = setTimeout(() => trackFilterEvent("result", "page", null, sortedProducts.length), 600);
+    return () => clearTimeout(tid);
+  }, [sortedProducts.length, loading, hasActiveFilters, products.length]);
+
+
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">
       <SEO
