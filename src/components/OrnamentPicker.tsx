@@ -51,7 +51,7 @@ export const OrnamentPicker = ({ productId, value, onChange }: Props) => {
     if (next === 0) {
       onChange(others);
     } else {
-      onChange([...others, { id: orn.id, name: orn.name, extra_price: Number(orn.extra_price), quantity: next }]);
+      onChange([...others, { id: orn.id, name: orn.name, extra_price: Number(orn.extra_price), quantity: next, image_url: orn.image_url }]);
     }
   };
 
