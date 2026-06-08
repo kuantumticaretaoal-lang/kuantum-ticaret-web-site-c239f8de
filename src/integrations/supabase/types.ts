@@ -774,6 +774,42 @@ export type Database = {
         }
         Relationships: []
       }
+      filter_events: {
+        Row: {
+          created_at: string
+          device_id: string | null
+          event_type: string
+          filter_key: string
+          filter_value: string | null
+          id: string
+          page_path: string | null
+          result_count: number | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          device_id?: string | null
+          event_type: string
+          filter_key: string
+          filter_value?: string | null
+          id?: string
+          page_path?: string | null
+          result_count?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          device_id?: string | null
+          event_type?: string
+          filter_key?: string
+          filter_value?: string | null
+          id?: string
+          page_path?: string | null
+          result_count?: number | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       iban_settings: {
         Row: {
           account_holder: string

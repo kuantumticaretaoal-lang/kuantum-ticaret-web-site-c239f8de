@@ -49,6 +49,7 @@ import { AdminNewsletter } from "@/components/admin/AdminNewsletter";
 import { AdminFAQ } from "@/components/admin/AdminFAQ";
 import { AdminBraceletStudio } from "@/components/admin/AdminBraceletStudio";
 import { AdminAdvisorAuditLog } from "@/components/admin/AdminAdvisorAuditLog";
+import { AdminFilterInsights } from "@/components/admin/AdminFilterInsights";
 
 type AdminTabKey =
   | "dashboard"
@@ -92,7 +93,8 @@ type AdminTabKey =
   | "newsletter"
   | "faq"
   | "bracelet-studio"
-  | "advisor-audit";
+  | "advisor-audit"
+  | "filter-insights";
 
 interface TabConfig {
   key: AdminTabKey;
@@ -144,6 +146,7 @@ const ADMIN_TABS: TabConfig[] = [
   { key: "faq", label: "Sıkça Sorulan Sorular", Component: AdminFAQ },
   { key: "bracelet-studio", label: "3D Stüdyo & AI Danışman", Component: AdminBraceletStudio },
   { key: "advisor-audit", label: "AI Denetim Günlüğü", Component: AdminAdvisorAuditLog },
+  { key: "filter-insights", label: "Filtre Etkileşimleri", Component: AdminFilterInsights },
 ];
 
 const AdminPage = () => {

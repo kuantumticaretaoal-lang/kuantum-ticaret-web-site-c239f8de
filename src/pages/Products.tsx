@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate, useLocation } from "react-router-dom";
 import { addToCart } from "@/lib/cart";
@@ -24,6 +24,9 @@ import { ProductCardImage } from "@/components/ProductCardImage";
 import { useTranslations } from "@/hooks/use-translations";
 import * as LucideIcons from "lucide-react";
 import SEO from "@/components/SEO";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { trackFilterEvent } from "@/lib/filter-tracker";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface Category {
   id: string;
@@ -33,25 +36,34 @@ interface Category {
   sort_order: number;
 }
 
+const FILTER_STORAGE_KEY = "products_filters_v1";
+const loadStored = () => {
+  try { return JSON.parse(localStorage.getItem(FILTER_STORAGE_KEY) || "{}"); } catch { return {}; }
+};
+
 const Products = () => {
+  const stored = (typeof window !== "undefined") ? loadStored() : {};
   const [products, setProducts] = useState<any[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [productTranslations, setProductTranslations] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(true);
-  const [sortBy, setSortBy] = useState<string>("newest");
-  const [filterPromotion, setFilterPromotion] = useState<string>("all");
-  const [filterCategory, setFilterCategory] = useState<string>("all");
-  const [showOnlyInStock, setShowOnlyInStock] = useState<boolean>(false);
+  const [sortBy, setSortBy] = useState<string>(stored.sortBy || "newest");
+  const [filterPromotion, setFilterPromotion] = useState<string>(stored.filterPromotion || "all");
+  const [filterCategory, setFilterCategory] = useState<string>(stored.filterCategory || "all");
+  const [showOnlyInStock, setShowOnlyInStock] = useState<boolean>(stored.showOnlyInStock || false);
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const [priceRange, setPriceRange] = useState({ min: "", max: "" });
-  const [priceSlider, setPriceSlider] = useState<[number, number]>([0, 50000]);
+  const [priceRange, setPriceRange] = useState({ min: stored.priceMin || "", max: stored.priceMax || "" });
+  const [priceSlider, setPriceSlider] = useState<[number, number]>(stored.priceSlider || [0, 50000]);
   const [maxProductPrice, setMaxProductPrice] = useState(50000);
   const [showFilters, setShowFilters] = useState(false);
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const isMobile = useIsMobile();
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
   const { toggleFavorite, isFavorite } = useFavorites();
   const { t, formatPrice, currentLanguage } = useTranslations();
+  const lastResultCountRef = useRef<number>(0);
 
   const getPromoBadgeConfig = (badge: string) => {
     const b = (badge || "").toLowerCase();
@@ -90,6 +102,16 @@ const Products = () => {
     const urlQuery = new URLSearchParams(location.search).get("query") || "";
     setSearchQuery(urlQuery);
   }, [location.search]);
+
+  // Persist filter selections to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem(FILTER_STORAGE_KEY, JSON.stringify({
+        sortBy, filterPromotion, filterCategory, showOnlyInStock,
+        priceMin: priceRange.min, priceMax: priceRange.max, priceSlider,
+      }));
+    } catch {}
+  }, [sortBy, filterPromotion, filterCategory, showOnlyInStock, priceRange, priceSlider]);
 
   const loadProducts = async () => {
     try {
@@ -209,6 +231,27 @@ const Products = () => {
     setPriceRange({ min: "", max: "" });
     setPriceSlider([0, maxProductPrice]);
     setSearchQuery("");
+    trackFilterEvent("clear", "all");
+  };
+
+  const handleSetCategory = (id: string) => {
+    setFilterCategory(id);
+    trackFilterEvent("apply", "category", id);
+  };
+  const handleSetPromotion = (v: string) => {
+    setFilterPromotion(v);
+    trackFilterEvent("apply", "promotion", v);
+  };
+  const handleSetSort = (v: string) => {
+    setSortBy(v);
+    trackFilterEvent("apply", "sort", v);
+  };
+  const handleToggleStock = (v: boolean) => {
+    setShowOnlyInStock(v);
+    trackFilterEvent("apply", "in_stock", v ? "true" : "false");
+  };
+  const handleChipRemove = (key: string) => {
+    trackFilterEvent("chip_remove", key);
   };
 
   const hasActiveFilters = filterPromotion !== "all" || filterCategory !== "all" || showOnlyInStock || priceRange.min || priceRange.max || searchQuery;
@@ -254,6 +297,17 @@ const Products = () => {
     }
   });
 
+  // Track result count after filters settle
+  useEffect(() => {
+    if (loading) return;
+    if (!hasActiveFilters && sortedProducts.length === products.length) return;
+    if (lastResultCountRef.current === sortedProducts.length) return;
+    lastResultCountRef.current = sortedProducts.length;
+    const tid = setTimeout(() => trackFilterEvent("result", "page", null, sortedProducts.length), 600);
+    return () => clearTimeout(tid);
+  }, [sortedProducts.length, loading, hasActiveFilters, products.length]);
+
+
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">
       <SEO
@@ -273,11 +327,13 @@ const Products = () => {
         
         {/* Kategoriler */}
         {categories.length > 0 && (
-          <div className="flex flex-wrap gap-2 justify-center mb-6">
+          <div className="flex flex-wrap gap-2 justify-center mb-6" role="group" aria-label="Kategori filtreleri">
             <Button
               variant={filterCategory === "all" ? "default" : "outline"}
               size="sm"
-              onClick={() => setFilterCategory("all")}
+              onClick={() => handleSetCategory("all")}
+              aria-pressed={filterCategory === "all"}
+              className="focus-visible:ring-2 focus-visible:ring-primary"
             >
               Tümü
             </Button>
@@ -286,8 +342,9 @@ const Products = () => {
                 key={cat.id}
                 variant={filterCategory === cat.id ? "default" : "outline"}
                 size="sm"
-                onClick={() => setFilterCategory(cat.id)}
-                className="flex items-center gap-1"
+                onClick={() => handleSetCategory(cat.id)}
+                aria-pressed={filterCategory === cat.id}
+                className="flex items-center gap-1 focus-visible:ring-2 focus-visible:ring-primary"
               >
                 {getIconComponent(cat.icon)}
                 {cat.name}
@@ -295,6 +352,7 @@ const Products = () => {
             ))}
           </div>
         )}
+
 
         {/* Arama ve Filtreler — sticky */}
         <div className="space-y-4 mb-8 sticky top-[68px] z-30 -mx-4 px-4 py-3 bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70 border-b border-border/60">
@@ -311,7 +369,7 @@ const Products = () => {
             </div>
             
             {/* Sıralama - Filtrelerin dışında */}
-            <Select value={sortBy} onValueChange={setSortBy}>
+            <Select value={sortBy} onValueChange={handleSetSort}>
               <SelectTrigger className="w-full sm:w-48">
                 <ArrowUpDown className="h-4 w-4 mr-2" />
                 <SelectValue placeholder={t("sort", "Sırala")} />
@@ -325,65 +383,109 @@ const Products = () => {
                 <SelectItem value="rating">{t("most_rated", "En Çok Değerlendirilen")}</SelectItem>
               </SelectContent>
             </Select>
-            
-            <Button
-              variant="outline"
-              onClick={() => setShowFilters(!showFilters)}
-              className="flex items-center gap-2"
-            >
-              <Filter className="h-4 w-4" />
-              {t("filters", "Filtreler")}
-              {hasActiveFilters && (
-                <Badge variant="secondary" className="ml-1">!</Badge>
-              )}
-            </Button>
+
+            {isMobile ? (
+              <Sheet open={mobileFiltersOpen} onOpenChange={setMobileFiltersOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="outline" className="flex items-center gap-2" aria-label="Filtreleri aç">
+                    <Filter className="h-4 w-4" />
+                    {t("filters", "Filtreler")}
+                    {hasActiveFilters && (<Badge variant="secondary" className="ml-1">!</Badge>)}
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="bottom" className="h-[85vh] overflow-y-auto">
+                  <SheetHeader><SheetTitle>Filtreler</SheetTitle></SheetHeader>
+                  <div className="space-y-4 mt-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Promosyon</label>
+                      <Select value={filterPromotion} onValueChange={handleSetPromotion}>
+                        <SelectTrigger><SelectValue placeholder="Filtrele" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Tüm Promosyonlar</SelectItem>
+                          <SelectItem value="En Geç Yarın Kargoda">En Geç Yarın Kargoda</SelectItem>
+                          <SelectItem value="Hızlı Teslimat">Hızlı Teslimat</SelectItem>
+                          <SelectItem value="Sınırlı Stok">Sınırlı Stok</SelectItem>
+                          <SelectItem value="İndirim">İndirim</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Fiyat Aralığı</label>
+                      <Slider min={0} max={maxProductPrice} step={10} value={priceSlider} onValueChange={(val) => setPriceSlider(val as [number, number])} />
+                      <div className="flex justify-between text-xs text-muted-foreground"><span>₺{priceSlider[0].toLocaleString("tr-TR")}</span><span>₺{priceSlider[1].toLocaleString("tr-TR")}</span></div>
+                    </div>
+                    <label className="flex items-center gap-2">
+                      <input type="checkbox" checked={showOnlyInStock} onChange={(e) => handleToggleStock(e.target.checked)} className="w-4 h-4" />
+                      <span className="text-sm">Sadece Stokta</span>
+                    </label>
+                    <div className="flex gap-2 pt-2 sticky bottom-0 bg-background py-2">
+                      <Button variant="outline" onClick={clearFilters} className="flex-1">Temizle</Button>
+                      <Button onClick={() => setMobileFiltersOpen(false)} className="flex-1">Uygula</Button>
+                    </div>
+                  </div>
+                </SheetContent>
+              </Sheet>
+            ) : (
+              <Button
+                variant="outline"
+                onClick={() => setShowFilters(!showFilters)}
+                className="flex items-center gap-2"
+                aria-expanded={showFilters}
+                aria-controls="advanced-filters-panel"
+              >
+                <Filter className="h-4 w-4" />
+                {t("filters", "Filtreler")}
+                {hasActiveFilters && (<Badge variant="secondary" className="ml-1">!</Badge>)}
+              </Button>
+            )}
           </div>
 
           {/* Aktif filtre çipleri */}
           {hasActiveFilters && (
-            <div className="flex flex-wrap items-center gap-2 max-w-4xl mx-auto animate-fade-in">
+            <div className="flex flex-wrap items-center gap-2 max-w-4xl mx-auto motion-safe:animate-fade-in" role="region" aria-label="Aktif filtreler">
               <span className="text-xs text-muted-foreground">Aktif filtreler:</span>
               {searchQuery && (
-                <Badge variant="secondary" className="gap-1 pr-1">
+                <Badge variant="secondary" className="gap-1 pr-1 focus-within:ring-2 focus-within:ring-primary">
                   Arama: "{searchQuery}"
-                  <button onClick={() => setSearchQuery("")} className="hover:bg-muted-foreground/20 rounded p-0.5" aria-label="Aramayı temizle">
-                    <X className="h-3 w-3" />
+                  <button onClick={() => { setSearchQuery(""); handleChipRemove("search"); }} className="hover:bg-muted-foreground/20 rounded p-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary" aria-label={`Arama filtresini kaldır: ${searchQuery}`}>
+                    <X className="h-3 w-3" aria-hidden />
                   </button>
                 </Badge>
               )}
               {filterCategory !== "all" && (
-                <Badge variant="secondary" className="gap-1 pr-1">
+                <Badge variant="secondary" className="gap-1 pr-1 focus-within:ring-2 focus-within:ring-primary">
                   Kategori: {categories.find(c => c.id === filterCategory)?.name || ""}
-                  <button onClick={() => setFilterCategory("all")} className="hover:bg-muted-foreground/20 rounded p-0.5" aria-label="Kategori temizle">
-                    <X className="h-3 w-3" />
+                  <button onClick={() => { handleSetCategory("all"); handleChipRemove("category"); }} className="hover:bg-muted-foreground/20 rounded p-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary" aria-label="Kategori filtresini kaldır">
+                    <X className="h-3 w-3" aria-hidden />
                   </button>
                 </Badge>
               )}
               {filterPromotion !== "all" && (
-                <Badge variant="secondary" className="gap-1 pr-1">
+                <Badge variant="secondary" className="gap-1 pr-1 focus-within:ring-2 focus-within:ring-primary">
                   Etiket: {filterPromotion}
-                  <button onClick={() => setFilterPromotion("all")} className="hover:bg-muted-foreground/20 rounded p-0.5" aria-label="Etiket temizle">
-                    <X className="h-3 w-3" />
+                  <button onClick={() => { handleSetPromotion("all"); handleChipRemove("promotion"); }} className="hover:bg-muted-foreground/20 rounded p-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary" aria-label={`Etiket filtresini kaldır: ${filterPromotion}`}>
+                    <X className="h-3 w-3" aria-hidden />
                   </button>
                 </Badge>
               )}
               {showOnlyInStock && (
-                <Badge variant="secondary" className="gap-1 pr-1">
+                <Badge variant="secondary" className="gap-1 pr-1 focus-within:ring-2 focus-within:ring-primary">
                   Sadece stokta
-                  <button onClick={() => setShowOnlyInStock(false)} className="hover:bg-muted-foreground/20 rounded p-0.5" aria-label="Stok filtresini temizle">
-                    <X className="h-3 w-3" />
+                  <button onClick={() => { handleToggleStock(false); handleChipRemove("in_stock"); }} className="hover:bg-muted-foreground/20 rounded p-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary" aria-label="Stok filtresini kaldır">
+                    <X className="h-3 w-3" aria-hidden />
                   </button>
                 </Badge>
               )}
               {(priceRange.min || priceRange.max) && (
-                <Badge variant="secondary" className="gap-1 pr-1">
+                <Badge variant="secondary" className="gap-1 pr-1 focus-within:ring-2 focus-within:ring-primary">
                   Fiyat: {priceRange.min || 0} – {priceRange.max || "∞"}
-                  <button onClick={() => { setPriceRange({ min: "", max: "" }); setPriceSlider([0, maxProductPrice]); }} className="hover:bg-muted-foreground/20 rounded p-0.5" aria-label="Fiyat temizle">
-                    <X className="h-3 w-3" />
+                  <button onClick={() => { setPriceRange({ min: "", max: "" }); setPriceSlider([0, maxProductPrice]); handleChipRemove("price"); }} className="hover:bg-muted-foreground/20 rounded p-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary" aria-label="Fiyat filtresini kaldır">
+                    <X className="h-3 w-3" aria-hidden />
                   </button>
                 </Badge>
               )}
               <Button variant="ghost" size="sm" onClick={clearFilters} className="h-7 text-xs text-destructive hover:text-destructive">
+
                 Tümünü temizle
               </Button>
             </div>
@@ -391,13 +493,14 @@ const Products = () => {
 
           {/* Gelişmiş Filtreler */}
           {showFilters && (
-            <Card className="max-w-4xl mx-auto">
+            <Card className="max-w-4xl mx-auto motion-safe:animate-fade-in" id="advanced-filters-panel">
+
               <CardContent className="pt-6">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {/* Promosyon Filtresi */}
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Promosyon</label>
-                    <Select value={filterPromotion} onValueChange={setFilterPromotion}>
+                    <Select value={filterPromotion} onValueChange={handleSetPromotion}>
                       <SelectTrigger>
                         <SelectValue placeholder="Filtrele" />
                       </SelectTrigger>
@@ -436,7 +539,7 @@ const Products = () => {
                         <input
                           type="checkbox"
                           checked={showOnlyInStock}
-                          onChange={(e) => setShowOnlyInStock(e.target.checked)}
+                          onChange={(e) => handleToggleStock(e.target.checked)}
                           className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
                         />
                         <span className="text-sm">Sadece Stokta</span>

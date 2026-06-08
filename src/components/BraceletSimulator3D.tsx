@@ -108,18 +108,21 @@ export const BraceletSimulator3D = ({
   }, [enabled]);
 
   const beads = useMemo(() => {
-    const arr: Array<{ key: string; label: string; color: string; kind: "name" | "charm" | "spacer" }> = [];
+    const arr: Array<{ key: string; label: string; color: string; kind: "name" | "charm" | "spacer"; imageUrl?: string | null }> = [];
     const letters = (customName || "").toUpperCase().replace(/\s+/g, "").slice(0, 12).split("");
     letters.forEach((ch, i) => arr.push({ key: `n${i}`, label: ch, color: beadColor, kind: "name" }));
     ornaments.forEach((o) => {
       for (let i = 0; i < (o.quantity || 1); i++) {
         let h = 0; for (let j = 0; j < o.name.length; j++) h = (h * 31 + o.name.charCodeAt(j)) >>> 0;
-        arr.push({ key: `${o.id}-${i}`, label: o.name, color: `hsl(${h % 360}, 65%, 55%)`, kind: "charm" });
+        arr.push({
+          key: `${o.id}-${i}`,
+          label: o.name,
+          color: `hsl(${h % 360}, 65%, 55%)`,
+          kind: "charm",
+          imageUrl: (o as any).image_url || null,
+        });
       }
     });
-    if (arr.length === 0) {
-      for (let i = 0; i < 12; i++) arr.push({ key: `sp${i}`, label: "", color: beadColor, kind: "spacer" });
-    }
     return arr;
   }, [customName, ornaments, beadColor]);
 
