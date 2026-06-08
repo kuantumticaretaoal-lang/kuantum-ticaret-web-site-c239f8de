@@ -539,7 +539,7 @@ const Products = () => {
                         <input
                           type="checkbox"
                           checked={showOnlyInStock}
-                          onChange={(e) => setShowOnlyInStock(e.target.checked)}
+                          onChange={(e) => handleToggleStock(e.target.checked)}
                           className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
                         />
                         <span className="text-sm">Sadece Stokta</span>
