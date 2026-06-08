@@ -365,7 +365,7 @@ const Products = () => {
             </div>
             
             {/* Sıralama - Filtrelerin dışında */}
-            <Select value={sortBy} onValueChange={setSortBy}>
+            <Select value={sortBy} onValueChange={handleSetSort}>
               <SelectTrigger className="w-full sm:w-48">
                 <ArrowUpDown className="h-4 w-4 mr-2" />
                 <SelectValue placeholder={t("sort", "Sırala")} />
@@ -379,65 +379,109 @@ const Products = () => {
                 <SelectItem value="rating">{t("most_rated", "En Çok Değerlendirilen")}</SelectItem>
               </SelectContent>
             </Select>
-            
-            <Button
-              variant="outline"
-              onClick={() => setShowFilters(!showFilters)}
-              className="flex items-center gap-2"
-            >
-              <Filter className="h-4 w-4" />
-              {t("filters", "Filtreler")}
-              {hasActiveFilters && (
-                <Badge variant="secondary" className="ml-1">!</Badge>
-              )}
-            </Button>
+
+            {isMobile ? (
+              <Sheet open={mobileFiltersOpen} onOpenChange={setMobileFiltersOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="outline" className="flex items-center gap-2" aria-label="Filtreleri aç">
+                    <Filter className="h-4 w-4" />
+                    {t("filters", "Filtreler")}
+                    {hasActiveFilters && (<Badge variant="secondary" className="ml-1">!</Badge>)}
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="bottom" className="h-[85vh] overflow-y-auto">
+                  <SheetHeader><SheetTitle>Filtreler</SheetTitle></SheetHeader>
+                  <div className="space-y-4 mt-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Promosyon</label>
+                      <Select value={filterPromotion} onValueChange={handleSetPromotion}>
+                        <SelectTrigger><SelectValue placeholder="Filtrele" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Tüm Promosyonlar</SelectItem>
+                          <SelectItem value="En Geç Yarın Kargoda">En Geç Yarın Kargoda</SelectItem>
+                          <SelectItem value="Hızlı Teslimat">Hızlı Teslimat</SelectItem>
+                          <SelectItem value="Sınırlı Stok">Sınırlı Stok</SelectItem>
+                          <SelectItem value="İndirim">İndirim</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Fiyat Aralığı</label>
+                      <Slider min={0} max={maxProductPrice} step={10} value={priceSlider} onValueChange={(val) => setPriceSlider(val as [number, number])} />
+                      <div className="flex justify-between text-xs text-muted-foreground"><span>₺{priceSlider[0].toLocaleString("tr-TR")}</span><span>₺{priceSlider[1].toLocaleString("tr-TR")}</span></div>
+                    </div>
+                    <label className="flex items-center gap-2">
+                      <input type="checkbox" checked={showOnlyInStock} onChange={(e) => handleToggleStock(e.target.checked)} className="w-4 h-4" />
+                      <span className="text-sm">Sadece Stokta</span>
+                    </label>
+                    <div className="flex gap-2 pt-2 sticky bottom-0 bg-background py-2">
+                      <Button variant="outline" onClick={clearFilters} className="flex-1">Temizle</Button>
+                      <Button onClick={() => setMobileFiltersOpen(false)} className="flex-1">Uygula</Button>
+                    </div>
+                  </div>
+                </SheetContent>
+              </Sheet>
+            ) : (
+              <Button
+                variant="outline"
+                onClick={() => setShowFilters(!showFilters)}
+                className="flex items-center gap-2"
+                aria-expanded={showFilters}
+                aria-controls="advanced-filters-panel"
+              >
+                <Filter className="h-4 w-4" />
+                {t("filters", "Filtreler")}
+                {hasActiveFilters && (<Badge variant="secondary" className="ml-1">!</Badge>)}
+              </Button>
+            )}
           </div>
 
           {/* Aktif filtre çipleri */}
           {hasActiveFilters && (
-            <div className="flex flex-wrap items-center gap-2 max-w-4xl mx-auto animate-fade-in">
+            <div className="flex flex-wrap items-center gap-2 max-w-4xl mx-auto motion-safe:animate-fade-in" role="region" aria-label="Aktif filtreler">
               <span className="text-xs text-muted-foreground">Aktif filtreler:</span>
               {searchQuery && (
-                <Badge variant="secondary" className="gap-1 pr-1">
+                <Badge variant="secondary" className="gap-1 pr-1 focus-within:ring-2 focus-within:ring-primary">
                   Arama: "{searchQuery}"
-                  <button onClick={() => setSearchQuery("")} className="hover:bg-muted-foreground/20 rounded p-0.5" aria-label="Aramayı temizle">
-                    <X className="h-3 w-3" />
+                  <button onClick={() => { setSearchQuery(""); handleChipRemove("search"); }} className="hover:bg-muted-foreground/20 rounded p-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary" aria-label={`Arama filtresini kaldır: ${searchQuery}`}>
+                    <X className="h-3 w-3" aria-hidden />
                   </button>
                 </Badge>
               )}
               {filterCategory !== "all" && (
-                <Badge variant="secondary" className="gap-1 pr-1">
+                <Badge variant="secondary" className="gap-1 pr-1 focus-within:ring-2 focus-within:ring-primary">
                   Kategori: {categories.find(c => c.id === filterCategory)?.name || ""}
-                  <button onClick={() => setFilterCategory("all")} className="hover:bg-muted-foreground/20 rounded p-0.5" aria-label="Kategori temizle">
-                    <X className="h-3 w-3" />
+                  <button onClick={() => { handleSetCategory("all"); handleChipRemove("category"); }} className="hover:bg-muted-foreground/20 rounded p-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary" aria-label="Kategori filtresini kaldır">
+                    <X className="h-3 w-3" aria-hidden />
                   </button>
                 </Badge>
               )}
               {filterPromotion !== "all" && (
-                <Badge variant="secondary" className="gap-1 pr-1">
+                <Badge variant="secondary" className="gap-1 pr-1 focus-within:ring-2 focus-within:ring-primary">
                   Etiket: {filterPromotion}
-                  <button onClick={() => setFilterPromotion("all")} className="hover:bg-muted-foreground/20 rounded p-0.5" aria-label="Etiket temizle">
-                    <X className="h-3 w-3" />
+                  <button onClick={() => { handleSetPromotion("all"); handleChipRemove("promotion"); }} className="hover:bg-muted-foreground/20 rounded p-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary" aria-label={`Etiket filtresini kaldır: ${filterPromotion}`}>
+                    <X className="h-3 w-3" aria-hidden />
                   </button>
                 </Badge>
               )}
               {showOnlyInStock && (
-                <Badge variant="secondary" className="gap-1 pr-1">
+                <Badge variant="secondary" className="gap-1 pr-1 focus-within:ring-2 focus-within:ring-primary">
                   Sadece stokta
-                  <button onClick={() => setShowOnlyInStock(false)} className="hover:bg-muted-foreground/20 rounded p-0.5" aria-label="Stok filtresini temizle">
-                    <X className="h-3 w-3" />
+                  <button onClick={() => { handleToggleStock(false); handleChipRemove("in_stock"); }} className="hover:bg-muted-foreground/20 rounded p-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary" aria-label="Stok filtresini kaldır">
+                    <X className="h-3 w-3" aria-hidden />
                   </button>
                 </Badge>
               )}
               {(priceRange.min || priceRange.max) && (
-                <Badge variant="secondary" className="gap-1 pr-1">
+                <Badge variant="secondary" className="gap-1 pr-1 focus-within:ring-2 focus-within:ring-primary">
                   Fiyat: {priceRange.min || 0} – {priceRange.max || "∞"}
-                  <button onClick={() => { setPriceRange({ min: "", max: "" }); setPriceSlider([0, maxProductPrice]); }} className="hover:bg-muted-foreground/20 rounded p-0.5" aria-label="Fiyat temizle">
-                    <X className="h-3 w-3" />
+                  <button onClick={() => { setPriceRange({ min: "", max: "" }); setPriceSlider([0, maxProductPrice]); handleChipRemove("price"); }} className="hover:bg-muted-foreground/20 rounded p-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary" aria-label="Fiyat filtresini kaldır">
+                    <X className="h-3 w-3" aria-hidden />
                   </button>
                 </Badge>
               )}
               <Button variant="ghost" size="sm" onClick={clearFilters} className="h-7 text-xs text-destructive hover:text-destructive">
+
                 Tümünü temizle
               </Button>
             </div>
