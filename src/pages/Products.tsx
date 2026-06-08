@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate, useLocation } from "react-router-dom";
 import { addToCart } from "@/lib/cart";
@@ -24,6 +24,9 @@ import { ProductCardImage } from "@/components/ProductCardImage";
 import { useTranslations } from "@/hooks/use-translations";
 import * as LucideIcons from "lucide-react";
 import SEO from "@/components/SEO";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { trackFilterEvent } from "@/lib/filter-tracker";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface Category {
   id: string;
