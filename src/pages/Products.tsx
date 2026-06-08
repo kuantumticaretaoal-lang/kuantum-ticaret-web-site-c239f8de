@@ -36,25 +36,34 @@ interface Category {
   sort_order: number;
 }
 
+const FILTER_STORAGE_KEY = "products_filters_v1";
+const loadStored = () => {
+  try { return JSON.parse(localStorage.getItem(FILTER_STORAGE_KEY) || "{}"); } catch { return {}; }
+};
+
 const Products = () => {
+  const stored = (typeof window !== "undefined") ? loadStored() : {};
   const [products, setProducts] = useState<any[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [productTranslations, setProductTranslations] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(true);
-  const [sortBy, setSortBy] = useState<string>("newest");
-  const [filterPromotion, setFilterPromotion] = useState<string>("all");
-  const [filterCategory, setFilterCategory] = useState<string>("all");
-  const [showOnlyInStock, setShowOnlyInStock] = useState<boolean>(false);
+  const [sortBy, setSortBy] = useState<string>(stored.sortBy || "newest");
+  const [filterPromotion, setFilterPromotion] = useState<string>(stored.filterPromotion || "all");
+  const [filterCategory, setFilterCategory] = useState<string>(stored.filterCategory || "all");
+  const [showOnlyInStock, setShowOnlyInStock] = useState<boolean>(stored.showOnlyInStock || false);
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const [priceRange, setPriceRange] = useState({ min: "", max: "" });
-  const [priceSlider, setPriceSlider] = useState<[number, number]>([0, 50000]);
+  const [priceRange, setPriceRange] = useState({ min: stored.priceMin || "", max: stored.priceMax || "" });
+  const [priceSlider, setPriceSlider] = useState<[number, number]>(stored.priceSlider || [0, 50000]);
   const [maxProductPrice, setMaxProductPrice] = useState(50000);
   const [showFilters, setShowFilters] = useState(false);
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const isMobile = useIsMobile();
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
   const { toggleFavorite, isFavorite } = useFavorites();
   const { t, formatPrice, currentLanguage } = useTranslations();
+  const lastResultCountRef = useRef<number>(0);
 
   const getPromoBadgeConfig = (badge: string) => {
     const b = (badge || "").toLowerCase();
