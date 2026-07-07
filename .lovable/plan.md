@@ -1,54 +1,83 @@
-# Siteye Bariz Etki Yapacak Geliştirmeler
+# Site Geliştirme Planı
 
-Mevcut kodu inceledim. Aşağıdaki geliştirmeler kullanıcıların ilk bakışta hissedeceği, "vay" dedirten farklar yaratır — hepsi mevcut altyapıyla uyumlu.
+Mevcut kod tabanı analiz edildi. Aşağıdaki iyileştirmeler tek komutla uygulanmaya hazır. Her madde bağımsız olarak uygulanabilir; onay verdiğinde hepsi sırayla yapılacak.
 
-## 1. Hero & Ana Sayfa Cilası
-- Hero'ya canlı 3D bileklik önizlemesi (zaten var olan `BraceletSimulator3D`'yi küçük, otomatik dönen "showcase" modunda hero'nun sağına yerleştir).
-- Sayı sayaçlı sosyal kanıt şeridi: "X+ mutlu müşteri • Y+ teslim edilen sipariş • Z ülkeye kargo" — `framer-motion` ile sayaç animasyonu.
-- Hero CTA'ya parıltı (shine) ve mıknatıs-hover mikro etkileşimi.
+## 1. Performans & Core Web Vitals
+- **Hero LCP**: `index.html` içine hero görseli için `<link rel="preload" as="image" fetchpriority="high">` ekle.
+- **Route prefetch**: Navbar linklerine hover'da `import()` prefetch (Products, Cart, ProductDetail).
+- **Image lazy + AVIF/WebP**: `vite-imagetools` ile ürün kart görsellerini otomatik dönüştür; `<img loading="lazy" decoding="async">` standardı.
+- **Font display swap**: Google Fonts linkine `&display=swap` ve `preconnect`.
+- **Bundle küçültme**: `framer-motion` gibi ağır kütüphaneleri sadece animasyon gerektiren bileşenlerde dinamik import.
 
-## 2. Ürün Kartı & Liste Deneyimi
-- Ürün kartına hover'da ikinci görsel geçişi + hızlı "Sepete Ekle" / "Hızlı Bakış" üst katman.
-- Liste sayfasında **sticky filtre çubuğu** ve seçili filtreler için chip'ler (tek tıkla kaldır).
-- Skeleton'ları gerçek karta birebir uyacak şekilde yenile (CLS sıfır).
+## 2. SEO
+- **Route başına meta**: FAQPage, PoliciesPage, ContactPage, SponsorsPage, FollowPage, PremiumPage, LoginPage, RegisterPage için eksik `<SEO>` bileşeni ekle.
+- **JSON-LD**: Organization, WebSite (SearchAction), BreadcrumbList, Product, FAQPage şemaları.
+- **Sitemap dinamik**: `scripts/generate-sitemap.ts` — ürün ve blog satırlarını Supabase'den çekip her build'de yaz.
+- **robots.txt** Sitemap satırı ekle.
+- **hreflang**: Aktif diller için `<link rel="alternate" hreflang>`.
 
-## 3. Ürün Detayı Wow Faktörleri
-- Görsel galeriye **360° dönen ürün modu** (zaten ImageZoom var, bunun yanına eklenir).
-- "Birlikte tasarla" yapışkan yan paneli: kullanıcı isim yazdıkça hem 3D hem fiyat hem teslim tarihi anlık güncellenir.
-- "Şu anda X kişi bakıyor" + "Son 24 saatte Y sipariş" canlı urgency rozeti (mevcut `UrgencyIndicators`'ı zenginleştir).
+## 3. Erişilebilirlik (a11y)
+- Icon-only butonlara `aria-label` (Navbar, CartDrawer, FavoriteButton, ShareButtons).
+- Tek `<main>` sarmalayıcı her route için.
+- Kontrast: `text-muted-foreground/50` gibi düşük kontrastları token'a çevir.
+- Focus-visible ring standartlaştır.
+- Skip-to-content linki.
 
-## 4. Sepet & Checkout Sürtünme Azaltma
-- Sepete eklemede tam sayfa yerine **slide-over (Sheet) drawer** — kullanıcı listede kalır.
-- Ücretsiz kargo eşiği için ilerleme çubuğu: "65₺ daha ekle, kargo bedava".
-- Tek sayfalık checkout iyileştirmesi: adres + kargo + ödeme adımlarını accordion ile aynı sayfada.
+## 4. Dönüşüm & UX
+- **Sepet kurtarma micro-CTA**: Ürün detayda "3 kişi bu ürünü sepete ekledi" (mevcut urgency verisi).
+- **Wishlist → Sepete taşı** tek tıkla toplu.
+- **Ödeme sonrası cross-sell**: Sipariş onayında "sıkça birlikte alınanlar".
+- **Boş durumlar**: FavoritesPage, CartPage, SearchResults için illustrated empty states.
+- **Loading skeleton'ları**: Products grid, ProductDetail için tam iskelet.
+- **Toast → Sonner standardı** (çift toast sistemi var, tekilleştir).
 
-## 5. Marka Hissi & Mikro-etkileşim
-- Sayfa geçişlerinde framer-motion fade/slide.
-- Buton, badge ve favori kalbi için tactile mikro animasyonlar (spring).
-- Dark mode'a özel cam (glassmorphism) navbar.
-- Tutarlı boş durum illüstrasyonları (`EmptyState`'i tüm sayfalarda kullan).
+## 5. Mobil
+- Bottom nav'da aktif rota göstergesi (haptic hover).
+- Sepet drawer'da swipe-to-close.
+- Ürün galerisinde pinch-zoom (mevcut ImageZoom mobil optimize).
+- Tap hedefleri min 44×44.
 
-## 6. Güven & Dönüşüm Sinyalleri
-- Üst bilgi şeridine: "Aynı gün kargo • 14 gün iade • Güvenli ödeme" rotasyonlu metin.
-- Ürün detayı altına gerçek müşteri fotoğraflı yorum karuseli.
-- Footer üstüne mini SSS akordeonu (en çok sorulan 4 soru).
+## 6. Güvenlik & Backend
+- Rate-limit login endpoint'i (mevcut localStorage'ı server-side'a taşı — edge function).
+- Newsletter double opt-in (Resend doğrulama e-postası).
+- CSP header'ları `index.html`'e meta tag olarak.
+- RLS denetimi: `visitor_analytics`, `filter_events`, `cart` tablolarında anon insert politikaları gözden geçir.
 
----
+## 7. Admin Paneli
+- **Dashboard KPI kartları**: bugün siparişler, ciro, dönüşüm oranı, terk sepet.
+- **Grafikler**: Son 30 gün ciro/sipariş trend (recharts).
+- **Hızlı aksiyonlar**: yeni ürün, kupon, banner.
+- **Toplu işlem**: sipariş durumu bulk update, ürün stok bulk edit.
+- **Excel export** tüm listelere.
 
-## Teknik Detay
-- Yeni paket gerekmez (`framer-motion`, `three`, `drei` zaten kurulu).
-- Hero showcase için `BraceletSimulator3D`'ye `autoplay` + `compact` prop'u eklenir, lazy yüklenir (CWV korunur).
-- Slide-over sepet için mevcut `Sheet` bileşeni kullanılır; `cart.ts` API'si değişmez.
-- Sticky filtre + chip'ler `Products.tsx` içinde, mevcut filtre state'i üzerinden.
-- Ücretsiz kargo eşiği `shipping_companies` tablosundan okunur (zaten var).
-- Sayfa geçiş animasyonları `App.tsx`'te `AnimatePresence` ile sarılır.
+## 8. Bileklik Simülatörü
+- İpli/deri seçenekleri için farklı materyal preset'i.
+- Ekran görüntüsü çözünürlük seçimi (1x/2x/3x).
+- URL paylaşımı (query string ile konfig).
+- Kayıtlı taslaklar (kullanıcı hesabına).
 
-## Öncelik Sırası (etki/efor)
-1. Slide-over sepet + kargo eşiği çubuğu
-2. Ürün kartı hover + ikinci görsel
-3. Hero 3D showcase + sosyal kanıt sayaçları
-4. Sticky filtre + chip'ler
-5. Ürün detayı yapışkan tasarım paneli
-6. Mikro-etkileşimler ve cam navbar
+## 9. Analitik
+- **Funnel raporu**: ziyaret → ürün detay → sepet → checkout → satın alma.
+- **Isı haritası**: en çok tıklanan bölümler (basit event tracker).
+- **Ürün performansı**: mevcut sekmeyi görsel grafiklerle zenginleştir.
 
-Hepsini sırayla uygulayabilirim, ya da sadece seçtiklerini. Onayla, başlayayım.
+## 10. İçerik & Pazarlama
+- Blog yorumları.
+- SSS içi arama.
+- E-posta şablonlarını Resend/React Email ile modernize.
+- WhatsApp destek butonu (mevcut sosyal medya verisinden).
+
+## Teknik Notlar
+- Tüm değişiklikler mevcut design token'ları (`index.css`) korur, hardcoded renk yok.
+- Migration'lar `GRANT` blokları ile birlikte.
+- TypeScript strict uyumlu, tsgo temiz.
+- Sonrasında SEO scan otomatik tetiklenir.
+
+## Uygulama Sırası
+1. Perf + SEO meta (kritik, hemen ölçülebilir)
+2. a11y düzeltmeleri
+3. Admin dashboard & analitik
+4. Bileklik & UX polisajları
+5. Backend/güvenlik sertleştirme
+
+Onayla, hepsini sırayla uygulayayım.
