@@ -55,6 +55,12 @@ const AppContent = () => {
   
   return (
     <>
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:rounded-md focus:bg-primary focus:px-4 focus:py-2 focus:text-primary-foreground focus:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      >
+        İçeriğe atla
+      </a>
       <ScrollToTop />
       <VisitorTracker />
       <CookieConsent />
@@ -62,6 +68,7 @@ const AppContent = () => {
       <PushNotificationManager />
       <MobileBottomNav />
       <ExitIntentPopup />
+
       <Suspense fallback={null}>
         <Routes>
           <Route path="/" element={<Index />} />
