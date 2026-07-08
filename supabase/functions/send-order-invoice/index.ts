@@ -19,30 +19,31 @@ const buildInvoiceHTML = (order: any, profile: any): string => {
   const itemRows = items.map((item: any, i: number) => `
     <tr>
       <td style="border:1px solid #ddd;padding:8px;text-align:center">${i + 1}</td>
-      <td style="border:1px solid #ddd;padding:8px">${item.products?.title || item.custom_name || '-'}</td>
-      <td style="border:1px solid #ddd;padding:8px;text-align:center">${item.selected_size || '-'}</td>
-      <td style="border:1px solid #ddd;padding:8px;text-align:center">${item.quantity}</td>
-      <td style="border:1px solid #ddd;padding:8px;text-align:right">₺${Number(item.price).toLocaleString('tr-TR', { minimumFractionDigits: 2 })}</td>
-      <td style="border:1px solid #ddd;padding:8px;text-align:right">₺${(Number(item.price) * item.quantity).toLocaleString('tr-TR', { minimumFractionDigits: 2 })}</td>
+      <td style="border:1px solid #ddd;padding:8px">${esc(item.products?.title || item.custom_name || '-')}</td>
+      <td style="border:1px solid #ddd;padding:8px;text-align:center">${esc(item.selected_size || '-')}</td>
+      <td style="border:1px solid #ddd;padding:8px;text-align:center">${Number(item.quantity) || 0}</td>
+      <td style="border:1px solid #ddd;padding:8px;text-align:right">₺${(Number(item.price)||0).toLocaleString('tr-TR', { minimumFractionDigits: 2 })}</td>
+      <td style="border:1px solid #ddd;padding:8px;text-align:right">₺${((Number(item.price)||0) * (Number(item.quantity)||0)).toLocaleString('tr-TR', { minimumFractionDigits: 2 })}</td>
     </tr>
   `).join('');
 
-  const subtotal = Number(order.subtotal_amount) || items.reduce((s: number, it: any) => s + Number(it.price) * it.quantity, 0);
+  const subtotal = Number(order.subtotal_amount) || items.reduce((s: number, it: any) => s + (Number(it.price)||0) * (Number(it.quantity)||0), 0);
   const discount = Number(order.discount_amount) || 0;
   const shipping = Number(order.shipping_fee) || 0;
   const total = Number(order.total_amount) || (subtotal - discount + shipping);
-  const customerName = profile ? `${profile.first_name ?? ''} ${profile.last_name ?? ''}`.trim() : '-';
-  const customerEmail = profile?.email || '-';
-  const customerPhone = profile?.phone || '-';
-  const customerAddress = profile ? `${profile.address ?? ''}, ${profile.district ?? ''}, ${profile.province ?? ''}` : '-';
-  const invoiceDate = new Date(order.created_at).toLocaleDateString('tr-TR');
+  const customerName = esc(profile ? `${profile.first_name ?? ''} ${profile.last_name ?? ''}`.trim() || '-' : '-');
+  const customerEmail = esc(profile?.email || '-');
+  const customerPhone = esc(profile?.phone || '-');
+  const customerAddress = esc(profile ? `${profile.address ?? ''}, ${profile.district ?? ''}, ${profile.province ?? ''}` : '-');
+  const invoiceDate = esc(new Date(order.created_at).toLocaleDateString('tr-TR'));
+  const orderCode = esc(order.order_code || '-');
 
-  return `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Fatura ${order.order_code}</title></head>
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Fatura ${orderCode}</title></head>
 <body style="font-family:Arial,sans-serif;color:#333;max-width:800px;margin:0 auto;padding:40px">
-  ${order.returned_at ? `<div style="background:#fef2f2;border:2px solid #dc2626;border-radius:8px;padding:16px;margin-bottom:24px;color:#991b1b"><div style="font-weight:bold">⚠ İADE EDİLEN SİPARİŞ</div><div style="font-size:13px">Bu sipariş ${new Date(order.returned_at).toLocaleString('tr-TR')} tarihinde başarıyla iade edilmiştir.</div></div>` : ''}
+  ${order.returned_at ? `<div style="background:#fef2f2;border:2px solid #dc2626;border-radius:8px;padding:16px;margin-bottom:24px;color:#991b1b"><div style="font-weight:bold">⚠ İADE EDİLEN SİPARİŞ</div><div style="font-size:13px">Bu sipariş ${esc(new Date(order.returned_at).toLocaleString('tr-TR'))} tarihinde başarıyla iade edilmiştir.</div></div>` : ''}
   <div style="display:flex;justify-content:space-between;border-bottom:3px solid #1e40af;padding-bottom:20px;margin-bottom:30px">
     <div><h2 style="color:#1e40af;margin:0">KUANTUM TİCARET</h2><div style="font-size:12px;color:#666">E-Ticaret Hizmetleri</div></div>
-    <div style="text-align:right"><h2 style="color:#1e40af;margin:0">FATURA</h2><div style="font-size:13px"><strong>No:</strong> ${order.order_code}</div><div style="font-size:13px"><strong>Tarih:</strong> ${invoiceDate}</div></div>
+    <div style="text-align:right"><h2 style="color:#1e40af;margin:0">FATURA</h2><div style="font-size:13px"><strong>No:</strong> ${orderCode}</div><div style="font-size:13px"><strong>Tarih:</strong> ${invoiceDate}</div></div>
   </div>
   <div style="margin-bottom:20px">
     <strong>Müşteri:</strong> ${customerName}<br/>
