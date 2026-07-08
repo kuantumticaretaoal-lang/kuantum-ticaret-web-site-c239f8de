@@ -8,10 +8,34 @@ const corsHeaders = {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
-  const supabase = createClient(
-    Deno.env.get("SUPABASE_URL")!,
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-  );
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+
+  // AUTH: service role OR admin JWT only (destructive state-changing job)
+  const authHeader = req.headers.get("Authorization") || "";
+  const bearer = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : "";
+  let authorized = bearer === serviceKey;
+  if (!authorized && bearer) {
+    const userClient = createClient(supabaseUrl, anonKey, {
+      global: { headers: { Authorization: authHeader } },
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
+    const { data: userData } = await userClient.auth.getUser();
+    if (userData?.user) {
+      const { data: roleOk } = await userClient.rpc("has_role", {
+        _user_id: userData.user.id, _role: "admin",
+      });
+      if (roleOk) authorized = true;
+    }
+  }
+  if (!authorized) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
+  const supabase = createClient(supabaseUrl, serviceKey);
 
   // Cancel pending orders older than 48 hours
   const cutoff = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
