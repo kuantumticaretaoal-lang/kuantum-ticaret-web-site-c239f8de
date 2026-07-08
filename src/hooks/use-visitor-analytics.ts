@@ -14,11 +14,12 @@ export function useVisitorAnalytics() {
       if (!visitIdRef.current) return;
       const duration = Math.max(0, Math.round((Date.now() - startRef.current) / 1000));
       try {
+        // Only authenticated users can update their own rows (enforced server-side by RLS + trigger).
         await (supabase as any)
           .from("visitor_analytics")
           .update({ left_at: new Date().toISOString(), duration })
           .eq("id", visitIdRef.current);
-      } catch (e) {
+      } catch {
         // ignore
       } finally {
         visitIdRef.current = null;
@@ -32,31 +33,23 @@ export function useVisitorAnalytics() {
       if (user) {
         const { data, error } = await (supabase as any)
           .from("visitor_analytics")
-          .insert({
-            page_path: location.pathname,
-            user_id: user.id,
-          })
+          .insert({ page_path: location.pathname, user_id: user.id })
           .select("id")
           .single();
         if (!cancelled && !error && data?.id) {
           visitIdRef.current = data.id as string;
         }
       } else {
-        // Anonymous users: insert without requiring SELECT permission
+        // Anonymous visits: insert only (immutable, no duration/left_at tracking)
         await (supabase as any)
           .from("visitor_analytics")
-          .insert({
-            page_path: location.pathname,
-            user_id: null,
-          }, { returning: 'minimal' });
-        // No id available -> we won't update duration for anonymous sessions
+          .insert({ page_path: location.pathname, user_id: null }, { returning: "minimal" });
       }
     };
-    // Finish old visit then start a new one
+
     finalizePrevious().finally(startNew);
 
     const handleBeforeUnload = () => {
-      // Best-effort finalize; may not always complete
       if (!visitIdRef.current) return;
       const duration = Math.max(0, Math.round((Date.now() - startRef.current) / 1000));
       (supabase as any)
