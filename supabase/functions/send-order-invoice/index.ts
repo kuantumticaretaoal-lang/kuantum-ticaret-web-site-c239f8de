@@ -146,7 +146,7 @@ Deno.serve(async (req) => {
           from: "Kuantum Ticaret <onboarding@resend.dev>",
           to: [profile.email],
           subject: `Faturanız - Sipariş ${order.order_code}`,
-          html: `<p>Merhaba ${profile.first_name ?? ''},</p><p>Siparişiniz onaylandı. Faturanız aşağıdadır:</p>${html}`,
+          html: `<p>Merhaba ${esc(profile.first_name ?? '')},</p><p>Siparişiniz onaylandı. Faturanız aşağıdadır:</p>${html}`,
         }),
       });
       const emailJson = await emailRes.json();
