@@ -113,6 +113,9 @@ const CartPage = () => {
   };
 
   const loadIbanSettings = async () => {
+    // IBAN details are sensitive — fetch only for authenticated users at checkout.
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { setIbanSettings([]); return; }
     const { data } = await (supabase as any)
       .from("iban_settings")
       .select("*")
