@@ -24,6 +24,32 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+
+    // AUTH: internal callers must present the service role key; admin JWTs also accepted.
+    const authHeader = req.headers.get("Authorization") || "";
+    const bearer = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : "";
+    let authorized = bearer === supabaseServiceKey;
+    if (!authorized && bearer) {
+      const userClient = createClient(supabaseUrl, anonKey, {
+        global: { headers: { Authorization: authHeader } },
+        auth: { autoRefreshToken: false, persistSession: false },
+      });
+      const { data: userData } = await userClient.auth.getUser();
+      if (userData?.user) {
+        const { data: roleOk } = await userClient.rpc("has_role", {
+          _user_id: userData.user.id,
+          _role: "admin",
+        });
+        if (roleOk) authorized = true;
+      }
+    }
+    if (!authorized) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const { userId, checkAll }: AbandonedCartRequest = await req.json();
