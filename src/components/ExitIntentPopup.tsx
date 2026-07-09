@@ -27,16 +27,19 @@ const ExitIntentPopup = () => {
 
       setPopup(data);
 
+      const isMobile = typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches;
+
       if (data.show_on_load) {
         setTimeout(() => setOpen(true), data.show_delay_ms || 0);
       }
-      if (data.show_on_exit) {
+      if (data.show_on_exit && !isMobile) {
         const handler = (e: MouseEvent) => {
           if (e.clientY < 10) setOpen(true);
         };
         document.addEventListener("mouseleave", handler);
         return () => document.removeEventListener("mouseleave", handler);
       }
+
     })();
     return () => { mounted = false; };
   }, []);

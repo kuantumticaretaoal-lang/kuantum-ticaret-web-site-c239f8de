@@ -141,23 +141,26 @@ export const CookieConsent = () => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 p-4 bg-background border-t shadow-lg animate-in slide-in-from-bottom">
-      <div className="container mx-auto max-w-4xl">
+    <div
+      className="fixed bottom-0 left-0 right-0 z-[60] bg-background border-t shadow-2xl animate-in slide-in-from-bottom pb-[env(safe-area-inset-bottom)] md:bottom-4 md:left-4 md:right-4 md:rounded-2xl md:border"
+      style={{ maxHeight: "min(80vh, 640px)" }}
+    >
+      <div className="container mx-auto max-w-4xl flex flex-col" style={{ maxHeight: "inherit" }}>
         {!showDetails ? (
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <div className="flex-1">
-              <h3 className="font-semibold mb-1">🍪 Çerez Kullanımı</h3>
-              <p className="text-sm text-muted-foreground">
-                Size daha iyi bir deneyim sunmak için çerezler kullanıyoruz. 
+          <div className="flex flex-col gap-3 p-4 md:flex-row md:items-center md:justify-between md:gap-4 md:p-5 overflow-y-auto">
+            <div className="flex-1 min-w-0">
+              <h3 className="font-semibold mb-1 text-sm md:text-base">🍪 Çerez Kullanımı</h3>
+              <p className="text-xs md:text-sm text-muted-foreground leading-relaxed">
+                Size daha iyi bir deneyim sunmak için çerezler kullanıyoruz.
                 Tercihlerinizi yönetebilir veya tümünü kabul edebilirsiniz.
               </p>
               {policies.length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-2">
+                <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2">
                   {policies.map(p => (
                     <button
                       key={p.id}
                       onClick={() => { setSelectedPolicy(p); setShowDetails(true); }}
-                      className="text-xs text-primary underline hover:no-underline"
+                      className="text-[11px] md:text-xs text-primary underline hover:no-underline"
                     >
                       📄 {p.title}
                     </button>
@@ -165,7 +168,7 @@ export const CookieConsent = () => {
                 </div>
               )}
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 md:flex md:flex-wrap md:shrink-0">
               <Button variant="outline" size="sm" onClick={() => { setSelectedPolicy(null); setShowDetails(true); }}>
                 Tercihleri Yönet
               </Button>
@@ -177,6 +180,7 @@ export const CookieConsent = () => {
               </Button>
             </div>
           </div>
+
         ) : (
           <Dialog open={showDetails} onOpenChange={(open) => { setShowDetails(open); if (!open) setSelectedPolicy(null); }}>
             <DialogContent className="max-w-2xl">

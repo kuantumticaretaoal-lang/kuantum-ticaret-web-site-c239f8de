@@ -198,16 +198,18 @@ export const LiveSupportWidget = () => {
     return (
       <Button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg z-50"
+        aria-label="Canlı destek"
+        className="fixed right-4 bottom-20 md:right-6 md:bottom-6 h-12 w-12 md:h-14 md:w-14 rounded-full shadow-lg z-40"
         size="icon"
       >
-        <MessageCircle className="h-6 w-6" />
+        <MessageCircle className="h-5 w-5 md:h-6 md:w-6" />
       </Button>
     );
   }
 
   return (
-    <Card className="fixed bottom-6 right-6 w-80 sm:w-96 h-[500px] z-50 shadow-2xl flex flex-col">
+    <Card className="fixed right-2 left-2 bottom-20 md:left-auto md:right-6 md:bottom-6 md:w-96 max-h-[calc(100vh-6rem)] md:h-[500px] z-40 shadow-2xl flex flex-col">
+
       <CardHeader className="pb-2 flex-shrink-0">
         <CardTitle className="flex items-center justify-between text-base">
           <div className="flex items-center gap-2">
