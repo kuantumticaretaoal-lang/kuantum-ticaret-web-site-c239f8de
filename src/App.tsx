@@ -16,6 +16,7 @@ import VisitorTracker from "./components/VisitorTracker";
 import { CookieConsent } from "./components/CookieConsent";
 import { MobileBottomNav } from "./components/MobileBottomNav";
 import ExitIntentPopup from "./components/ExitIntentPopup";
+import RouteProgressBar from "./components/RouteProgressBar";
 
 const Products = lazy(() => import("./pages/Products"));
 const FAQPage = lazy(() => import("./pages/FAQPage"));
@@ -62,6 +63,7 @@ const AppContent = () => {
         İçeriğe atla
       </a>
       <ScrollToTop />
+      <RouteProgressBar />
       <VisitorTracker />
       <CookieConsent />
       <LiveSupportWidget />

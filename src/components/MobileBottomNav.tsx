@@ -41,8 +41,8 @@ export const MobileBottomNav = () => {
   if (location.pathname.startsWith("/admin")) return null;
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-t border-border md:hidden safe-area-bottom">
-      <div className="flex items-center justify-around h-16">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background/90 backdrop-blur-xl border-t border-border md:hidden safe-area-bottom shadow-[0_-4px_20px_-4px_rgba(0,0,0,0.15)]">
+      <div className="flex items-end justify-around h-16 px-1">
         {navItems.map((item) => {
           const isActive = location.pathname === item.path;
           const Icon = item.icon;
@@ -50,22 +50,42 @@ export const MobileBottomNav = () => {
             <button
               key={item.path}
               onClick={() => navigate(item.path)}
+              aria-label={item.label}
+              aria-current={isActive ? "page" : undefined}
               className={cn(
-                "flex flex-col items-center justify-center gap-0.5 flex-1 h-full transition-colors relative",
-                isActive ? "text-primary" : "text-muted-foreground"
+                "group relative flex flex-col items-center justify-center gap-0.5 flex-1 h-full transition-all",
+                isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
               )}
             >
+              <div
+                className={cn(
+                  "absolute inset-x-2 inset-y-1 rounded-2xl transition-all duration-300",
+                  isActive
+                    ? "bg-primary/10 scale-100 opacity-100"
+                    : "scale-75 opacity-0"
+                )}
+              />
               <div className="relative">
-                <Icon className="h-5 w-5" />
+                <Icon
+                  className={cn(
+                    "h-5 w-5 transition-transform duration-300",
+                    isActive ? "scale-110" : "group-hover:scale-105"
+                  )}
+                />
                 {item.path === "/cart" && cartCount > 0 && (
-                  <span className="absolute -top-1.5 -right-2.5 bg-primary text-primary-foreground text-[10px] font-bold rounded-full h-4 min-w-4 flex items-center justify-center px-1">
+                  <span className="absolute -top-1.5 -right-2.5 bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full h-4 min-w-4 flex items-center justify-center px-1 animate-in zoom-in">
                     {cartCount}
                   </span>
                 )}
               </div>
-              <span className="text-[10px] font-medium">{item.label}</span>
+              <span className={cn(
+                "text-[10px] font-medium relative transition-all",
+                isActive ? "font-bold" : ""
+              )}>
+                {item.label}
+              </span>
               {isActive && (
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-primary rounded-full" />
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-1 bg-primary rounded-b-full shadow-[0_0_8px_hsl(var(--primary))]" />
               )}
             </button>
           );
