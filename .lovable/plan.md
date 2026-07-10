@@ -1,115 +1,86 @@
+# Görünür UI/UX Yenileme + Bileklik Önizlemesi Yeniden Yapımı
 
-# Kapsamlı Site İyileştirme Planı
+## 1. Bileklik Önizlemesi — Tamamen Yeniden İnşa (BraceletSimulator3D.tsx)
 
-Amaç: Tüm cihazlarda sorunsuz görünüm, ekrana sığmayan öğelerin düzeltilmesi, gerçek verilere bağlı istatistikler ve göze çarpan görsel/UX iyileştirmeleri.
+Mevcut SVG halka, dairesel dizilim ve döndürme yüzünden hâlâ ucuz görünüyor. Yerine **dümdüz, gerçekçi yatay bileklik** yapılacak (Pandora / Trendyol takı ürün fotoğrafı estetiği).
 
-## 1. Acil Düzeltmeler (Responsive & Konumlandırma)
+**Yeni tasarım:**
+- Bileklik yatay, hafif bombeli bir eğri (SVG `path` kübik bezier) — iki uçta metalik kapaklar ve halka.
+- İp/deri dokusu: `pattern` ile örgü/tel doku + drop shadow + iç ışık.
+- Boncuklar/harfler ve süsler ipe **soldan sağa** dizilir. Fazla slot yok — sadece isim harfleri + süsler + araya küçük ayırıcı boncuklar (ilk/son + charmlar arası).
+- Harf boncukları: kare değil, gerçekçi küp (perspektif için hafif eğim + gradient + üstte parlama).
+- Süsler: gerçek `image_url` `<image>` içinde, üstünde asma halkası + gölge; imaj yoksa renkli disk + baş harf.
+- Boyut: yükseklik önemsiz, bileklik container'ın %90'ını yatayda kullanır — mobilde de düzgün.
+- Otomatik döndürme kaldırılır (yatayda mantıksız); yerine **hover'da hafif salınım** + "kolda gör" seçeneği (arka planı el fotoğrafına çeviren toggle).
+- Doku seçenekleri: deri / ip / metal zincir (üçü de farklı pattern).
+- Canlı sayaç: "N harf • N süs • ~cm uzunluk" tahmini.
+- İndir: mevcut PNG export korunur, boyut ürün fotoğrafı oranında (1600×900).
 
-### Çerez Bannerı (CookieConsent)
-- Mobilde tam ekran yerine alt kısımda kompakt, kaydırılabilir kart olarak yeniden tasarla
-- Maksimum yükseklik `max-h-[80vh]` + iç scroll, buton grubunu sticky footer yap
-- Küçük ekranlarda (< 400px) tek kolon layout, ikonları küçült
-- Safe-area padding (iOS notch) ekle
+## 2. Ana Sayfa Hero — Dinamik Ürün Vitrini
+- Sağdaki büyük logo kartını kaldır → yerine **3 ürünlü dönen kart yığını** (öne çıkan / en çok satan / yeni). Auto-slide 4sn, Framer Motion.
+- Sol tarafa: rozet ("★ 4.8 • X memnun müşteri"), altında **canlı akış**: "Son sipariş: Ali K. — 3 dk önce" (`orders`'tan son 5).
+- CTA butonlarına gerçek parıltı (mevcut var, iyileştirilecek) + ikon micro-animation.
 
-### AI Chatbot (LiveSupportWidget)
-- Mobil bottom nav ile çakışmayı önle: `bottom-20 md:bottom-6` konumlandırma
-- Açık durumdayken pencere boyutu `w-[calc(100vw-2rem)] max-w-sm` + `max-h-[70vh]`
-- Z-index hiyerarşisini düzelt (banner > widget > nav)
+## 3. Ürün Kartları — Belirgin Fark
+- Hover: kart 6px yukarı + primary glow shadow + resim hafif zoom (`scale-105`).
+- Sol üst köşede **çok katmanlı rozetler**: indirim %'si (kırmızı gradient), "Yeni" (yeşil pulse), "Son X adet" (turuncu flame animasyonu).
+- Sağ alta hızlı aksiyonlar (kalp + hızlı görünüm + karşılaştır) — hover'da fade in, mobilde daima görünür.
+- Fiyat: eski fiyat üstü çizili + yeni fiyat büyük + "₺X tasarruf" chip.
+- Yıldız puanı satırı + değerlendirme sayısı görünür.
 
-### Exit Intent Popup
-- Mobilde tetiklenmesin (scroll-up trigger'a çevir), padding küçült
+## 4. Navbar
+- Scroll'da glassmorphism (`backdrop-blur-xl bg-background/70`) + shrink (padding küçülür).
+- Aktif route altına animasyonlu underline (Framer `layoutId`).
+- Sepet ikonuna ürün eklendiğinde bounce + kırmızı ping badge.
 
-## 2. Gerçek Veri Entegrasyonu
+## 5. Ürün Detay Sayfası
+- Mobilde sticky alt bar: fiyat + "Sepete Ekle" (her zaman erişilebilir).
+- Galeri: ana resim yanında dikey thumbnails, hover'da magnifier lens.
+- "3 kişi bu ürüne bakıyor" (var olan urgency ile) — daha büyük ve dikkat çekici konumlandırma.
+- Sekmeler (Açıklama / Yorumlar / Sorular / Kargo): animasyonlu underline tab.
 
-### HeroStats Düzeltmesi
-- Şu an `Math.max(count, 50)` gibi minimum floor değerleri var — bunları kaldır, gerçek sayıları göster
-- `delivered` sipariş sayısı: doğrudan `orders` tablosundan
-- Müşteri sayısı: en az 1 delivered siparişi olan unique `user_id` sayısı (sadece kayıtlı değil, gerçekten alışveriş yapmış)
-- Ortalama puan: `product_reviews.rating` ortalaması (gerçek yıldız), yoksa alanı gizle
-- Kargo süresi: `shipping_settings`'ten ortalama teslim süresi
-- Loading skeleton ekle, boş veri durumunda ilgili stat'ı gizle
+## 6. Sepet / Checkout
+- Görsel adım göstergesi: Sepet → Adres → Ödeme → Onay (progress bar + tik animasyonu).
+- Boş sepet: illüstrasyon + "Öne çıkan ürünler" carousel.
+- Kupon kutusu: inline yeşil tik / kırmızı X anında feedback + toast.
+- Toplam kartı sticky (desktop sağda, mobil altta).
 
-## 3. Görünür UX/UI İyileştirmeleri
+## 7. Mobil Bottom Nav
+- Aktif item: pill background + üstte küçük primary indicator + scale animation.
+- Sepet/Favori ikonlarında dinamik badge (canlı sayı).
+- Ortaya "Ürünler" için **çıkıntılı FAB** (floating action button) — Trendyol tarzı.
 
-Aşağıdaki değişiklikler kullanıcı ve admin tarafından ilk bakışta fark edilecek şekilde tasarlanır:
+## 8. Genel Görsel Sistem
+- `index.css`'e ek tokenler: `--shadow-glow-primary`, `--shadow-card-hover`, `--gradient-mesh` (aurora arka plan), `--animation-shimmer`.
+- Skeleton loader standardı: shimmer efekti (mevcut ProductSkeleton dahil).
+- Sayfa geçişlerinde üstte ince progress bar (`RouteProgressBar`).
+- Görüntü yükleme: blur-up placeholder.
+- Reduce-motion prefers desteği (mevcut kısmen var, sistemleştirilecek).
 
-### 3.1 Hero Bölümü Yenileme
-- Sağdaki büyük statik logo kartını kaldır → yerine dönen/parlayan ürün karuseli (öne çıkan 3-4 ürün)
-- Arka plana animasyonlu gradient blob efekti
-- Başlık font-weight ve boyut hiyerarşisi güçlendir
+## 9. Küçük Ama Görünür Eklemeler
+- "Sizin İçin Seçtiklerimiz" — ürün listesinin üstünde, ziyaret geçmişine göre kişisel öneri şeridi.
+- Ana sayfa alt tarafına **son değerlendirmeler carousel'i** (5 yıldızlı gerçek yorumlar).
+- Fiyat düşüşü bildirimi rozeti (favorideki ürün ucuzladıysa hero'da toast).
+- "Bugünün fırsatı" geri sayımlı büyük banner (mevcut CampaignBanner'ın yanı sıra).
 
-### 3.2 Ürün Kartları
-- Hover efektlerini güçlendir: subtle lift + shadow-glow
-- "Yeni", "Çok Satan", "Stokta Az" rozetleri (halihazırda urgency var, görsel olarak iyileştir)
-- Favori kalp animasyonu (pulse + fill transition)
-- Mobilde 2 kolon grid, tap feedback
+## Teknik Özet
 
-### 3.3 Navbar
-- Scroll'da glassmorphism efekti (backdrop-blur intensifikasyon)
-- Aktif route için altı çizili gösterge animasyonu
-- Sepet ikonu üzerinde ürün eklendiğinde bounce animasyonu
+**Yeni dosyalar:**
+- `src/components/HeroProductShowcase.tsx` — dönen 3'lü ürün kartı yığını
+- `src/components/HeroLiveActivity.tsx` — canlı sipariş akışı
+- `src/components/RouteProgressBar.tsx` — sayfa geçiş progress
+- `src/components/CheckoutSteps.tsx` — 4 adımlı progress
+- `src/components/HomeReviewsCarousel.tsx` — anasayfa yorum şeridi
+- `src/components/PersonalRecommendations.tsx` — ürün sayfası önerileri
 
-### 3.4 Mobil Bottom Nav
-- Aktif tab için renkli pill background + haptic-feedback benzeri scale animation
-- Bildirim/sepet badge'leri daha görünür
+**Güncellenecek:**
+- `src/components/BraceletSimulator3D.tsx` — tamamen yeniden yazılır (yatay, gerçekçi)
+- `HeroSection.tsx`, `Navbar.tsx`, `MobileBottomNav.tsx`, `ProductCardImage.tsx` + ürün listesi kartı JSX'i (Products.tsx)
+- `ProductDetail.tsx` (sticky bar, tab, magnifier)
+- `CartPage.tsx` (adım göstergesi, boş state)
+- `index.css` (yeni tokenler + shimmer/aurora keyframes)
+- `tailwind.config.ts` (yeni shadow/animation)
 
-### 3.5 Loading States
-- Tüm sayfalarda skeleton loader'ları standartlaştır
-- Route geçişlerinde ince top progress bar (nprogress benzeri)
+**Backend:** Değişiklik yok — mevcut RLS/tablo yapıları kullanılır. Canlı sipariş akışı `orders` tablosundan (var olan RLS ile isim maskelenerek: `Ali K.`) çekilir.
 
-### 3.6 Ürün Detay Sayfası
-- Sticky "Sepete Ekle" barı (mobilde ekranın altında sabit)
-- Görsel galeri: zoom + swipe iyileştirme
-- "Bu üründen kaç kişi bakıyor" real-time gösterge (mevcut urgency'yi öne çıkar)
-
-### 3.7 Sepet & Checkout
-- Adım göstergesi (Sepet → Adres → Ödeme) progress bar
-- Boş sepet için illustrated empty state
-- Kupon input inline feedback (yeşil check / kırmızı X)
-
-### 3.8 Footer
-- Sosyal medya ikonlarına hover animasyonları
-- Newsletter kayıt form'unu görsel olarak öne çıkar
-
-### 3.9 Renk & Tipografi Rafinasyonu
-- Semantic token'lar korunur; `--shadow-elegant` ve `--gradient-primary` daha aktif kullanılır
-- H1/H2 için display font ağırlığı artırılır
-
-## 4. Erişilebilirlik & Performans
-- Tüm interaktif öğelere `focus-visible` ring
-- `prefers-reduced-motion` respect edilir (animasyonlar devre dışı)
-- Görsel `loading="lazy"` + `decoding="async"` denetimi
-- Hero image preload zaten mevcut, koru
-
-## Teknik Detaylar
-
-### Değişecek Dosyalar
-- `src/components/CookieConsent.tsx` — mobil layout yeniden
-- `src/components/LiveSupportWidget.tsx` — konum ve boyut
-- `src/components/ExitIntentPopup.tsx` — mobil davranış
-- `src/components/HeroStats.tsx` — gerçek query'ler, floor kaldırma
-- `src/components/HeroSection.tsx` — sağ karusel
-- `src/components/Navbar.tsx` — scroll glassmorphism
-- `src/components/MobileBottomNav.tsx` — aktif indicator
-- `src/components/ProductCardImage.tsx` — hover efekt
-- `src/components/Footer.tsx` — sosyal + newsletter
-- `src/pages/ProductDetail.tsx` — sticky CTA
-- `src/pages/CartPage.tsx` — step indicator
-- `src/index.css` — yeni animation keyframe'leri (blob, shimmer, pulse)
-
-### Yeni Dosyalar
-- `src/components/HeroProductCarousel.tsx` — öne çıkan ürün karuseli
-- `src/components/RouteProgressBar.tsx` — üst progress
-- `src/components/CheckoutSteps.tsx` — sepet adım göstergesi
-
-### Migration Yok
-- Sadece frontend değişiklikleri; DB şeması değişmez
-- HeroStats için mevcut RLS izinleriyle count query'leri yeterli
-
-## Uygulama Sırası
-1. Acil responsive düzeltmeler (cookie + chatbot + popup)
-2. HeroStats gerçek veri entegrasyonu
-3. Hero karusel + navbar glassmorphism
-4. Ürün kartı, mobil nav, footer animasyonları
-5. Sticky CTA + checkout steps
-6. Loading states + progress bar
+**Kalite çıtası:** Her değişiklik build sonrası preview'da görsel doğrulama. Bileklik için Playwright screenshot alınıp yeni tasarımın gerçekten farklı ve düzgün göründüğü teyit edilir.
