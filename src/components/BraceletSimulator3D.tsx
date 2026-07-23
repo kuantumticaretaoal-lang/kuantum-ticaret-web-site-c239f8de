@@ -241,15 +241,20 @@ export const BraceletSimulator3D = ({
       </CardHeader>
       <CardContent className="space-y-3">
         <div
-          className="w-full rounded-xl border overflow-hidden relative"
+          ref={containerRef}
+          className="w-full rounded-xl border overflow-hidden relative touch-none select-none cursor-grab active:cursor-grabbing"
           style={{
             height,
             background:
               "radial-gradient(ellipse at center, hsl(var(--muted)) 0%, hsl(var(--background)) 70%)",
           }}
-          onMouseEnter={() => setHovering(true)}
-          onMouseLeave={() => setHovering(false)}
-          aria-label="Bileklik önizleme alanı"
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={onPointerUp}
+          onPointerCancel={onPointerUp}
+          onWheel={onWheel}
+          onDoubleClick={resetView}
+          aria-label="Bileklik önizleme alanı — sürükleyip döndürebilir, kaydırarak yakınlaştırabilirsiniz"
         >
           <svg
             ref={svgRef}
@@ -259,8 +264,9 @@ export const BraceletSimulator3D = ({
             role="img"
             aria-label={`Bileklik: ${customName || "isim yok"}, ${charmSlots.length} süs`}
             style={{
-              transition: "transform 0.6s cubic-bezier(.2,.7,.2,1)",
-              transform: hovering ? "translateY(-4px) rotate(-1deg)" : "none",
+              transition: dragState.current.active ? "none" : "transform 0.25s ease-out",
+              transform: `scale(${zoom}) rotate(${rotate}deg)`,
+              transformOrigin: "50% 50%",
             }}
           >
             <defs>
