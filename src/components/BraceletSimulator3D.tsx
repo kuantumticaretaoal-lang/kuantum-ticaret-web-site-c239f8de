@@ -190,7 +190,26 @@ export const BraceletSimulator3D = ({
     });
   }, [sequence]);
 
-  const approxCm = Math.round(8 + sequence.length * 1.1);
+  const sizeCm = { S: 15, M: 17, L: 19, XL: 21 }[size];
+  const approxCm = Math.round(sizeCm + Math.max(0, sequence.length - 8) * 0.3);
+
+  const onPointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
+    dragState.current = { x: e.clientX, y: e.clientY, rot: rotate, active: true };
+  }, [rotate]);
+  const onPointerMove = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    if (!dragState.current.active) return;
+    const dx = e.clientX - dragState.current.x;
+    setRotate(dragState.current.rot + dx * 0.4);
+  }, []);
+  const onPointerUp = useCallback(() => {
+    dragState.current.active = false;
+  }, []);
+  const onWheel = useCallback((e: React.WheelEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setZoom((z) => Math.max(0.6, Math.min(2.5, z + (e.deltaY < 0 ? 0.1 : -0.1))));
+  }, []);
+  const resetView = useCallback(() => { setZoom(1); setRotate(0); }, []);
 
   const downloadImage = () => {
     const svg = svgRef.current;
