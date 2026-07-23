@@ -1,9 +1,17 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Sparkles, Download, Ruler } from "lucide-react";
+import { Sparkles, Download, Ruler, ZoomIn, ZoomOut, RotateCw, RefreshCw } from "lucide-react";
 import type { SelectedOrnament } from "@/components/OrnamentPicker";
+
+const SIZE_OPTIONS = [
+  { key: "S", label: "S (14-16 cm)", filler: 4 },
+  { key: "M", label: "M (16-18 cm)", filler: 6 },
+  { key: "L", label: "L (18-20 cm)", filler: 8 },
+  { key: "XL", label: "XL (20-22 cm)", filler: 10 },
+] as const;
+type SizeKey = typeof SIZE_OPTIONS[number]["key"];
 
 interface BraceletSimulatorProps {
   customName?: string;
