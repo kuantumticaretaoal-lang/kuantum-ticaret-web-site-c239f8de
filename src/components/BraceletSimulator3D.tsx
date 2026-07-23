@@ -1,9 +1,17 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Sparkles, Download, Ruler } from "lucide-react";
+import { Sparkles, Download, Ruler, ZoomIn, ZoomOut, RotateCw, RefreshCw } from "lucide-react";
 import type { SelectedOrnament } from "@/components/OrnamentPicker";
+
+const SIZE_OPTIONS = [
+  { key: "S", label: "S (14-16 cm)", filler: 4 },
+  { key: "M", label: "M (16-18 cm)", filler: 6 },
+  { key: "L", label: "L (18-20 cm)", filler: 8 },
+  { key: "XL", label: "XL (20-22 cm)", filler: 10 },
+] as const;
+type SizeKey = typeof SIZE_OPTIONS[number]["key"];
 
 interface BraceletSimulatorProps {
   customName?: string;
@@ -62,10 +70,17 @@ export const BraceletSimulator3D = ({
 }: BraceletSimulatorProps) => {
   const [cord, setCord] = useState(cordColor);
   const svgRef = useRef<SVGSVGElement>(null);
-  const [hovering, setHovering] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [size, setSize] = useState<SizeKey>("M");
+  const [zoom, setZoom] = useState(1);
+  const [rotate, setRotate] = useState(0);
+  const dragState = useRef<{ x: number; y: number; rot: number; active: boolean }>({
+    x: 0, y: 0, rot: 0, active: false,
+  });
 
   useEffect(() => setCord(cordColor), [cordColor]);
   useEffect(() => onCordColorChange?.(cord), [cord, onCordColorChange]);
+
 
   const texture = useMemo(
     () => CORD_OPTIONS.find((c) => c.value === cord)?.texture ?? "leather",
@@ -121,10 +136,11 @@ export const BraceletSimulator3D = ({
     });
     out.push(bead(99));
 
-    // Ensure minimum length so cord looks full
-    while (out.length < 8) out.push(bead(200 + out.length));
+    // Ensure minimum length based on selected size so cord looks full
+    const minLen = SIZE_OPTIONS.find((s) => s.key === size)!.filler + 4;
+    while (out.length < minLen) out.push(bead(200 + out.length));
     return out;
-  }, [letters, charmSlots]);
+  }, [letters, charmSlots, size]);
 
   // Geometry — horizontal bracelet with slight droop (catenary-like curve)
   const W = 900;
@@ -174,7 +190,26 @@ export const BraceletSimulator3D = ({
     });
   }, [sequence]);
 
-  const approxCm = Math.round(8 + sequence.length * 1.1);
+  const sizeCm = { S: 15, M: 17, L: 19, XL: 21 }[size];
+  const approxCm = Math.round(sizeCm + Math.max(0, sequence.length - 8) * 0.3);
+
+  const onPointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
+    dragState.current = { x: e.clientX, y: e.clientY, rot: rotate, active: true };
+  }, [rotate]);
+  const onPointerMove = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    if (!dragState.current.active) return;
+    const dx = e.clientX - dragState.current.x;
+    setRotate(dragState.current.rot + dx * 0.4);
+  }, []);
+  const onPointerUp = useCallback(() => {
+    dragState.current.active = false;
+  }, []);
+  const onWheel = useCallback((e: React.WheelEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setZoom((z) => Math.max(0.6, Math.min(2.5, z + (e.deltaY < 0 ? 0.1 : -0.1))));
+  }, []);
+  const resetView = useCallback(() => { setZoom(1); setRotate(0); }, []);
 
   const downloadImage = () => {
     const svg = svgRef.current;
@@ -226,15 +261,20 @@ export const BraceletSimulator3D = ({
       </CardHeader>
       <CardContent className="space-y-3">
         <div
-          className="w-full rounded-xl border overflow-hidden relative"
+          ref={containerRef}
+          className="w-full rounded-xl border overflow-hidden relative touch-none select-none cursor-grab active:cursor-grabbing"
           style={{
             height,
             background:
               "radial-gradient(ellipse at center, hsl(var(--muted)) 0%, hsl(var(--background)) 70%)",
           }}
-          onMouseEnter={() => setHovering(true)}
-          onMouseLeave={() => setHovering(false)}
-          aria-label="Bileklik önizleme alanı"
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={onPointerUp}
+          onPointerCancel={onPointerUp}
+          onWheel={onWheel}
+          onDoubleClick={resetView}
+          aria-label="Bileklik önizleme alanı — sürükleyip döndürebilir, kaydırarak yakınlaştırabilirsiniz"
         >
           <svg
             ref={svgRef}
@@ -244,8 +284,9 @@ export const BraceletSimulator3D = ({
             role="img"
             aria-label={`Bileklik: ${customName || "isim yok"}, ${charmSlots.length} süs`}
             style={{
-              transition: "transform 0.6s cubic-bezier(.2,.7,.2,1)",
-              transform: hovering ? "translateY(-4px) rotate(-1deg)" : "none",
+              transition: dragState.current.active ? "none" : "transform 0.25s ease-out",
+              transform: `scale(${zoom}) rotate(${rotate}deg)`,
+              transformOrigin: "50% 50%",
             }}
           >
             <defs>
@@ -468,6 +509,45 @@ export const BraceletSimulator3D = ({
           </svg>
         </div>
 
+        {/* Interactive controls */}
+        <div className="flex flex-wrap items-center gap-2">
+          <Button variant="outline" size="sm" onClick={() => setZoom((z) => Math.max(0.6, z - 0.15))} aria-label="Uzaklaştır">
+            <ZoomOut className="h-3.5 w-3.5" />
+          </Button>
+          <span className="text-xs tabular-nums w-10 text-center">{Math.round(zoom * 100)}%</span>
+          <Button variant="outline" size="sm" onClick={() => setZoom((z) => Math.min(2.5, z + 0.15))} aria-label="Yakınlaştır">
+            <ZoomIn className="h-3.5 w-3.5" />
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setRotate((r) => r - 15)} aria-label="Sola döndür">
+            <RotateCw className="h-3.5 w-3.5 -scale-x-100" />
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setRotate((r) => r + 15)} aria-label="Sağa döndür">
+            <RotateCw className="h-3.5 w-3.5" />
+          </Button>
+          <Button variant="ghost" size="sm" onClick={resetView} aria-label="Görünümü sıfırla">
+            <RefreshCw className="h-3.5 w-3.5 mr-1" /> Sıfırla
+          </Button>
+        </div>
+
+        {/* Size picker */}
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs text-muted-foreground mr-1">Bileklik Boyu:</span>
+          {SIZE_OPTIONS.map((s) => (
+            <button
+              key={s.key}
+              onClick={() => setSize(s.key)}
+              aria-pressed={size === s.key}
+              className={`px-2.5 py-1 rounded-md border text-xs transition-all ${
+                size === s.key
+                  ? "border-primary bg-primary text-primary-foreground shadow"
+                  : "border-border hover:border-primary/50 hover:bg-muted"
+              }`}
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
+
         {/* Info row */}
         <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
           <span className="inline-flex items-center gap-1">
@@ -478,7 +558,10 @@ export const BraceletSimulator3D = ({
           <span>{letters.length} harf</span>
           <span>•</span>
           <span>{charmSlots.length} süs</span>
+          <span className="hidden md:inline">•</span>
+          <span className="hidden md:inline">Sürükle · Kaydır · Çift tık ile sıfırla</span>
         </div>
+
 
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-xs text-muted-foreground mr-1">İp/Malzeme:</span>
