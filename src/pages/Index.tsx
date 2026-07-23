@@ -3,19 +3,19 @@ import SEO from "@/components/SEO";
 import Navbar from "@/components/Navbar";
 import HeroSection from "@/components/HeroSection";
 import Footer from "@/components/Footer";
-import { useTranslations } from "@/hooks/use-translations";
 import { BackToTop } from "@/components/BackToTop";
 
 const CampaignBanner = lazy(() => import("@/components/CampaignBanner").then(m => ({ default: m.CampaignBanner })));
 const TrustStrip = lazy(() => import("@/components/TrustStrip"));
+const TrustBadges = lazy(() => import("@/components/TrustBadges"));
 const Sponsors = lazy(() => import("@/components/Sponsors"));
 const ShippingInfo = lazy(() => import("@/components/ShippingInfo"));
 const Features = lazy(() => import("@/components/Features"));
+const Testimonials = lazy(() => import("@/components/Testimonials"));
+const HomeFAQ = lazy(() => import("@/components/HomeFAQ"));
 const CallToAction = lazy(() => import("@/components/CallToAction"));
 
 const Index = () => {
-  const { t } = useTranslations();
-  
   return (
     <div className="min-h-screen pb-20 md:pb-0">
       <SEO
@@ -30,9 +30,12 @@ const Index = () => {
       <HeroSection />
       <Suspense fallback={null}>
         <TrustStrip />
+        <TrustBadges />
         <Sponsors showTitle={true} />
         <ShippingInfo />
         <Features />
+        <Testimonials />
+        <HomeFAQ />
         <CallToAction />
       </Suspense>
       <Footer />
