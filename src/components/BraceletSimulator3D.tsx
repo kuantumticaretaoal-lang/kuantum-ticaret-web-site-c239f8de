@@ -136,10 +136,11 @@ export const BraceletSimulator3D = ({
     });
     out.push(bead(99));
 
-    // Ensure minimum length so cord looks full
-    while (out.length < 8) out.push(bead(200 + out.length));
+    // Ensure minimum length based on selected size so cord looks full
+    const minLen = SIZE_OPTIONS.find((s) => s.key === size)!.filler + 4;
+    while (out.length < minLen) out.push(bead(200 + out.length));
     return out;
-  }, [letters, charmSlots]);
+  }, [letters, charmSlots, size]);
 
   // Geometry — horizontal bracelet with slight droop (catenary-like curve)
   const W = 900;
