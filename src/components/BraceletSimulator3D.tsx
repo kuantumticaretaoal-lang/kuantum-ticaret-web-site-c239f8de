@@ -78,6 +78,10 @@ export const BraceletSimulator3D = ({
     x: 0, y: 0, rot: 0, active: false,
   });
 
+  useEffect(() => setCord(cordColor), [cordColor]);
+  useEffect(() => onCordColorChange?.(cord), [cord, onCordColorChange]);
+
+
   const texture = useMemo(
     () => CORD_OPTIONS.find((c) => c.value === cord)?.texture ?? "leather",
     [cord]
