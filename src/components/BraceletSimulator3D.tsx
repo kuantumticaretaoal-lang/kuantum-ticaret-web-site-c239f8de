@@ -70,10 +70,13 @@ export const BraceletSimulator3D = ({
 }: BraceletSimulatorProps) => {
   const [cord, setCord] = useState(cordColor);
   const svgRef = useRef<SVGSVGElement>(null);
-  const [hovering, setHovering] = useState(false);
-
-  useEffect(() => setCord(cordColor), [cordColor]);
-  useEffect(() => onCordColorChange?.(cord), [cord, onCordColorChange]);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [size, setSize] = useState<SizeKey>("M");
+  const [zoom, setZoom] = useState(1);
+  const [rotate, setRotate] = useState(0);
+  const dragState = useRef<{ x: number; y: number; rot: number; active: boolean }>({
+    x: 0, y: 0, rot: 0, active: false,
+  });
 
   const texture = useMemo(
     () => CORD_OPTIONS.find((c) => c.value === cord)?.texture ?? "leather",
