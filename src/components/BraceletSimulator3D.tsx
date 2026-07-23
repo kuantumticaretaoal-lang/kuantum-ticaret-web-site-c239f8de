@@ -509,6 +509,45 @@ export const BraceletSimulator3D = ({
           </svg>
         </div>
 
+        {/* Interactive controls */}
+        <div className="flex flex-wrap items-center gap-2">
+          <Button variant="outline" size="sm" onClick={() => setZoom((z) => Math.max(0.6, z - 0.15))} aria-label="Uzaklaştır">
+            <ZoomOut className="h-3.5 w-3.5" />
+          </Button>
+          <span className="text-xs tabular-nums w-10 text-center">{Math.round(zoom * 100)}%</span>
+          <Button variant="outline" size="sm" onClick={() => setZoom((z) => Math.min(2.5, z + 0.15))} aria-label="Yakınlaştır">
+            <ZoomIn className="h-3.5 w-3.5" />
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setRotate((r) => r - 15)} aria-label="Sola döndür">
+            <RotateCw className="h-3.5 w-3.5 -scale-x-100" />
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setRotate((r) => r + 15)} aria-label="Sağa döndür">
+            <RotateCw className="h-3.5 w-3.5" />
+          </Button>
+          <Button variant="ghost" size="sm" onClick={resetView} aria-label="Görünümü sıfırla">
+            <RefreshCw className="h-3.5 w-3.5 mr-1" /> Sıfırla
+          </Button>
+        </div>
+
+        {/* Size picker */}
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs text-muted-foreground mr-1">Bileklik Boyu:</span>
+          {SIZE_OPTIONS.map((s) => (
+            <button
+              key={s.key}
+              onClick={() => setSize(s.key)}
+              aria-pressed={size === s.key}
+              className={`px-2.5 py-1 rounded-md border text-xs transition-all ${
+                size === s.key
+                  ? "border-primary bg-primary text-primary-foreground shadow"
+                  : "border-border hover:border-primary/50 hover:bg-muted"
+              }`}
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
+
         {/* Info row */}
         <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
           <span className="inline-flex items-center gap-1">
@@ -519,7 +558,10 @@ export const BraceletSimulator3D = ({
           <span>{letters.length} harf</span>
           <span>•</span>
           <span>{charmSlots.length} süs</span>
+          <span className="hidden md:inline">•</span>
+          <span className="hidden md:inline">Sürükle · Kaydır · Çift tık ile sıfırla</span>
         </div>
+
 
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-xs text-muted-foreground mr-1">İp/Malzeme:</span>
