@@ -1,6 +1,7 @@
 import { Component, ErrorInfo, ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle } from "lucide-react";
+import { recoverAssetLoad, isAssetLoadError } from "@/lib/page-recovery";
 
 interface Props {
   children: ReactNode;
@@ -23,6 +24,7 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    recoverAssetLoad(error);
     console.error("ErrorBoundary caught:", error, errorInfo);
   }
 
@@ -35,11 +37,15 @@ export class ErrorBoundary extends Component<Props, State> {
           <AlertTriangle className="h-12 w-12 text-destructive mb-4" />
           <h2 className="text-xl font-semibold text-foreground mb-2">Bir şeyler ters gitti</h2>
           <p className="text-muted-foreground mb-4 max-w-md">
-            {this.state.error?.message || "Beklenmeyen bir hata oluştu."}
+            Sayfa yüklenemedi. Lütfen tekrar deneyin; sepetiniz ve hesabınız silinmez.
           </p>
-          <Button onClick={() => this.setState({ hasError: false })}>
+          <Button onClick={() => {
+            if (isAssetLoadError(this.state.error)) window.location.reload();
+            else this.setState({ hasError: false, error: undefined });
+          }}>
             Tekrar Dene
           </Button>
+          <Button variant="link" asChild><a href="/">Ana Sayfaya Dön</a></Button>
         </div>
       );
     }

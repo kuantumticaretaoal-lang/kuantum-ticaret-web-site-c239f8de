@@ -1,16 +1,14 @@
 import { browserStorage } from "@/lib/browser-storage";
-// XSS koruması - HTML temizleme (DOMPurify yerine native)
+import DOMPurify from "dompurify";
+// Parse and sanitize HTML; regular expressions cannot secure HTML.
 export const sanitizeHtml = (html: string): string => {
   if (!html) return "";
-  
-  // Temel HTML tag'lerini temizle
-  const allowedTags = ["b", "i", "em", "strong", "p", "br"];
-  const tagRegex = new RegExp(`<(?!\/?(${allowedTags.join("|")})\s*\/?)[^>]+>`, "gi");
-  
-  return html
-    .replace(tagRegex, "")
-    .replace(/javascript:/gi, "")
-    .replace(/on\w+\s*=/gi, "");
+  return DOMPurify.sanitize(html, {
+    ALLOWED_TAGS: ["b", "i", "em", "strong", "p", "br"],
+    ALLOWED_ATTR: [],
+    ALLOW_DATA_ATTR: false,
+    ALLOW_ARIA_ATTR: false,
+  });
 };
 
 // Input doğrulama - zararlı karakterleri temizle
@@ -83,7 +81,11 @@ export const checkClientRateLimit = (
     return true;
   }
 
-  const data = JSON.parse(stored);
+  let data: { count: number; timestamp: number };
+  try {
+    data = JSON.parse(stored);
+    if (!data || !Number.isInteger(data.count) || data.count < 0 || !Number.isFinite(data.timestamp)) return false;
+  } catch { return false; }
   
   if (now - data.timestamp > windowMs) {
     browserStorage.setItem(storageKey, JSON.stringify({ count: 1, timestamp: now }));
