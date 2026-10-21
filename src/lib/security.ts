@@ -1,3 +1,4 @@
+import { browserStorage } from "@/lib/browser-storage";
 // XSS koruması - HTML temizleme (DOMPurify yerine native)
 export const sanitizeHtml = (html: string): string => {
   if (!html) return "";
@@ -75,17 +76,17 @@ export const checkClientRateLimit = (
 ): boolean => {
   const now = Date.now();
   const storageKey = `rate_limit_${key}`;
-  const stored = localStorage.getItem(storageKey);
+  const stored = browserStorage.getItem(storageKey);
 
   if (!stored) {
-    localStorage.setItem(storageKey, JSON.stringify({ count: 1, timestamp: now }));
+    browserStorage.setItem(storageKey, JSON.stringify({ count: 1, timestamp: now }));
     return true;
   }
 
   const data = JSON.parse(stored);
   
   if (now - data.timestamp > windowMs) {
-    localStorage.setItem(storageKey, JSON.stringify({ count: 1, timestamp: now }));
+    browserStorage.setItem(storageKey, JSON.stringify({ count: 1, timestamp: now }));
     return true;
   }
 
@@ -93,7 +94,7 @@ export const checkClientRateLimit = (
     return false;
   }
 
-  localStorage.setItem(storageKey, JSON.stringify({ count: data.count + 1, timestamp: data.timestamp }));
+  browserStorage.setItem(storageKey, JSON.stringify({ count: data.count + 1, timestamp: data.timestamp }));
   return true;
 };
 

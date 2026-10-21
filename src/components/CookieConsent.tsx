@@ -1,3 +1,4 @@
+import { browserStorage } from "@/lib/browser-storage";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -20,10 +21,10 @@ interface SitePolicy {
 }
 
 const getDeviceId = (): string => {
-  let deviceId = localStorage.getItem('device_id');
+  let deviceId = browserStorage.getItem('device_id');
   if (!deviceId) {
     deviceId = 'device_' + Math.random().toString(36).substr(2, 9) + Date.now();
-    localStorage.setItem('device_id', deviceId);
+    browserStorage.setItem('device_id', deviceId);
   }
   return deviceId;
 };
@@ -44,7 +45,7 @@ export const CookieConsent = () => {
       // Local fast-path: if the user already consented from this device, skip the modal.
       // (RLS restricts the DB read to the authenticated owner, so we rely on localStorage
       // as the device-scoped source of truth for anonymous visitors.)
-      const localConsent = localStorage.getItem('cookie_consent_v1');
+      const localConsent = browserStorage.getItem('cookie_consent_v1');
       if (localConsent) {
         return;
       }
@@ -80,7 +81,7 @@ export const CookieConsent = () => {
   }, []);
 
   const persistLocal = () => {
-    try { localStorage.setItem('cookie_consent_v1', new Date().toISOString()); } catch {}
+    try { browserStorage.setItem('cookie_consent_v1', new Date().toISOString()); } catch {}
   };
 
   const handleAcceptAll = async () => {

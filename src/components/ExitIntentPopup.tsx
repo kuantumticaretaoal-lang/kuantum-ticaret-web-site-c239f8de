@@ -1,3 +1,4 @@
+import { browserStorage } from "@/lib/browser-storage";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -21,7 +22,7 @@ const ExitIntentPopup = () => {
         .maybeSingle();
       if (!mounted || !data) return;
 
-      const dismissedAt = Number(localStorage.getItem(COOLDOWN_KEY) || 0);
+      const dismissedAt = Number(browserStorage.getItem(COOLDOWN_KEY) || 0);
       const cooldownMs = (data.cooldown_hours || 24) * 60 * 60 * 1000;
       if (Date.now() - dismissedAt < cooldownMs) return;
 
@@ -46,7 +47,7 @@ const ExitIntentPopup = () => {
 
   const close = () => {
     setOpen(false);
-    localStorage.setItem(COOLDOWN_KEY, String(Date.now()));
+    browserStorage.setItem(COOLDOWN_KEY, String(Date.now()));
   };
 
   if (!popup) return null;
