@@ -1,3 +1,4 @@
+import { browserStorage } from "@/lib/browser-storage";
 import { useState, useEffect, createContext, useContext, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -51,7 +52,7 @@ export const useTranslationProvider = () => {
 
   // Load saved language preference
   useEffect(() => {
-    const savedLang = localStorage.getItem("preferred_language") || "tr";
+    const savedLang = browserStorage.getItem("preferred_language") || "tr";
     setCurrentLanguage(savedLang);
     loadLanguageInfo(savedLang);
     loadTranslations(savedLang);
@@ -135,7 +136,7 @@ export const useTranslationProvider = () => {
 
   const setLanguage = useCallback((code: string) => {
     setCurrentLanguage(code);
-    localStorage.setItem("preferred_language", code);
+    browserStorage.setItem("preferred_language", code);
     loadLanguageInfo(code);
     loadTranslations(code);
     

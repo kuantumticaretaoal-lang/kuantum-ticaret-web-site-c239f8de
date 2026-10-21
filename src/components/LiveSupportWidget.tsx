@@ -1,3 +1,4 @@
+import { browserStorage } from "@/lib/browser-storage";
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -15,10 +16,10 @@ interface Message {
 }
 
 const getDeviceId = (): string => {
-  let deviceId = localStorage.getItem("device_id");
+  let deviceId = browserStorage.getItem("device_id");
   if (!deviceId) {
     deviceId = crypto.randomUUID();
-    localStorage.setItem("device_id", deviceId);
+    browserStorage.setItem("device_id", deviceId);
   }
   return deviceId;
 };
@@ -30,7 +31,7 @@ export const LiveSupportWidget = () => {
   const [loading, setLoading] = useState(false);
   const [threadId, setThreadId] = useState<string | null>(null);
   const [disclaimerAccepted, setDisclaimerAccepted] = useState<boolean>(
-    typeof window !== "undefined" && localStorage.getItem("live_support_disclaimer_v1") === "1"
+    typeof window !== "undefined" && browserStorage.getItem("live_support_disclaimer_v1") === "1"
   );
   const [contactInfo, setContactInfo] = useState<{ email?: string; phone?: string }>({});
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -46,7 +47,7 @@ export const LiveSupportWidget = () => {
   }, [isOpen, disclaimerAccepted]);
 
   const acceptDisclaimer = () => {
-    localStorage.setItem("live_support_disclaimer_v1", "1");
+    browserStorage.setItem("live_support_disclaimer_v1", "1");
     setDisclaimerAccepted(true);
   };
 

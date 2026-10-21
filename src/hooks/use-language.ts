@@ -1,5 +1,6 @@
 import { useState, useEffect, createContext, useContext } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { browserStorage } from "@/lib/browser-storage";
 
 interface Language {
   code: string;
@@ -53,7 +54,7 @@ export const useLanguageData = (): LanguageContextType => {
       setLanguages(data);
 
       // Kullanıcının kayıtlı tercihini veya varsayılanı yükle
-      const savedCode = localStorage.getItem("preferred_language");
+      const savedCode = browserStorage.getItem("preferred_language");
       const defaultLang = data.find((l) => l.is_default) || data[0];
       const selectedLang = savedCode ? data.find((l) => l.code === savedCode) : defaultLang;
 
@@ -72,7 +73,7 @@ export const useLanguageData = (): LanguageContextType => {
     const lang = languages.find((l) => l.code === code);
     if (lang) {
       setCurrentLanguage(lang);
-      localStorage.setItem("preferred_language", code);
+      browserStorage.setItem("preferred_language", code);
     }
   };
 

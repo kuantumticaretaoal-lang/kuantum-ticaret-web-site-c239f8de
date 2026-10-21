@@ -1,3 +1,4 @@
+import { browserStorage, readStoredArray } from "@/lib/browser-storage";
 import { useState, useEffect } from 'react';
 
 const STORAGE_KEY = 'recently_viewed_products';
@@ -16,14 +17,13 @@ export const useRecentlyViewed = () => {
   const [recentlyViewed, setRecentlyViewed] = useState<RecentlyViewedProduct[]>([]);
 
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      try {
-        setRecentlyViewed(JSON.parse(stored));
-      } catch (e) {
-        localStorage.removeItem(STORAGE_KEY);
-      }
-    }
+    setRecentlyViewed(readStoredArray(STORAGE_KEY, (value): value is RecentlyViewedProduct => {
+      if (!value || typeof value !== "object") return false;
+      const product = value as Partial<RecentlyViewedProduct>;
+      return typeof product.id === "string" && typeof product.title === "string"
+        && typeof product.price === "number" && Number.isFinite(product.price)
+        && typeof product.viewed_at === "number";
+    }).slice(0, MAX_ITEMS));
   }, []);
 
   const addToRecentlyViewed = (product: Omit<RecentlyViewedProduct, 'viewed_at'>) => {
@@ -38,13 +38,13 @@ export const useRecentlyViewed = () => {
       };
       
       const updated = [newItem, ...filtered].slice(0, MAX_ITEMS);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      browserStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
       return updated;
     });
   };
 
   const clearRecentlyViewed = () => {
-    localStorage.removeItem(STORAGE_KEY);
+    browserStorage.removeItem(STORAGE_KEY);
     setRecentlyViewed([]);
   };
 

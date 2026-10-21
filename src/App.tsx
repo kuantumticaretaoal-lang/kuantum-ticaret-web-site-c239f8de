@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useOnlinePresence } from "@/hooks/use-online-presence";
 import { TranslationProvider } from "@/contexts/TranslationContext";
 import { LiveSupportWidget } from "@/components/LiveSupportWidget";
@@ -65,15 +65,16 @@ const AppContent = () => {
       <ScrollToTop />
       <RouteProgressBar />
       <VisitorTracker />
-      <CookieConsent />
-      <LiveSupportWidget />
-      <PushNotificationManager />
+      <ErrorBoundary fallback={<></>}><CookieConsent /></ErrorBoundary>
+      <ErrorBoundary fallback={<></>}><LiveSupportWidget /></ErrorBoundary>
+      <ErrorBoundary fallback={<></>}><PushNotificationManager /></ErrorBoundary>
       <MobileBottomNav />
-      <ExitIntentPopup />
+      <ErrorBoundary fallback={<></>}><ExitIntentPopup /></ErrorBoundary>
 
-      <Suspense fallback={null}>
+      <Suspense fallback={<div role="status" aria-live="polite" className="flex min-h-[50vh] items-center justify-center bg-background text-muted-foreground">Sayfa yükleniyor…</div>}>
         <Routes>
           <Route path="/" element={<Index />} />
+          <Route path="/index" element={<Navigate to="/" replace />} />
           <Route path="/products" element={<Products />} />
           <Route path="/products/:id" element={<ProductDetail />} />
           <Route path="/cart" element={<CartPage />} />

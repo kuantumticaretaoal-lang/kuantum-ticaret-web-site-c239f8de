@@ -1,14 +1,19 @@
+import "./lib/storage-bootstrap";
 import React from "react";
 import { createRoot } from "react-dom/client";
 import { HelmetProvider } from "react-helmet-async";
 import App from "./App.tsx";
 import "./index.css";
 import { installSupabaseSessionHeaders } from "./lib/supabase-session";
+import { installPageRecovery } from "./lib/page-recovery";
 
 installSupabaseSessionHeaders();
+installPageRecovery();
 
 
-createRoot(document.getElementById("root")!).render(
+const root = document.getElementById("root");
+if (!root) throw new Error("Uygulama başlangıç alanı bulunamadı.");
+createRoot(root).render(
   <React.StrictMode>
     <HelmetProvider>
       <App />

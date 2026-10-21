@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { browserStorage } from "@/lib/browser-storage";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -39,7 +40,7 @@ export const LanguageSelector = ({ variant = "navbar" }: LanguageSelectorProps) 
     if (data && data.length > 0) {
       setLanguages(data);
 
-      const savedCode = localStorage.getItem("preferred_language");
+      const savedCode = browserStorage.getItem("preferred_language");
       const defaultLang = data.find((l) => l.is_default) || data[0];
       const selectedLang = savedCode ? data.find((l) => l.code === savedCode) : defaultLang;
 
@@ -49,7 +50,7 @@ export const LanguageSelector = ({ variant = "navbar" }: LanguageSelectorProps) 
 
   const handleSelect = async (lang: Language) => {
     setCurrentLanguage(lang);
-    localStorage.setItem("preferred_language", lang.code);
+    browserStorage.setItem("preferred_language", lang.code);
     
     // Döviz kurlarını arka planda güncelle (kullanıcı beklemeden)
     if (lang.currency_code !== "TRY") {
