@@ -27,6 +27,7 @@ import SEO from "@/components/SEO";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { trackFilterEvent } from "@/lib/filter-tracker";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { browserStorage } from "@/lib/browser-storage";
 
 interface Category {
   id: string;
@@ -38,7 +39,22 @@ interface Category {
 
 const FILTER_STORAGE_KEY = "products_filters_v1";
 const loadStored = () => {
-  try { return JSON.parse(localStorage.getItem(FILTER_STORAGE_KEY) || "{}"); } catch { return {}; }
+  try {
+    const value = JSON.parse(browserStorage.getItem(FILTER_STORAGE_KEY) || "{}");
+    if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+    const sorts = ["newest", "price-asc", "price-desc", "name-asc", "name-desc"];
+    return {
+      sortBy: sorts.includes(value.sortBy) ? value.sortBy : "newest",
+      filterPromotion: typeof value.filterPromotion === "string" ? value.filterPromotion : "all",
+      filterCategory: typeof value.filterCategory === "string" ? value.filterCategory : "all",
+      showOnlyInStock: value.showOnlyInStock === true,
+      priceMin: typeof value.priceMin === "string" ? value.priceMin : "",
+      priceMax: typeof value.priceMax === "string" ? value.priceMax : "",
+      priceSlider: Array.isArray(value.priceSlider) && value.priceSlider.length === 2
+        && value.priceSlider.every((n: unknown) => typeof n === "number" && Number.isFinite(n) && n >= 0)
+        && value.priceSlider[0] <= value.priceSlider[1] ? value.priceSlider : [0, 50000],
+    };
+  } catch { return {}; }
 };
 
 const Products = () => {
@@ -106,7 +122,7 @@ const Products = () => {
   // Persist filter selections to localStorage
   useEffect(() => {
     try {
-      localStorage.setItem(FILTER_STORAGE_KEY, JSON.stringify({
+      browserStorage.setItem(FILTER_STORAGE_KEY, JSON.stringify({
         sortBy, filterPromotion, filterCategory, showOnlyInStock,
         priceMin: priceRange.min, priceMax: priceRange.max, priceSlider,
       }));

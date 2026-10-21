@@ -8,7 +8,8 @@
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "bun test src/lib/*.test.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -73,6 +74,11 @@
     "vaul": "^0.9.9",
     "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz",
     "zod": "^3.25.76"
+  },
+  "overrides": {
+    "lodash": "4.18.1",
+    "fflate": "0.8.3",
+    "dompurify": "3.4.17"
   },
   "devDependencies": {
     "@eslint/js": "^9.32.0",
