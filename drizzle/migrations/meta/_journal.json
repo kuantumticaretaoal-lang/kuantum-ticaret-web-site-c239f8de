@@ -8,6 +8,13 @@
       "when": 1792557965273,
       "tag": "0000_protect_webhook_audit_writes",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1795491265506,
+      "tag": "0001_verified_cart_ownership_and_guest_import",
+      "breakpoints": true
     }
   ]
 }

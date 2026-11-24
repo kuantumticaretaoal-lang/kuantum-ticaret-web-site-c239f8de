@@ -14,6 +14,7 @@ import NavbarMobileMenu from "@/components/navbar/NavbarMobileMenu";
 import NavbarDesktopLinks from "@/components/navbar/NavbarDesktopLinks";
 import NavbarUserMenu from "@/components/navbar/NavbarUserMenu";
 import CartDrawer from "@/components/CartDrawer";
+import { CART_CHANGED_EVENT, CART_MERGE_ERROR_EVENT } from "@/lib/guest-cart";
 
 const Navbar = () => {
   const [user, setUser] = useState<any>(null);
@@ -49,6 +50,9 @@ const Navbar = () => {
     });
 
     loadCartCount();
+    const mergeError = () => toast({ variant: "destructive", title: "Misafir sepetiniz korunuyor", description: "Ürünler hesabınıza aktarılamadı. Yeniden giriş yaparak tekrar deneyebilirsiniz." });
+    window.addEventListener(CART_CHANGED_EVENT, loadCartCount);
+    window.addEventListener(CART_MERGE_ERROR_EVENT, mergeError);
 
     const cartChannel = supabase
       .channel("navbar-cart-changes")
@@ -81,6 +85,8 @@ const Navbar = () => {
 
     return () => {
       subscription.unsubscribe();
+      window.removeEventListener(CART_CHANGED_EVENT, loadCartCount);
+      window.removeEventListener(CART_MERGE_ERROR_EVENT, mergeError);
       supabase.removeChannel(cartChannel);
       supabase.removeChannel(notificationsChannel);
     };

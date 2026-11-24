@@ -97,7 +97,7 @@ const ContactPage = () => {
       toast({
         variant: "destructive",
         title: "Hata",
-        description: validation.error.errors[0].message,
+        description: validation.error.issues[0]?.message,
       });
       return;
     }

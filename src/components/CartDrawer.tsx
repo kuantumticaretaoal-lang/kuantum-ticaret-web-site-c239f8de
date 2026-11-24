@@ -6,6 +6,7 @@ import { ShoppingBag, Trash2, Plus, Minus, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
 import { getCartItems, updateCartQuantity, removeFromCart, getSessionId } from "@/lib/cart";
 import { supabase } from "@/integrations/supabase/client";
+import { CART_CHANGED_EVENT } from "@/lib/guest-cart";
 
 const FREE_SHIPPING_THRESHOLD = 500;
 
@@ -28,6 +29,7 @@ const CartDrawer = ({ open, onOpenChange }: CartDrawerProps) => {
   useEffect(() => {
     if (!open) return;
     load();
+    window.addEventListener(CART_CHANGED_EVENT, load);
     const ch = supabase
       .channel("cart-drawer-changes")
       .on("postgres_changes", { event: "*", schema: "public", table: "cart" }, async (payload) => {
@@ -38,7 +40,7 @@ const CartDrawer = ({ open, onOpenChange }: CartDrawerProps) => {
             (!user && (n?.session_id === sid || o?.session_id === sid))) load();
       })
       .subscribe();
-    return () => { supabase.removeChannel(ch); };
+    return () => { window.removeEventListener(CART_CHANGED_EVENT, load); supabase.removeChannel(ch); };
   }, [open]);
 
   const subtotal = items.reduce((s, it) => {

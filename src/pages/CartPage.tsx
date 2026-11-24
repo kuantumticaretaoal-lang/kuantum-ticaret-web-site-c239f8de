@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { getCartItems, updateCartQuantity, removeFromCart, getSessionId } from "@/lib/cart";
+import { getCartItems, updateCartQuantity, removeFromCart, getSessionId, clearCart } from "@/lib/cart";
+import { CART_CHANGED_EVENT } from "@/lib/guest-cart";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -78,6 +79,7 @@ const CartPage = () => {
     loadShippingSettings();
     loadIbanSettings();
     loadLoyaltyBalance();
+    window.addEventListener(CART_CHANGED_EVENT, loadCart);
 
     const channel = supabase
       .channel("cart-changes")
@@ -100,6 +102,7 @@ const CartPage = () => {
       .subscribe();
 
     return () => {
+      window.removeEventListener(CART_CHANGED_EVENT, loadCart);
       supabase.removeChannel(channel);
     };
   }, []);
@@ -469,10 +472,7 @@ const CartPage = () => {
         });
       }
 
-      const { error: clearError } = await (supabase as any)
-        .from("cart")
-        .delete()
-        .eq("user_id", user.id);
+      const { error: clearError } = await clearCart();
 
       if (clearError) throw clearError;
 

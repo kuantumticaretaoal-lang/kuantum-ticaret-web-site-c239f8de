@@ -40,7 +40,7 @@ export const AdminNotifications = () => {
     if (!validation.success) {
       toast({
         variant: "destructive",
-        description: validation.error.errors[0].message,
+        description: validation.error.issues[0]?.message,
       });
       return;
     }

@@ -2643,6 +2643,7 @@ export type Database = {
         Returns: boolean
       }
       hash_backup_code: { Args: { plain_code: string }; Returns: string }
+      import_guest_cart: { Args: { p_items: Json }; Returns: number }
       increment_coupon_usage: {
         Args: { p_coupon_id: string }
         Returns: undefined

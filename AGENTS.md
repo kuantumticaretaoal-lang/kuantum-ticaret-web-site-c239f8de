@@ -3,3 +3,5 @@
 - Validate persisted JSON before it reaches React state because syntactically valid stale preferences may have the wrong shape.
 - Isolate optional global widgets with error boundaries so a widget failure does not remove shopping routes.
 - Recover stale lazy imports with at most one automatic reload per tab and a visible fallback; never clear auth or cart data to recover a page.
+- Initialize denied-storage fallback before generated auth imports to keep restricted browsers usable without deleting real sessions.
+- Guest carts stay browser-local; import them atomically and idempotently into the verified account, validating selections and accessory prices server-side.

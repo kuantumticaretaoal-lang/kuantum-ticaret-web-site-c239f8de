@@ -21,15 +21,14 @@ const HeroProductShowcase = () => {
       try {
         const { data } = await (supabase as any)
           .from("products")
-          .select("id, name, price, product_images(image_url)")
-          .eq("is_active", true)
+          .select("id, title, price, product_images(image_url)")
           .order("created_at", { ascending: false })
           .limit(6);
         if (Array.isArray(data)) {
           setProducts(
             data.map((p: any) => ({
               id: p.id,
-              name: p.name,
+              name: p.title,
               price: Number(p.price) || 0,
               images: p.product_images || [],
             }))
